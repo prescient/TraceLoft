@@ -52,3 +52,10 @@
   its existing monogram geometry. Versioned the favicon URL so browsers request the new asset.
 - Updated the interface reference. Verified SVG parsing, palette, geometry and favicon link;
   inspected Chromium renders at 16, 32 and 64 pixels. No service or session state changed.
+
+## 2026-10-03 — Favicon cache follow-up
+
+- User still saw the green tab icon. Confirmed the live HTTP service serves the blue SVG and
+  updated HTML with no-store headers. Added a distinct black/blue asset filename and pointed
+  the favicon link to it to bypass retained browser favicon identity.
+- Verified the new live asset matches the approved SVG and the live HTML references it.
