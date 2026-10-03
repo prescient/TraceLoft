@@ -456,3 +456,8 @@ and Skip. New shots animate only while viewing that session; entry/reload/review
 history. Range inspection retains the selected shot until Back to latest. Play completion, Next
 hole, Misread/Mulligan and Exit remain available during playback. A new hole or correction clears
 the previous animation; finishing an approach returns to the normal green camera.
+
+Round setup adds Landing in rough / Landing out of bounds rollout sliders, separate from the
+Shot from rough / Shot from sand distance settings. Demo shot input exposes optional reported
+carry. No route changes. Launch saves settings; the live log/review shows landing adjustments and
+original source carry/total/offline. Correction, end/review and exits keep their existing paths.

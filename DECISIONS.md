@@ -94,3 +94,17 @@ flight payload; do not backfill old rounds. Use presentation-only clocks, no rep
 arrival only for batches, no automatic history replay, Replay/Skip and reduced-motion support.
 This is a limited presentation step; validated bounce/roll, obstacles, terrain and realistic physics
 remain separate backlog work. See [verification](designs/shot-motion/README.md).
+
+## D55 — Simple carry-landing rollout rules (2026-10-03)
+
+At reported carry, stop immediately in sand; remove 75% of remaining rollout in rough and 100%
+in OB by default, with separate setup percentages. Calculate the landing point by carry/total
+interpolation along the original adjusted shot vector; lateral landing remains an estimate. Apply
+the existing starting-lie reduction and direction variation first. Final position determines lies
+and water/OB penalties. Missing/invalid carry skips landing rules without discarding the shot.
+
+Version new outcomes as endpoint-golf-v2 with frozen landing-rollout-v1 evidence. Preserve raw
+readings and all prior outcomes; legacy active rounds use default rollout settings for new shots.
+Animation consumes saved landing/final points, preserving flight landing when rollout shortens.
+This does not add bounce, continuous terrain interaction, new putting physics or adjusted heatmap
+predictions. See [operation and verification](docs/PLAY_LANDING_RULES.md).

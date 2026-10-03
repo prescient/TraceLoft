@@ -55,6 +55,8 @@ wind, elevation, green slopes and intermediate ball-path collisions are not simu
 
 The existing endpoint rules apply: default sand reduction 20%, rough 7%, nature 30%; adjustable
 lie variation; water/OB replay with +1 penalty. Flat putting uses the selected Stimp/model.
+New full shots use [landing rollout rules](PLAY_LANDING_RULES.md): sand stops at carry;
+rough removes 75% of remaining rollout and OB removes 100% by default, configurable during setup.
 A gimme adds one putt; Mulligan/Misread restore the latest scored shot's prior state even after
 completion. Both retain an audit; misreads also exclude from analysis. See
 [Boulder Beach controls](PEBBLE_BOULDER.md) for the shared round contract.

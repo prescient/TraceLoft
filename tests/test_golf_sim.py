@@ -42,6 +42,18 @@ class GameTests(unittest.TestCase):
             self.assertFalse(p.add(event))
             self.assertEqual(model.call_count,1)
 
+    def test_landing_settings_and_explicit_demo_carry_validate_and_persist(self):
+        p=self.launch(game_rollout_rough=50,game_rollout_ob=75)
+        self.assertEqual(p.data['game_settings']['rough_rollout_percent'],50)
+        self.assertEqual(p.data['game_settings']['ob_rollout_percent'],75)
+        url=f"/api/game/{p.data['id']}/simulate"
+        self.assertEqual(self.client.post(url,json=dict(turn=0,distance_yd=100,carry_yd=101)).status_code,409)
+        self.assertEqual(len(p.data['shots']),0)
+        self.assertEqual(self.client.post(url,json=dict(turn=0,distance_yd=100,carry_yd=80)).status_code,200)
+        self.assertEqual(p.data['shots'][0]['vals']['carry'],80)
+        self.assertEqual(self.service.load_session(p.data['id']).data,p.data)
+        self.assertEqual(self.client.post('/api/practice',json=dict(drill='2D golf',game_rollout_rough=101)).status_code,422)
+
     def test_round_putt_completion_and_recoverable_review(self):
         p=self.launch();sid=p.data['id']
         self.assertEqual(self.simulate(p,200).status_code,200)
@@ -117,7 +129,9 @@ class GameTests(unittest.TestCase):
         self.assertEqual(p.data['game']['position'],[0,0])
         # OB returns to start, but the immutable attempted endpoint preserves this rotation.
         o=p.data['shots'][-1]['game_outcome']
-        self.assertAlmostEqual(o['endpoint'][0],40);self.assertAlmostEqual(o['endpoint'][1],-30)
+        self.assertAlmostEqual(o['landing_rollout']['base_endpoint'][0],40)
+        self.assertAlmostEqual(o['landing_rollout']['base_endpoint'][1],-30)
+        self.assertAlmostEqual(o['endpoint'][0],37.2);self.assertAlmostEqual(o['endpoint'][1],-27.9)
         self.assertEqual(p.data['shots'][-1]['vals'],raw)
 
     def test_water_penalty_replay_and_lie_classification(self):

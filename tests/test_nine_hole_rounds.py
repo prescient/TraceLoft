@@ -25,7 +25,9 @@ class NineHoleTests(unittest.TestCase):
     def holeout(self,p):
         pin=p.data['course']['pin'];g=p.data['game']
         self.assertEqual(self.action(p,'aim',x=pin[0],y=pin[1]).status_code,200)
-        r=self.action(p,'simulate',distance_yd=math.dist(g['position'],pin),offline_yd=0)
+        travel=math.dist(g['position'],pin)
+        # This lifecycle fixture flies straight into the cup, without rollout through hazards.
+        r=self.action(p,'simulate',distance_yd=travel,carry_yd=travel,offline_yd=0)
         self.assertEqual(r.status_code,200,r.text)
 
     def test_both_courses_front_and_back_completion_review_resume_and_correction(self):

@@ -39,6 +39,8 @@ scores honestly and analysis exclusions never remove strokes. Existing one-hole 
 
 Use the current endpoint game: flat greens, configurable rough/sand reductions, no tree collisions
 or elevation, water/OB replay with one penalty. Coastal art does not add undisclosed physics.
+New full shots also use [carry landing rules](PLAY_LANDING_RULES.md): sand stops immediately,
+rough rollout is reduced 75% and OB rollout 100% by default. Setup can change rough/OB percentages.
 
 ## Playing and reviewing
 

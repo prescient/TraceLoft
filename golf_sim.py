@@ -14,7 +14,7 @@ from putting import PuttingSession, timestamp
 from putting_distance import distance_ft, required_speed_mph, model_context, DEFAULT_MODEL_ID
 from distance_ladder import numeric
 
-GAME_FIELDS = ('game_rough', 'game_sand', 'game_variation', 'game_gimme', 'game_geometry', 'game_acknowledged', 'game_course_id', 'game_holes')
+GAME_FIELDS = ('game_rough', 'game_sand', 'game_variation', 'game_gimme', 'game_geometry', 'game_acknowledged', 'game_course_id', 'game_holes', 'game_rollout_rough', 'game_rollout_ob')
 COURSE = dict(id='meadow-one-v1', name='Meadow One', par=4, yards=350, tee=[0,0], pin=[0,350],
     bounds=[-80,80,-15,385], green_radius=18,
     fairway=[[-18,0],[18,0],[22,140],[8,250],[10,335],[-15,335],[-32,240],[-25,130]],
@@ -39,12 +39,33 @@ def lie_at(point, course):
     return classify(point,course)
 
 
+def landing_rollout(start, endpoint, carry, total, course, settings):
+    """Simple landing rules; lateral landing is interpolated, not measured separately."""
+    result=dict(version='landing-rollout-v1',applied=False,base_endpoint=copy.deepcopy(endpoint))
+    if not numeric(total,0,600) or total<=0 or not numeric(carry,0,total):
+        result['reason']='Landing rules unavailable: valid reported carry and total are required.'
+        return endpoint,result
+    ratio=carry/total
+    landing=[a+(b-a)*ratio for a,b in zip(start,endpoint)]
+    lie=lie_at(landing,course)
+    reduction={'sand':100,'rough':settings.get('rough_rollout_percent',75),
+               'out of bounds':settings.get('ob_rollout_percent',100)}.get(lie,0)
+    final=[a+(b-a)*(1-reduction/100) for a,b in zip(landing,endpoint)]
+    result.update(applied=True,landing_point=landing,landing_lie=lie,carry_ratio=ratio,
+        landing_method='reported carry / total ratio; interpolated lateral position',
+        reduction_percent=reduction,original_rollout_yd=distance(landing,endpoint),
+        adjusted_rollout_yd=distance(landing,final))
+    return final,result
+
+
 class GolfSimSession(PuttingSession):
     def __init__(self, folder, store=None, equipment_selection=None, demo=True, stimp=10,
                  game_rough=7, game_sand=20, game_variation=0, game_gimme=3,
-                 game_geometry='downrange', game_acknowledged=False, game_course_id='pebble-boulder-blue-v1', game_holes='full', course=None):
+                 game_geometry='downrange', game_acknowledged=False, game_course_id='pebble-boulder-blue-v1', game_holes='full', course=None,
+                 game_rollout_rough=75, game_rollout_ob=100):
         if any(not numeric(v,lo,hi) for v,lo,hi in ((game_rough,0,60),(game_sand,0,80),
-            (game_variation,0,10),(game_gimme,0,10),(stimp,3,20))):
+            (game_variation,0,10),(game_gimme,0,10),(stimp,3,20),
+            (game_rollout_rough,0,100),(game_rollout_ob,0,100))):
             raise ValueError('Choose valid lie, putting and variation settings.')
         if type(demo) is not bool or game_geometry not in ('downrange','radial'):
             raise ValueError('Choose a valid game mode and distance geometry.')
@@ -69,6 +90,7 @@ class GolfSimSession(PuttingSession):
             practice_type='full_swing',session_kind='golf_sim',random_pace=False,target=0,demo=demo,
             equipment_selection=copy.deepcopy(equipment_selection),shots=[],course=copy.deepcopy(course),
             game_settings=dict(rough_percent=game_rough,sand_percent=game_sand,nature_percent=30,
+                rough_rollout_percent=game_rollout_rough,ob_rollout_percent=game_rollout_ob,
                 variation_degrees=game_variation,gimme_ft=game_gimme,geometry=game_geometry,
                 acknowledged=game_acknowledged,putting=model_context(stimp)),
             game=dict(position=copy.deepcopy(course['tee']),aim=copy.deepcopy(course['pin']),lie='tee',turn=0,strokes=0,penalties=0,
@@ -149,8 +171,11 @@ class GolfSimSession(PuttingSession):
             vals=copy.deepcopy(vals),excluded=False,success=False,scored=False,simulated=self.data['demo'],
             **copy.deepcopy(event.get('equipment_selection',self.data.get('equipment_selection')) or {}))
         shot.update(hole_id=course['id'],hole_number=course.get('hole_number',1))
-        outcome=dict(version='endpoint-golf-v1',course_id=course['id'],context=context,settings=copy.deepcopy(settings),
+        outcome=dict(version='endpoint-golf-v2',course_id=course['id'],context=context,settings=copy.deepcopy(settings),
                      before=before,applied=False,penalty_strokes=0,conceded_strokes=0)
+        # Legacy active rounds use these defaults for new shots; frozen outcomes stay intact.
+        outcome['settings'].setdefault('rough_rollout_percent',75)
+        outcome['settings'].setdefault('ob_rollout_percent',100)
         reason=None;putting=g['lie']=='green'
         left,right,near,far=course['bounds']
         valid_context=(isinstance(context,dict) and all(context.get(k)==g[k] for k in ('turn','position','lie'))
@@ -183,6 +208,12 @@ class GolfSimSession(PuttingSession):
                 forward=math.sqrt(max(0,travel*travel-lateral*lateral)) if settings['geometry']=='radial' else travel
             end=[p[0]+forward*math.sin(angle)+lateral*math.cos(angle),
                  p[1]+forward*math.cos(angle)-lateral*math.sin(angle)]
+            if not putting:
+                end,landing=landing_rollout(p,end,vals.get('carry'),vals['total'],course,outcome['settings'])
+                outcome['landing_rollout']=landing
+                if landing['applied']:
+                    adjustment=landing['carry_ratio']+(1-landing['carry_ratio'])*(1-landing['reduction_percent']/100)
+                    forward*=adjustment;lateral*=adjustment
             final_lie=lie_at(end,course);remaining=distance(end,course['pin'])
             outcome.update(applied=True,putting=putting,raw_total_yd=vals.get('total'),raw_offline_yd=vals.get('offline'),
                 adjusted_forward_yd=forward,adjusted_right_yd=lateral,distance_factor=1-reduction,
@@ -204,6 +235,12 @@ class GolfSimSession(PuttingSession):
                     message='Hole complete · one conceded putt added.' if conceded else 'Hole complete · endpoint inside the simulated cup.'
                 else:message=f'Green · {remaining*3:.1f} ft to the pin.' if final_lie=='green' else f'{final_lie.capitalize()} · {remaining:.1f} yd to the pin.'
                 g['aim']=copy.deepcopy(course['pin'])
+            if not putting:
+                landing=outcome['landing_rollout']
+                if not landing['applied']:message+=' '+landing['reason']
+                elif landing['reduction_percent']>0 and landing['original_rollout_yd']>.01:
+                    message+=(' Sand landing stopped rollout.' if landing['landing_lie']=='sand' else
+                        f" {landing['landing_lie'].capitalize()} landing reduced rollout by {landing['reduction_percent']:g}%.")
             g['last_message']=message;outcome['message']=message
             shot.update(scored=True,success=g['holed'])
         outcome['after']=copy.deepcopy(g);shot['game_outcome']=outcome
@@ -238,13 +275,15 @@ class GolfSimSession(PuttingSession):
         return result
 
 
-def simulated_event(session, distance_yd, offline_yd=0):
+def simulated_event(session, distance_yd, offline_yd=0, carry_yd=None):
     """Explicit deterministic test input, recorded as synthetic and isolated from live sessions."""
     if not session.data['demo'] or session.data['ended'] or session.data['game']['holed']:
         raise ValueError('Simulated shots require an active demo round.')
     if not numeric(distance_yd,.01,600) or not numeric(offline_yd,-200,200):
         raise ValueError('Choose a valid simulated distance and offline amount.')
     putting=session.data['game']['lie']=='green'
+    if carry_yd is not None and (putting or not numeric(carry_yd,0,distance_yd)):
+        raise ValueError('Full-swing simulated carry must be between zero and total distance.')
     if putting:
         travel=math.hypot(distance_yd,offline_yd)
         speed=required_speed_mph(travel*3,session.data['game_settings']['putting']['stimp_ft'])
@@ -253,7 +292,8 @@ def simulated_event(session, distance_yd, offline_yd=0):
         vals=dict(ball_speed=speed,launch_ang=0,launch_dir=hla,total_spin=0)
     else:
         vals=dict(ball_speed=max(1,min(200,distance_yd*.55)),launch_ang=18,launch_dir=0,
-                  total=distance_yd,carry=distance_yd*.93,offline=offline_yd,total_spin=5500,spin_axis=0)
+                  total=distance_yd,carry=distance_yd*.93 if carry_yd is None else carry_yd,
+                  offline=offline_yd,total_spin=5500,spin_axis=0)
     return dict(kind='record',session_id='game-demo-'+session.data['id'],seq=len(session.data['shots'])+1,
         receipt_id=uuid.uuid4().hex,producer_id='golfdata-game-demo-v1',result='validated',simulated=True,
         captured_at=timestamp(),practice_session_id=session.data['id'],vals=vals,

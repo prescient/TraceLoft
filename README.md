@@ -37,6 +37,10 @@ timing and the fitted path are illustrative. **Replay ball** and **Skip** never 
 shots. Reduced-motion preferences disable animation; opening/reloading a session does not replay
 history. Play saves flight estimates for new full shots; older rounds keep their original data.
 
+Play checks the carry landing surface: sand stops rollout, rough removes **75%** of remaining
+rollout and out of bounds removes **100%** by default. Both percentages are adjustable in setup.
+Final water/OB positions still incur the normal penalty. See [landing rules](docs/PLAY_LANDING_RULES.md).
+
 Play also includes **Sheboygan Straits**, an 18-hole lakeside links course with dense bunker
 complexes, Blue tees at **7,142 yards / par 72**, and original aerial artwork. Select it in Play.
 See the [Sheboygan Straits guide](docs/SHEBOYGAN_STRAITS.md) for hole details and scoring rules.

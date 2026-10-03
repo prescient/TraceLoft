@@ -46,8 +46,17 @@ export function shotMotion(shot,game=false) {
     const cs=Math.cos(heading),sn=Math.sin(heading),start=o.before.position;
     // Fit to the frozen game endpoint, including radial geometry and saved lie effects.
     const end=points.at(-1),factor=o.distance_factor??1;
-    const dx=o.endpoint[1]-start[1],dy=o.endpoint[0]-start[0];
+    const rule=o.landing_rollout,land=rule?.applied&&vector(rule.landing_point)&&airTime>0?rule:null;
+    const base=land&&vector(land.base_endpoint)?land.base_endpoint:o.endpoint;
+    const dx=base[1]-start[1],dy=base[0]-start[0],originalDuration=points.at(-1).t;
+    if(land&&land.adjusted_rollout_yd<=.01)points=points.filter(p=>p.t<=airTime);
     points=points.map(p=>{const u=total>0?p.x/total:0,curve=p.y-(total>0?p.x/total*end.y:0);
+      if(land&&p.t>=airTime){
+        const progress=total>carry?clamp((p.x-carry)/(total-carry)):0;
+        const rollTime=Math.max(.6,Math.min(2.5,Math.sqrt(land.adjusted_rollout_yd)*.3));
+        return {...p,t:originalDuration>airTime?airTime+(p.t-airTime)/(originalDuration-airTime)*rollTime:airTime,
+          x:lerp(land.landing_point[1],o.endpoint[1],progress),y:lerp(land.landing_point[0],o.endpoint[0],progress),z:0};
+      }
       return {...p,x:start[1]+u*dx-curve*factor*sn,y:start[0]+u*dy+curve*factor*cs};});
     points[points.length-1]={...points.at(-1),x:o.endpoint[1],y:o.endpoint[0],z:0};
     label+=' · saved lie adjustments';

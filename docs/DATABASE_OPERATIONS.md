@@ -210,3 +210,9 @@ their existing session shot payload, as Range already does. Source values and fr
 remain authoritative and unchanged. Existing SQLite storage includes the payload in normal
 session saving/backups; no schema migration or historical backfill. Browser replay clocks are not
 persisted and replay/skip actions do not create shots or change scores.
+
+New Play outcomes use `endpoint-golf-v2` with `landing_rollout` version-1 evidence: original
+adjusted endpoint, carry ratio, estimated landing position/lie, reduction and before/after rollout.
+Round settings save rough/OB rollout percentages. Existing active rounds without them use defaults
+for new shots, frozen into each outcome. Prior shots/results remain untouched. This lives in the
+existing SQLite shot/session payload and normal backups; no schema migration or historical rescoring.

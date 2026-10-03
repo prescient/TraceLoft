@@ -342,7 +342,7 @@ class GolfService:
                 if action=='aim':saved.set_aim(params['x'],params['y'],params['turn'])
                 elif action=='next':saved.next_hole(params['turn'])
                 elif action=='simulate':
-                    event=simulated_event(saved,params['distance_yd'],params['offline_yd'])
+                    event=simulated_event(saved,params['distance_yd'],params['offline_yd'],params.get('carry_yd'))
                     if self.store:self.store.ingest(event,provenance='synthetic_demo')
                     saved.add(event)
                 else:raise ValueError('Unknown game action.')

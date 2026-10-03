@@ -39,6 +39,18 @@ test('putting stays on ground, ends at scored endpoint and never adds an animate
   const p=shotMotion(s,true);assert.equal(p.airTime,0);
   assert.ok(p.points.every(p=>p.z===0));assert.equal(p.points.at(-1).x,103);
 });
+test('landing rules preserve carry landing and shorten only rollout; sand has no roll phase',()=>{
+  const s=shot();s.game_outcome={applied:true,before:{position:[20,30]},endpoint:[9.2,210],distance_factor:1,aim_heading_degrees:0,
+    landing_rollout:{applied:true,base_endpoint:[8,230],landing_point:[9.2,210],adjusted_rollout_yd:0}};
+  const sand=shotMotion(s,true);
+  assert.equal(sand.duration,sand.airTime);
+  assert.deepEqual([sand.points.at(-1).y,sand.points.at(-1).x],[9.2,210]);
+  s.game_outcome.endpoint=[8.9,215];s.game_outcome.landing_rollout.adjusted_rollout_yd=5.01;
+  const rough=shotMotion(s,true),landing=motionFrame(rough,rough.airTime);
+  assert.deepEqual([landing.y,landing.x],[9.2,210]);
+  assert.deepEqual([rough.points.at(-1).y,rough.points.at(-1).x],[8.9,215]);
+  assert.ok(rough.duration>rough.airTime);assert.ok(rough.points.every(p=>Object.values(p).every(Number.isFinite)));
+});
 test('clock baselines initial entry, plays one latest arrival, preserves redraw time, skips reduced motion',()=>{
   const c=new MotionClock(),p=shotMotion(shot());
   c.observe('range','old',p,true,0);assert.equal(c.playing(0),false);

@@ -345,6 +345,19 @@ reload/review baselines, corrections and completion remain independent of scorin
 inputs fall back to endpoint-only replay. This does not implement validated bounce/roll or obstacle
 physics; the immersive simulation work below remains planned. See [review](designs/shot-motion/README.md).
 
+**Simple landing rules implemented 2026-10-03:** sand stops at carry, rough reduces remaining
+rollout 75%, OB 100%, with configurable rough/OB percentages. Freeze landing surface and adjustment
+per shot, preserve source readings and prior outcomes, and animate the saved landing/final position.
+Missing/invalid carry retains endpoint-only scoring with a message. Demo carry is adjustable.
+See [rules and verification](docs/PLAY_LANDING_RULES.md). Continuous ground interaction and terrain-
+adjusted heatmap previews remain future work.
+
+**P1 — Boulder Beach scoring/art registration audit (found 2026-10-03):** hole 1's saved sand/green
+outlines are visibly offset from artwork in green view. Landing rules correctly follow the polygons,
+but visual terrain can suggest a different lie. Reconcile the finished art and geometry, scan all
+18 holes and version corrections for new rounds without rewriting frozen rounds. Estimate 2–4 hours
+for initial hole/scan; 1–2 days if the full course needs retracing. Separate from rollout-rule work.
+
 **Immersive browser simulation — requested 2026-10-03 · planned:** extend the playable 2D
 course mode with realistic modeled physics and animated ball movement, while keeping it lightweight
 enough to run smoothly in a browser. Aim for modestly greater immersion within the top-down format.

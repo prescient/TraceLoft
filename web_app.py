@@ -63,6 +63,8 @@ class PracticeParams(BaseModel):
     collection_samples: int = Field(default=5, ge=2, le=100)
     game_rough: float = Field(default=7,ge=0,le=60,allow_inf_nan=False)
     game_sand: float = Field(default=20,ge=0,le=80,allow_inf_nan=False)
+    game_rollout_rough: float = Field(default=75,ge=0,le=100,allow_inf_nan=False)
+    game_rollout_ob: float = Field(default=100,ge=0,le=100,allow_inf_nan=False)
     game_variation: float = Field(default=0,ge=0,le=10,allow_inf_nan=False)
     game_gimme: float = Field(default=3,ge=0,le=10,allow_inf_nan=False)
     game_course_id: str = Field(default='pebble-boulder-blue-v1',max_length=80)
@@ -92,6 +94,7 @@ class GameDemoParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
     distance_yd: float = Field(gt=0,le=600,allow_inf_nan=False)
     offline_yd: float = Field(default=0,ge=-200,le=200,allow_inf_nan=False)
+    carry_yd: float | None = Field(default=None,ge=0,le=600,allow_inf_nan=False)
     turn: int = Field(ge=0)
 
 

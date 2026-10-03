@@ -330,3 +330,9 @@ Respect reduced motion, provide touch-sized Replay/Skip, baseline session entry/
 old playback on a new shot, correction or navigation. Review requires explicit replay. Keep course
 world coordinates and final scored position authoritative; hazard replays return to the saved
 penalty position, and gimme strokes do not become invented ball movements.
+
+Landing rules belong to Python scoring, with versioned landing/surface/rollout evidence per shot.
+Separate starting-lie distance reductions from carry-landing rollout reductions in setup. Sand stops
+at carry; rough/OB reduce only remaining rollout. Keep raw carry/total unchanged and disclose
+interpolated lateral landing; missing carry skips the rule with feedback. Animate the saved landing
+and final points without moving the airborne landing when rollout shortens. Preserve older outcomes.

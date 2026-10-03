@@ -19,3 +19,5 @@ outcome tags and detailed shot log. Pending review; no application route or beha
 original guides, the generation prompt and the final artwork-to-scoring registration process.
 
 [Ball replay](shot-motion/README.md) documents source-anchored Range/Play animation and responsive QA.
+
+[Landing rollout rules](landing-rollout/README.md) records setup/log changes and boundary-based QA.

@@ -340,3 +340,32 @@
 - Updated README, design principles, D54, navigation controls, database operations and backlog.
 - Restarted the idle production service on 8765 to load Play prediction saving; it remained idle.
   Production test shots were not created. Stopped the isolated QA service and restored browser sizing.
+
+## 2026-10-03 — Carry landing terrain and rollout rules
+
+- Full shots now classify the estimated carry landing point before applying remaining rollout.
+  Sand removes all roll, rough removes 75% by default and out of bounds removes 100%; rough/OB
+  percentages are adjustable in round setup. Existing starting-lie reductions apply first, and
+  final-position penalties retain their existing behavior. Invalid/missing carry preserves the
+  original endpoint with visible feedback. Putting remains unchanged.
+- Preserve raw measurements and freeze landing surface, original endpoint, estimated carry point
+  and rollout adjustment in each new v2 outcome. Existing active rounds use defaults for future
+  shots without rescoring earlier outcomes. Animation follows those saved points and removes the
+  roll phase for sand. Source carry/total/offline and game landing/roll are visible in the shot log.
+  Demo shots accept optional reported carry for deterministic landing checks.
+- Verification: 31 Python landing/game/correction/nine-hole tests and all 49 JavaScript tests passed;
+  frontend syntax check passed. Coverage includes bunker landings that would otherwise roll clear,
+  rough roll exiting rough, OB penalties, configurable percentages, missing carry, prior lie effects,
+  frozen historical outcomes, corrections and animation endpoints/timing.
+- Isolated SQLite/service on 8879: launched a demo round, entered carry 364.8 yd / total 420 yd,
+  verified sand landing with zero rollout, animation/Skip, raw/game log evidence, reload and Misread
+  restoration. Checked iPad 1366×1024 and 1376×1032, reduced 1366×900, desktop 1440×900 and phone
+  390×844; no horizontal page overflow, 48px numeric controls and no browser errors. Setup screenshot
+  is in designs/landing-rollout. Physical Safari and live monitor geometry remain unverified.
+- Boundary overlay review exposed an existing Boulder Beach hole 1 art/scoring offset. Logged a
+  separate P1 geometry registration audit; terrain rules correctly use saved boundaries. Continuous
+  terrain crossing during rollout and terrain-adjusted heatmap previews remain future work.
+- Updated operating/design/storage docs, D55 and backlog. Restarted production on 8765 and compared
+  the complete active practice snapshot before/after: the two-shot round was preserved exactly.
+  No production test shots were created. Stopped the isolated service, closed its tab and restored
+  browser sizing.
