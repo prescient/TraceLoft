@@ -78,3 +78,15 @@
   simulator acknowledgements. Core rēlā code is not covered by its MIT connector example license.
 - Documentation-only verification: checked relative link targets, consistency with docs/RELAY.md
   and the existing Sim backlog, and git whitespace. No runtime, capture or session changes.
+
+## 2026-10-03 — Sim page mockup and Play outcome audit
+
+- Generated a Vector iPad-landscape concept with large club targets and shot metrics, optional
+  manual outcome tags and a detailed editable log. Saved image, generation prompt and behavior notes;
+  linked the concept and outcome-entry scope from the backlog. Awaiting design review.
+- Reviewed Play's per-shot game_outcome construction and SQLite session/attempt persistence:
+  start/destination lies, endpoint, remaining distance, penalties/concessions and resulting score
+  are retained; these are internal game results, not external simulator course telemetry.
+- Visually inspected the bitmap and checked document links/whitespace. Generated table targets
+  still require touch sizing in implementation. No application code, routes, live data or services
+  changed; no responsive/runtime test is claimed for a bitmap mockup.

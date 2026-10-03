@@ -6,3 +6,6 @@ The TL browser icon uses a black background, white T and cobalt blue L, matching
 [Exploration and approved targets](future-language/README.md) preserve the design studies.
 [Game club preview](GAME_CLUB_PREVIEW.md) describes on-course dispersion. Earlier screenshots and
 capture concepts remain in the private combined archive; generated concepts are not test evidence.
+
+[Sim page concept](SIM_PAGE.md): large bag/club selection, latest-shot tiles, optional manual
+outcome tags and detailed shot log. Pending review; no application route or behavior added.

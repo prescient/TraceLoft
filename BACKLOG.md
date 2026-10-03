@@ -51,6 +51,14 @@ on each shot, and show recording state with clear session exits. Keep the pure-w
 No drill targets, course rendering or scoring are required for this page. Define its navigation
 and active-session guards when implementing; this entry does not add a working route.
 
+Mockup requested 2026-10-03: [Vector Sim concept and behavior notes](designs/SIM_PAGE.md).
+Large direct club buttons, large latest-shot metrics and detailed log beneath. Add optional one-tap
+manual outcomes (fairway, rough, bunker, green, water, OB, other), with explicit separate penalty/note
+entry, unknown when untagged, shot-ID-bound edits, history and Undo. Keep next-shot selection separate
+from last-shot tagging. This is not an 18Birdies integration or automatic external-simulator outcome
+feed. Play already saves internal game lies/endpoints/penalties in SQLite; general Sim annotations
+and outcome analytics remain planned. Concept pending review; no implementation authorized by mockup.
+
 GSPro integration follow-up: verify actual club behavior with a live connection. The documented
 [Open Connect v1](https://gsprogolf.com/GSProConnectV1.html) incoming ClubData contains measured
 club metrics, not a club identifier/name or a command to change GSPro's selected club. GSPro can
