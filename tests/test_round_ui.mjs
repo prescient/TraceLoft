@@ -17,3 +17,14 @@ test('review switches frozen holes without mutating current state; unplayed hole
  assert.match(gameScoreboard(d),/Shots played<\/dt><dd>1/);
  assert.equal(holeShots({...d,round:undefined}).length,3);
 });
+
+
+test('compact scorecard keeps reviewed-hole counts separate from the original round total',()=>{
+ const d=data(),reviewed=reviewHoleData(d,0),before=structuredClone(d);
+ const html=roundScorecard(d,true,0,true,gameScoreboard(reviewed,true));
+ assert.match(html,/Hole 1 · Par 4/);
+ assert.match(html,/Total strokes<\/dt><dd>5/);
+ assert.match(html,/<strong>7<\/strong>/);
+ assert.match(html,/value="0" selected/);
+ assert.deepEqual(d,before);
+});

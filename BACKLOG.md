@@ -1,5 +1,14 @@
 # TraceLoft backlog
 
+## Map-first Play layout — implemented 2026-10-03
+
+- [x] Approved Option 1: compact hole/round score strip, club row and full-width map.
+- [x] Map readouts replace the position sidebar; estimated putting pace remains visible on green.
+- [x] Collapsed dispersion settings retain the heatmap and show its source/sample/visibility summary.
+- [x] Collapsible shot log, map options/hole guide, demo input and bag suggestions.
+- [x] Preserve corrections, completion warnings, review, aiming and explicit exits; iPad landscape,
+  desktop and phone browser checks. [Design and actual screenshot](designs/play-map-first/README.md).
+
 - [x] Rename Pebble Boulder to **Boulder Beach** across the library and round/review displays;
   retain stable course IDs and historical session data (2026-10-03).
 

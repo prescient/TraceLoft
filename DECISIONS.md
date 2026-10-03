@@ -60,3 +60,12 @@ edges before shipping. Hash each asset with its registered geometry. Keep all de
 analysis dependencies outside the application environment. Existing endpoint lie rules, round
 snapshots and corrections apply; dense sand does not imply simulated bunker depth or terrain.
 See [course guide](docs/SHEBOYGAN_STRAITS.md).
+
+## D52 — Map-first Play layout (2026-10-03)
+
+Implement approved Option 1: consolidate hole scoring into the round scorecard strip, place the
+compact club row above a full-width map, and replace the position sidebar with map readouts.
+Put planning settings and secondary tools in disclosures below the map. Closing planning controls
+does not change heatmap visibility. Preserve explicit exits, recording/completion warnings, frozen
+review and the authoritative scoring model. Course scaling preserves aspect ratio and registration.
+See [approved concept and implemented review](designs/play-map-first/README.md).

@@ -1,5 +1,7 @@
 # Interface references
 
+[Map-first Play](play-map-first/README.md) records the approved Option 1 and implemented iPad layout.
+
 [Boulder Beach artwork](pebble-boulder/README.md) records the original eighteen-hole coastal
 references, generation prompt and registration approach used in Play.
 

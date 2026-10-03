@@ -27,6 +27,10 @@ Windows launch scripts are the verified distribution path.
 - **Analyze**: session/date/equipment filters, robust summaries, trends and CSV export.
 - **Sessions**: review, end/abandon, recoverable deletion and restoration.
 
+Play uses a [map-first iPad layout](designs/play-map-first/README.md): a compact scorecard and
+club row above the full-width course, with distance/lie/putting pace on the map. Expand Club
+dispersion below the map for preview settings; its heatmap remains visible while collapsed.
+
 Play also includes **Sheboygan Straits**, an 18-hole lakeside links course with dense bunker
 complexes, Blue tees at **7,142 yards / par 72**, and original aerial artwork. Select it in Play.
 See the [Sheboygan Straits guide](docs/SHEBOYGAN_STRAITS.md) for hole details and scoring rules.

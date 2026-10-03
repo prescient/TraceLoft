@@ -62,22 +62,26 @@ export function previewSvg(points,position,aim,mode) {
 export function mountClubPreview(app,data,state,ctx,active) {
   const host=app.querySelector('#club-preview'),layer=app.querySelector('#club-preview-layer');
   if(!host||!layer)return;
+  const describe=(text,mode='')=>{const label=app.querySelector('[data-preview-summary]'),status=app.querySelector('[data-preview-state]');if(label)label.textContent=text;if(status)status.textContent=mode;};
   if(!active||data.game.lie==='green'){
-    host.innerHTML=`<p class="form-hint">${!active?'Historical review · planning overlay is available in an active round.':'Putting · full-swing preview is hidden on the green.'}</p>`;return;
+    describe(!active?(data.game.holed?'Hole complete · preview paused':'Saved view'):'Putting · full-swing preview hidden','Overlay off');
+    host.innerHTML=`<p class="form-hint">${!active?(data.game.holed?'Hole complete · planning preview is paused.':'Historical review · planning overlay is available in an active round.'):'Putting · full-swing preview is hidden on the green.'}</p>`;return;
   }
   const equipment=data.equipment_selection??{};
-  if(!equipment.club_id){host.innerHTML='<p class="form-hint">Select a club above to see its mapped dispersion.</p>';return;}
+  if(!equipment.club_id){describe('Choose a club to view its mapping','Overlay off');host.innerHTML='<p class="form-hint">Select a club above to see its mapped dispersion.</p>';return;}
   const key=JSON.stringify([data.id,equipment.bag_id,equipment.club_id]);
   const pref=preferences.get(data.id)??{mode:'density',source:'reported',metric:'total'};
   preferences.set(data.id,pref);
+  describe(equipment.club_label+' · loading mapping');
   host.innerHTML='<p class="form-hint" role="status">Loading mapped dispersion…</p>';
   ctx.preview().then(payload=>{
     if(!host.isConnected)return;
-    if(payload.equipment?.club_id!==equipment.club_id||payload.equipment?.bag_id!==equipment.bag_id){host.textContent='Equipment changed. Select your club again to refresh the preview.';return;}
-    if(!payload.profiles.length){host.innerHTML=`<p class="form-hint">No ${data.demo?'demo':'real'} mapping for ${esc(equipment.club_label)} yet. Collect paired distance and offline readings in <a href="#setup/bag-mapping">Bag mapping</a> or <a href="#setup/wedge-matrix">Wedge matrix</a>. Your round stays active.</p>`;return;}
+    if(payload.equipment?.club_id!==equipment.club_id||payload.equipment?.bag_id!==equipment.bag_id){describe('Equipment changed','Overlay off');host.textContent='Equipment changed. Select your club again to refresh the preview.';return;}
+    if(!payload.profiles.length){describe(equipment.club_label+' · no matching mapping','Overlay off');host.innerHTML=`<p class="form-hint">No ${data.demo?'demo':'real'} mapping for ${esc(equipment.club_label)} yet. Collect paired distance and offline readings in <a href="#setup/bag-mapping">Bag mapping</a> or <a href="#setup/wedge-matrix">Wedge matrix</a>. Your round stays active.</p>`;return;}
     const draw=()=>{
       const profile=payload.profiles.find(p=>p.id===selectedProfiles.get(key))??payload.profiles[0];selectedProfiles.set(key,profile.id);
       const view=profile.views[`${pref.source}_${pref.metric}`],points=view.points,stats=view.distance;
+      describe(`${equipment.club_label} · ${pref.metric==='total'?'Total':'Carry'} · ${points.length} shots · ${pref.source==='model'?'estimated':data.demo?'synthetic':'reported'}`,pref.mode==='off'?'Overlay off':points.length===0?'No paired data':points.length<5?'Dots only':pref.mode==='density'?'Density on':'Outline on');
       const disabledCarry=pref.source==='reported',small=points.length<20;
       host.innerHTML=`<div class="preview-heading"><div><h3>Club dispersion <span class="preview-info"><button class="info-button" aria-label="About club dispersion" aria-expanded="false">i</button><span class="preview-help" role="tooltip">Historical paired endpoints from included mapping attempts, before lie reductions. Brighter shading means more nearby samples, not a future-shot probability. Dots below 5 samples; smoothing and a descriptive 80% radial outline from 5. Under 20 is a small sample. The white diamond is the median endpoint. Reused shots count once per mapping session. Aim rotates the cloud without stretching distance. Preview settings do not change shot tags or scoring.</span></span></h3><span class="form-hint">${esc(equipment.bag_name)} / ${esc(equipment.club_label)} · ${data.demo?'DEMO':'REAL'} PROFILE</span></div></div>
       <div class="preview-controls"><label class="field">Mapping / swing profile<select data-preview="profile" aria-label="Mapping / swing profile">${payload.profiles.map(p=>`<option value="${esc(p.id)}" ${p.id===profile.id?'selected':''}>${esc(p.label)}</option>`).join('')}</select></label><label class="field">Endpoint source<select data-preview="source" aria-label="Endpoint source"><option value="reported" ${pref.source==='reported'?'selected':''}>${data.demo?'Synthetic':'Reported'} total + offline</option><option value="model" ${pref.source==='model'?'selected':''}>OpenGolfCoach estimate</option></select></label></div>
@@ -95,5 +99,5 @@ export function mountClubPreview(app,data,state,ctx,active) {
       const info=host.querySelector('.info-button');info.onclick=()=>{const open=info.getAttribute('aria-expanded')!=='true';info.setAttribute('aria-expanded',String(open));};
       info.onkeydown=e=>{if(e.key==='Escape')info.setAttribute('aria-expanded','false');};
     };draw();
-  }).catch(error=>{if(host.isConnected)host.textContent=`Club preview unavailable: ${error.message}`;});
+  }).catch(error=>{if(host.isConnected){describe('Preview unavailable','Overlay off');host.textContent=`Club preview unavailable: ${error.message}`;}});
 }

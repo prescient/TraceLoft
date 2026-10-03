@@ -204,3 +204,74 @@ tbody tr.excluded{color:#737e90}
 .equipment-clubs-only .equipment-status{max-width:220px}
 @media(max-width:1100px){.game-head-actions{flex-shrink:1;max-width:none}}
 @media(max-width:600px){.game-equipment{padding:16px}.equipment-clubs-only .club-buttons{flex-basis:100%}.equipment-clubs-only .equipment-foot{width:100%}}
+
+/* Map-first Play: shared scores above a full-width, registered course. */
+body:has(.play-map-stage) .topbar{min-height:56px}
+#app:has(.play-map-stage){max-width:1600px;padding:12px 18px 24px}
+#app:has(.play-map-stage) .play-head{margin:0 0 8px;gap:16px}
+#app:has(.play-map-stage) .play-head h1{font-size:28px;margin:0 0 3px}
+#app:has(.play-map-stage) .play-head .eyebrow{font-size:11px;margin:0 0 3px}
+.play-head .subtitle{font-size:13px}.play-head .chip{padding:2px 6px;font-size:11px}
+.play-head .btn{min-height:44px;padding:10px 16px}
+#app:has(.play-map-stage) .round-scorecard{padding:10px 16px;margin:0 0 8px}
+#app:has(.play-map-stage) .round-scorecard>summary{display:flex;gap:20px;align-items:center}
+.scorecard-hole{flex:1;min-width:0;position:relative;padding-left:132px}
+.compact-score.game-scoreboard{display:flex;align-items:center;gap:24px;border:0;padding:0;margin:0}
+.compact-score .game-score-heading{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;font-size:13px}
+.compact-score .game-score-heading span{font-size:11px}
+.scorecard-toggle{position:absolute;left:0;bottom:0;font-size:12px;color:var(--accent)}
+.scorecard-toggle:after{content:' ▾'}.round-scorecard[open] .scorecard-toggle:after{content:' ▴'}
+.compact-score .game-score-counts{display:flex;align-items:center;justify-content:space-around;gap:24px;width:100%;margin:0}
+.compact-score .game-score-counts>div{position:relative;text-align:center;flex:1}
+.compact-score .game-score-counts>div:not(.game-score-total):not(:last-child):after{content:'+';position:absolute;right:-16px;top:22px;color:var(--muted)}
+.compact-score .game-score-total{order:4}.compact-score .game-score-total:before{content:'=';position:absolute;left:-16px;top:22px;color:var(--muted)}
+.compact-score .game-score-counts dd{font-size:26px;margin:4px 0 0;color:var(--ink)}
+.compact-score .game-score-counts dt{min-height:0;font-size:12px}
+.compact-score .game-gimme-note{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#app:has(.play-map-stage) .round-total{border-left:1px solid var(--border);padding-left:20px;min-width:230px;gap:2px}
+#app:has(.play-map-stage) .round-total>strong{font-size:18px}
+#app:has(.play-map-stage) .round-total>strong:before{content:'Round · ';font-size:13px;font-weight:500}
+#app:has(.play-map-stage) .round-total>span,#app:has(.play-map-stage) .round-total>small{font-size:11px}
+#app:has(.play-map-stage) .correction-counts{font-size:11px;margin:2px 0 0}
+.single-hole-score{display:flex;gap:24px;align-items:center;margin-bottom:8px;padding:12px 16px}.single-hole-score .compact-score{flex:1;position:relative;padding-left:132px}
+#app:has(.play-map-stage) .game-equipment{padding:10px 14px;margin:0 0 8px}
+#app:has(.play-map-stage) .equipment-clubs-only .club-column{flex-wrap:nowrap;gap:12px}
+#app:has(.play-map-stage) .equipment-clubs-only .club-heading{flex-basis:auto;flex-shrink:0;display:block;font-size:12px;max-width:160px}
+#app:has(.play-map-stage) .game-bag-name{display:block;font-size:11px;margin-top:4px}
+#app:has(.play-map-stage) .club-buttons{gap:7px}
+#app:has(.play-map-stage) .club-button{width:44px;height:44px;min-width:44px;font-size:16px}
+#app:has(.play-map-stage) .equipment-foot{flex-shrink:0}
+#app:has(.play-map-stage) .equipment-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#app:has(.play-map-stage) [data-clear-club]{font-size:12px;padding:8px;min-height:44px}
+.play-map-stage.game-layout{position:relative;display:block;overflow:hidden;border:1px solid var(--border)}
+.play-map-stage .game-map,.play-map-stage .game-map.zoomed{margin:0;width:100%;height:min(calc((100vw - 38px)/2),calc(100dvh - 325px),720px);max-height:none;min-height:0}
+.map-topline{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none}
+.map-position{background:#fffffff2;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 14px;min-height:44px;font-size:14px;max-width:70%;pointer-events:auto}
+.map-position>span{border-left:1px solid var(--border);padding-left:12px;text-transform:capitalize}
+.map-pace{flex-basis:100%;color:var(--accent);font-size:20px}.map-pace small{font-size:12px;color:var(--muted);font-weight:400}
+.map-buttons{display:flex;gap:10px;pointer-events:auto}.map-buttons .btn{background:#fff;min-height:44px}.map-buttons .btn.primary{background:var(--accent);color:white}
+.play-map-stage .game-aim-distances{position:absolute;bottom:12px;left:12px;margin:0;gap:24px;padding:8px 12px;background:#fffffff2;pointer-events:none}
+.play-map-stage .game-aim-distances strong{font-size:20px;margin:2px 0 0}.play-map-stage .game-aim-distances span{font-size:12px}
+.play-feedback{font-size:13px;line-height:1.4;margin:6px 0;min-height:18px}
+.play-disclosure.card{padding:0;margin:6px 0}
+.play-disclosure>summary{min-height:44px;cursor:pointer;padding:10px 14px;align-content:center;font-weight:600}
+.play-disclosure>summary>span{font-size:12px;font-weight:400;margin-left:24px;color:var(--muted)}
+.play-disclosure>summary>[data-preview-state]{float:right;color:var(--accent);font-weight:650}
+.play-disclosure-body{padding:4px 16px 16px}.play-disclosure:not([open])>.play-disclosure-body{display:none}
+.play-disclosure .preview-controls{grid-template-columns:1fr 1fr}.play-disclosure .preview-help{left:0}
+.play-disclosure #game-demo{display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end}
+.play-disclosure #game-demo>p{grid-column:1/-1;margin:0}.play-disclosure #game-demo .section-space{margin-top:0}
+.play-disclosure .game-map-display{margin-top:12px;padding-top:8px}
+.play-bottom-actions{margin-top:16px}
+@media(max-width:1100px){.play-head{flex-wrap:wrap}#app:has(.play-map-stage) .equipment-clubs-only .club-column{flex-wrap:wrap}#app:has(.play-map-stage) .equipment-clubs-only .club-heading{flex-basis:100%;max-width:none;display:flex;gap:12px;align-items:center}#app:has(.play-map-stage) .game-bag-name{margin:0}.map-position{max-width:60%}.scorecard-hole{padding-left:120px}.compact-score .game-score-counts{gap:20px}}
+@media(max-width:760px){#app:has(.play-map-stage){padding:12px}.play-head .head-actions{gap:6px}.play-head .btn{padding:8px 10px}.scorecard-hole{width:100%;padding-left:0;padding-top:48px}.compact-score .game-score-heading{top:0}.scorecard-toggle{left:auto;right:0;top:0;bottom:auto;min-height:44px;align-content:center}#app:has(.play-map-stage) .round-scorecard>summary{flex-direction:column;align-items:stretch;gap:10px}#app:has(.play-map-stage) .round-total{border-left:0;border-top:1px solid var(--border);padding:8px 0 0;text-align:left;min-width:0}.single-hole-score{display:block}.single-hole-score .compact-score{padding:42px 0 0}.compact-score .game-score-counts{gap:18px}.compact-score .game-score-counts dd{font-size:24px}.compact-score .game-score-counts dt{font-size:11px}.map-topline{position:static;padding:8px;background:white;flex-wrap:wrap}.map-position{max-width:none;width:100%;padding:0;font-size:13px}.map-buttons{width:100%;justify-content:space-between}.play-map-stage{display:flex!important;flex-direction:column}.map-topline{order:-1}.play-map-stage .game-map,.play-map-stage .game-map.zoomed{height:auto;min-height:200px;max-height:450px}.play-map-stage .game-aim-distances{position:static;justify-content:space-around;background:white}.play-disclosure>summary>span{display:block;margin:5px 0 0}.play-disclosure>summary>[data-preview-state]{float:none}.play-disclosure .preview-controls,.play-disclosure #game-demo{grid-template-columns:1fr}.play-disclosure .preview-help{left:-80px;max-width:280px}}
+.play-title{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px}.play-title h1{order:-1}
+#app:has(.play-map-stage) .round-total{display:grid;grid-template-columns:auto auto;column-gap:12px;min-width:260px;align-items:center}
+#app:has(.play-map-stage) .round-total>strong{grid-column:1;grid-row:1;text-align:left}
+#app:has(.play-map-stage) .round-total>.round-relative{grid-column:2;grid-row:1;font-size:12px}
+#app:has(.play-map-stage) .round-total>span{grid-column:1/-1;font-size:12px}
+#app:has(.play-map-stage) .round-total>.correction-counts{grid-column:1/-1;font-size:12px}
+.play-map-stage .play-feedback{position:absolute;right:12px;bottom:12px;max-width:50%;background:#fffffff2;padding:8px 12px;margin:0;pointer-events:none}
+@media(max-width:760px){.play-title{display:block}.play-map-stage .game-map,.play-map-stage .game-map.zoomed{height:auto;max-height:450px;min-height:200px}.play-map-stage .play-feedback{position:static;max-width:none;width:100%;border-top:1px solid var(--border);margin:0}.play-map-stage .game-map.zoomed{height:350px}.round-relative{text-align:right}}
+
+#app:has(.play-map-stage) .equipment-controls:has(.club-button:disabled) .equipment-status{position:static;width:auto;height:auto;clip-path:none;overflow:visible;color:var(--amber);font-size:12px}

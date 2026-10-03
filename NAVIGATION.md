@@ -413,3 +413,20 @@ holes are preserved for Sessions review. The library also retains Boulder Beach 
 Fresh isolated browser verification covered this selection/setup path, hole completion/Next hole,
 Misread back to hole 1, Play menu active guard/Return, End, hole 18 review/Green zoom and Exit.
 Viewport checks: iPad 1366×1024, desktop 1536×960, phone 390×844; no document overflow.
+
+## Map-first Play — 2026-10-03
+
+No route changes. The score strip expands the scorecard/history; ended/review opens it and the shot
+log automatically. Review a hole switches the displayed hole/map/log while the round total remains
+the original aggregate. Active Club for next shot keeps the setup bag and updates the existing
+planning layer. Club dispersion expands settings below the map; collapsing it does not hide the
+overlay. Map options & hole guide expands coordinate aiming, terrain/boundary controls and Relay.
+Demo shot generation and Bag suggestions each expand in place. Panel openness survives shot/aim
+redraws within the session. Reload starts with the default panels.
+
+Header order remains Mulligan → Misread → End round → Play menu → Exit round. Lifecycle controls
+also remain outside the lower disclosures. Completion/recording warnings are not collapsed.
+Fresh isolated browser checks covered club changes, map tap/pin/numeric aim, preview modes/source,
+terrain boundaries, green pace, gimme completion → Misread reopen → completion → Next hole,
+End round and saved hole selection. Verified iPad landscape, reduced-height, desktop and phone
+layouts; physical iPad Safari/touch remains unverified. See [design review](designs/play-map-first/README.md).

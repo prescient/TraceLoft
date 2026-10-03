@@ -232,6 +232,15 @@ do not add a separate replay card. Button help identifies the latest scored atte
 Select the bag in course setup. During play, use the full width for compact Club for next shot
 buttons and reference the selected bag by name, without repeating bag management or selection.
 Practice retains its bag-and-club selector. Preserve the setup bag when changing or clearing a club.
+Use the [approved map-first layout](designs/play-map-first/README.md): current-hole shots,
+penalties, gimmes and total share the compact scorecard strip with round totals. Give the map the
+full content width; put distance, lie, next stroke and estimated putting pace on the map instead
+of a separate position card. Keep aim-distance readouts and latest-shot feedback legible over art.
+Below it, collapse dispersion controls and the live shot log by default. Collapsing controls must
+never turn off the heatmap; show club, endpoint source, sample count and overlay state in the summary.
+Put map options, keyboard aim coordinates and hole guidance in a disclosure. Keep stop/exit actions
+and recording/completion warnings directly visible. On phones, move map readouts outside the art
+and wrap controls. Preserve the map aspect ratio and scoring registration at every viewport.
 Completion must not lock out correcting the last shot: allow reopening a hole or round, including
 the previous hole from its untouched next tee. Restore score and position together, including
 penalties/gimmes. Preserve raw readings and original outcomes; misreads default out of analysis,

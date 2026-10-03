@@ -54,6 +54,14 @@ or elevation, water/OB replay with one penalty. Coastal art does not add undiscl
 5. Hole 18 ends the round. Sessions → Review → **Review a hole** inspects its map, shot log and
    score. Excluding shots affects analytics only. Delete remains recoverable through Sessions.
 
+The map spans the full content width. The scorecard strip above it shows the current hole's played
+shots + penalties + gimmes = total, separately from the round total and correction counts. Distance,
+lie and next stroke appear on the map; on the green this includes estimated pace and Stimp.
+Expand **Club dispersion** below the map to change source, Carry/Total, swing profile or visibility.
+The heatmap continues to display while these controls are collapsed. **Map options & hole guide**
+contains coordinate aiming, terrain/boundary switches and hole strategy. The shot log is collapsed
+during play and opens in saved review. Demo rounds have a separate **Simulate a shot/putt** disclosure.
+
 The full course package is `courses/pebble-boulder-blue-v1.json`. A normal service restart restores
 an unfinished round or its between-hole pause. No database migration or reset is required.
 Artwork provenance and editable geometry references are in [design notes](../designs/pebble-boulder/README.md).

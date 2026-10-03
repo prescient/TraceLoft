@@ -1,5 +1,28 @@
 # TraceLoft work log
 
+## 2026-10-03 — Map-first Play implementation
+
+- Implemented approved Option 1 in the Vector interface: compact hole/round scorecard, club row,
+  full-width map and on-map distance/lie/next-stroke/estimated putting pace. Removed the position
+  sidebar. Kept the latest result and both aim distances legible over course artwork.
+- Moved dispersion settings below the map; collapsed summaries retain club, endpoint choice,
+  sample/source and overlay state. The heatmap continues rendering while the disclosure is closed.
+  Shot log, map options/hole guide, synthetic input and suggestions expand independently.
+- Retained ordered corrections/exits, source warnings, completion pause and saved-review identity.
+  Scorecard and shot log open in ended/review views; current-hole components remain distinct from
+  the overall round aggregate. No backend, schema, scoring or course-geometry changes.
+- Verification: all 39 JavaScript tests pass, including a regression for reviewed-hole scores versus
+  round totals. Isolated service/SQLite on 8879 verified club selection, tap/pin/numeric aim, preview
+  modes and source, scoring boundaries, putting units/pace, gimme finish, Misread reopening and
+  gimme removal, completion/Next hole, End round and historical-hole review. Browser console clean.
+- Visually checked 1366×1024 and 1376×1032 iPad landscape, reduced-height 1366×900, 1600×1000 desktop
+  and 390×844 phone. Phone has no horizontal document overflow; controls wrap and map readouts move
+  outside the image. Saved the actual 1376×1032 demo screenshot and approved concept in
+  [design notes](designs/play-map-first/README.md). Physical iPad Safari/touch and LAN were not tested.
+- Updated design principles, navigation, decisions, course operation, README and backlog. Refreshed
+  the existing production tab without creating shots or changing its session. No server restart
+  required. Synthetic state-changing checks remained in the isolated database.
+
 ## 2026-10-03 — Compact Play actions and club selection
 
 - Moved Mulligan and Misread into the round header before End round, Play menu and Exit round;

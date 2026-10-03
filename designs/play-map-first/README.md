@@ -1,0 +1,27 @@
+# Map-first Play — Option 1
+
+Approved and implemented 2026-10-03. Follow the pure-white Vector language and
+[design principles](../../DESIGN_PRINCIPLES.md).
+
+The compact scorecard contains current-hole components, round total and correction counts.
+The setup bag is referenced beside compact club buttons. A full-width map carries distance,
+lie, next stroke, estimated putting pace and the latest result. Ball-to-aim and aim-to-pin
+readouts stay in a fixed lower-left position for legibility instead of following the tapped point.
+
+Dispersion controls sit below the map in a disclosure; closing it leaves the heatmap visible.
+The summary retains club, Carry/Total, sample count, source and overlay status. The live shot
+log, map options/hole guide, demo input and bag suggestions also expand in place. Scorecard
+and shot log open in ended/review states. Existing corrections and explicit exits remain visible.
+
+The map preserves its aspect ratio and coordinate registration. Reduced-height windows may
+letterbox the course rather than distort or crop it. Phone readouts move outside the image.
+
+## References
+
+- [Approved generated concept](approved-concept.png): visual direction, not application evidence.
+- [Implemented iPad landscape](ipad-landscape.png): 1376×1032 browser viewport, isolated demo
+  Sheboygan Straits round with synthetic Tour mapping. This is the application, not generated art
+  composited into a UI mockup.
+
+Verified browser viewports: 1366×1024, 1376×1032, reduced-height 1366×900, desktop 1600×1000
+and phone 390×844. No physical iPad Safari/touch or LAN verification was performed.
