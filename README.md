@@ -43,6 +43,10 @@ See [Open Connect contract](docs/RELAY.md), [database operations](docs/DATABASE_
 [design principles](DESIGN_PRINCIPLES.md), [navigation](NAVIGATION.md), [backlog](BACKLOG.md),
 [decisions](DECISIONS.md) and [work log](WORK_LOG.md).
 
+The [approved ball-physics research plan](docs/BALL_PHYSICS_RESEARCH_PLAN.md) and
+[research log](docs/BALL_PHYSICS_RESEARCH.md) cover flight, bounce, ground travel, lies and simulator
+approaches for future browser simulation. Research findings are distinct from implemented physics.
+
 ## Verification and limits
 
 Run `.venv\Scripts\python -m unittest discover -s tests` and `node --test tests/*.mjs`.

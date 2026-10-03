@@ -309,6 +309,12 @@ enough to run smoothly in a browser. Aim for modestly greater immersion within t
 This updates the earlier relaxed accuracy direction: realistic physics is now a development goal,
 with explicit validation and browser performance limits; a detailed 3D engine is not required.
 
+**Physics research started 2026-10-03:** [approved plan](docs/BALL_PHYSICS_RESEARCH_PLAN.md) and
+[initial literature log](docs/BALL_PHYSICS_RESEARCH.md) cover flight, bounce, lies and simulator
+approaches, with source access limits, an input audit and proposed validation. Coefficient extraction,
+bounce-data evaluation, bunker/putting/cup review and engine-code comparisons remain research work;
+new physics implementation and calibration remain planned.
+
 **Course visuals implemented 2026-10-02:** AI terrain textures inside existing Meadow One shapes,
 scoring-boundary overlay, simple rendering option, map/coordinate aiming plus Aim at pin.
 **Proposed real-course importer:** combine OSM geometry, georeferenced aerial imagery and course

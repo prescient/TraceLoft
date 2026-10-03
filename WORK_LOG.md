@@ -111,3 +111,18 @@
   supersedes the earlier relaxed realism direction. Implementation and performance targets remain open.
 - Documentation verification: checked consistency with the current game architecture and whitespace.
   Concurrent course implementation files were left untouched.
+
+## 2026-10-03 — Ball physics research foundation
+
+- Saved the user-approved research plan and initial literature log for flight, turf contact,
+  ground travel, starting lies and simulator approaches. Recorded twelve academic/experimental
+  sources, official vendor material, pinned implementation references and a bounce dataset lead.
+- Distinguished inspected full-text sections, abstracts, unread leads and blocked downloads;
+  checked citation metadata, correction scope and the flight paper's differing runtime figures.
+  Source summaries separate evidence, vendor claims, inference and proposed application.
+- Audited current launch inputs and endpoint placement. Proposed a 3D trajectory with lightweight
+  2D presentation, separate launch/landing lie effects, candidate model comparisons and held-out
+  validation. No engine, calibrated coefficients or new physics implementation was selected.
+- Documentation verification: checked local Markdown targets, source/citation consistency and
+  focused Git whitespace. No model experiments, simulator injections, runtime or device tests were
+  performed. Concurrent course code, artwork and documentation changes remain outside this commit.
