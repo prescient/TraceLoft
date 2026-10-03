@@ -48,6 +48,20 @@ Registration reads the original art/v1 packages and reproduces v2; it refuses to
 different existing v2. Thresholds and reviewed seed regions are specific to these assets. New
 artwork requires fresh extraction and visual review, not reuse of this approval.
 
+For individual-hole review, run the renderer with `--individual --output <review-folder>`.
+It exports all 36 holes at the original 1774×887 artwork resolution, plus six overview sheets,
+an offline `index.html` gallery and `course-boundary-review.zip`. Gallery links jump to a course
+or hole; clicking an image opens its full size. Pink marks the artificial map OB perimeter in
+individual exports. The original overview sheets/manifest remain identical. Generated review packs
+can live outside the repository; they do not change artwork, geometry, live state or the database.
+
+The registration script accelerates tracing by using color masks, contour cleanup and known guide
+regions, then converts image coordinates to uniform yard coordinates and validates tees/pins/shapes.
+The render script accelerates review by drawing every saved polygon over its artwork in one run,
+producing fixed pixel probes and hashes for regression checks. These helpers currently target the
+two bundled courses; extracting an arbitrary new course still needs adjusted masks/seed regions
+and human visual approval. Automatic probe generation is a proposal, not independent proof of alignment.
+
 [review.json](review.json) records reference pixels, fixed labels and asset/geometry/legacy hashes.
 The render script proposes fixtures; reviewing the actual artwork is required before accepting them.
 Hash and point tests guard later drift but do not replace visual review.

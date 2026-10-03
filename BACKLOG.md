@@ -360,6 +360,9 @@ geometry hashes guard drift; original v1 packages and saved rounds remain intact
 [full review and evidence](designs/course-registration/README.md). Simplified edges/soft textures
 remain distinct from validated physical terrain; later artwork changes need another review/version.
 
+Individual review tooling also exports all 36 native-resolution boundary images, a linked offline
+gallery and a ZIP in one run (`render_registration_review.py --individual --output <folder>`).
+
 **Immersive browser simulation — requested 2026-10-03 · planned:** extend the playable 2D
 course mode with realistic modeled physics and animated ball movement, while keeping it lightweight
 enough to run smoothly in a browser. Aim for modestly greater immersion within the top-down format.

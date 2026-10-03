@@ -400,3 +400,17 @@
   instant to UTC. Restored its prior Driver selection through the normal API without changing the
   saved shots. No production shots were generated or deleted. Stopped QA, closed its browser tab
   and reset viewport sizing. Full review evidence: designs/course-registration/README.md.
+
+## 2026-10-03 — Individual-hole boundary review pack
+
+- Added `--individual --output` to the design renderer: 36 original-resolution 1774×887 boundary
+  images, course/hole anchor links in an offline HTML gallery and a ZIP with the images, six sheets,
+  two green details and manifest. Individual exports also show the map's artificial OB perimeter.
+  Published the requested local pack in Downloads/TraceLoft-course-boundary-review (52.3 MB ZIP).
+  Large generated files stay outside Git; no course, database or live-service changes.
+- Verified all 36 image sizes, every gallery file/anchor link, all 46 ZIP entries and archive integrity.
+  Existing overview images/manifest match committed bytes. Visually checked native Boulder hole 1
+  and Straits hole 10 exports. The in-app browser blocks file URLs, so browser interaction with the
+  offline gallery was not verified; its static HTML links were checked directly. Documented command
+  usage, tracing/review speedups and asset-specific extraction limits. No app test rerun needed for
+  this design-only export change.
