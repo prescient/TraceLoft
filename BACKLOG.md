@@ -1,5 +1,8 @@
 # TraceLoft backlog
 
+- [x] Retire Meadow One, Willow Cove, Pine Bend and Meadow Reach from Play/setup; keep archived
+  course assets and saved-round compatibility. New default rounds use Boulder Beach (2026-10-03).
+
 ## Map-first Play layout — implemented 2026-10-03
 
 - [x] Approved Option 1: compact hole/round score strip, club row and full-width map.

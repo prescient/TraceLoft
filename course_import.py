@@ -211,9 +211,9 @@ def catalog(store):
 
 
 def load(store,course_id):
-    from bundled_courses import COURSE_IDS, load_bundled
+    from bundled_courses import COURSE_IDS, RETIRED_IDS, load_bundled
     if course_id in ('meadow-one-v1','meadow-one-v2'):return None
-    if course_id in COURSE_IDS:return load_bundled(course_id)
+    if course_id in COURSE_IDS + RETIRED_IDS:return load_bundled(course_id)
     if store:
         with store.lock:row=store.connection.execute('SELECT value FROM metadata WHERE key=?',(PREFIX+course_id,)).fetchone()
         if row:return copy.deepcopy(json.loads(row[0])['course'])

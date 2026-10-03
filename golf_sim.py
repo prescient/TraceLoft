@@ -41,7 +41,7 @@ def lie_at(point, course):
 class GolfSimSession(PuttingSession):
     def __init__(self, folder, store=None, equipment_selection=None, demo=True, stimp=10,
                  game_rough=7, game_sand=20, game_variation=0, game_gimme=3,
-                 game_geometry='downrange', game_acknowledged=False, game_course_id='meadow-one-v2', course=None):
+                 game_geometry='downrange', game_acknowledged=False, game_course_id='pebble-boulder-blue-v1', course=None):
         if any(not numeric(v,lo,hi) for v,lo,hi in ((game_rough,0,60),(game_sand,0,80),
             (game_variation,0,10),(game_gimme,0,10),(stimp,3,20))):
             raise ValueError('Choose valid lie, putting and variation settings.')

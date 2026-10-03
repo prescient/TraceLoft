@@ -65,7 +65,7 @@ class PracticeParams(BaseModel):
     game_sand: float = Field(default=20,ge=0,le=80,allow_inf_nan=False)
     game_variation: float = Field(default=0,ge=0,le=10,allow_inf_nan=False)
     game_gimme: float = Field(default=3,ge=0,le=10,allow_inf_nan=False)
-    game_course_id: str = Field(default='meadow-one-v2',max_length=80)
+    game_course_id: str = Field(default='pebble-boulder-blue-v1',max_length=80)
     game_geometry: str = 'downrange'
     game_acknowledged: bool = False
 

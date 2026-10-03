@@ -136,7 +136,7 @@ async function boot() {
     const fragment=new URLSearchParams(location.hash.slice(1));
     if(fragment.has('pair'))history.replaceState(null,'',location.pathname);
     state=await api('/api/state');drills=categorizedDrills(await api('/api/drills'));
-    try{courses=await api('/api/courses');}catch(e){if(e.status!==404)throw e;courses=[{id:'meadow-one-v2',name:'Meadow One',par:4,yards:350}];}
+    courses=await api('/api/courses');
     document.querySelector('nav').hidden=false;connection.hidden=false;review=null;online=true;
     if(location.hash)await openRoute(location.hash);
     else setView(state.practice&&!state.practice.ended?'runner':'choose',{replace:true});

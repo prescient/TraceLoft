@@ -2,11 +2,13 @@
 import json
 from pathlib import Path
 
-COURSE_IDS = ('sheboygan-straits-blue-v1', 'pebble-boulder-blue-v1', 'meadow-one-v2', 'willow-cove-155-v1', 'pine-bend-365-v1', 'meadow-reach-525-v1')
+COURSE_IDS = ('sheboygan-straits-blue-v1', 'pebble-boulder-blue-v1')
+# Retain versioned assets/load compatibility for historical rounds and archived links.
+RETIRED_IDS = ('meadow-one-v2', 'willow-cove-155-v1', 'pine-bend-365-v1', 'meadow-reach-525-v1')
 
 
 def load_bundled(course_id):
-    if course_id not in COURSE_IDS:
+    if course_id not in COURSE_IDS + RETIRED_IDS:
         raise ValueError('Choose an available course from the library.')
     return json.loads((Path(__file__).parent/'courses'/f'{course_id}.json').read_text(encoding='utf-8'))
 

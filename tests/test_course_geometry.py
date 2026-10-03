@@ -30,7 +30,7 @@ class CourseGeometryTests(unittest.TestCase):
 
     def test_new_round_and_legacy_geometry_remain_independent(self):
         with tempfile.TemporaryDirectory() as folder:
-            p=GolfSimSession(folder)
+            p=GolfSimSession(folder,game_course_id='meadow-one-v2')
             self.assertEqual(p.data['course']['id'],'meadow-one-v2')
             p.add(simulated_event(p,200));self.assertEqual(p.data['game']['lie'],'fairway')
             p.add(simulated_event(p,145));self.assertEqual(p.data['game']['lie'],'green')

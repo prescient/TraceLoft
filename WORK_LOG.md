@@ -1,5 +1,14 @@
 # TraceLoft work log
 
+## 2026-10-03 — Retire standalone starter holes
+
+- Removed Meadow One, Willow Cove, Pine Bend and Meadow Reach from the built-in catalog and new
+  round setup. Default API/constructor rounds now use Boulder Beach; removed the obsolete browser
+  fallback to Meadow One. Retained versioned loaders/artwork for existing sessions and compatibility.
+- Verified 19 Python game/geometry/library tests, including the new catalog and default course.
+  Isolated browser on 8879 confirms only the two full courses in Play and setup. Production data
+  unchanged. Updated README, navigation and backlog.
+
 ## 2026-10-03 — Map-first Play implementation
 
 - Implemented approved Option 1 in the Vector interface: compact hole/round scorecard, club row,

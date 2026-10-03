@@ -35,6 +35,9 @@ Play also includes **Sheboygan Straits**, an 18-hole lakeside links course with 
 complexes, Blue tees at **7,142 yards / par 72**, and original aerial artwork. Select it in Play.
 See the [Sheboygan Straits guide](docs/SHEBOYGAN_STRAITS.md) for hole details and scoring rules.
 
+The built-in library contains Sheboygan Straits and Boulder Beach. The four earlier standalone
+holes are retired from new-round choices; saved rounds and imported courses remain available.
+
 Play includes **Boulder Beach**, an original 18-hole coastal course using the January 2026 Pebble
 Beach Blue tee yardages: **6,801 yards, par 72**. Choose Play → Boulder Beach → Set up round.
 Complete each hole, then tap Next hole. The round saves automatically in SQLite; its scorecard and

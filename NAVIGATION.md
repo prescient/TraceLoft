@@ -395,7 +395,7 @@ block, publish → setup → demo shot → End → Play → importer, and respon
 
 ## Fictional hole library — 2026-10-02
 
-Play now displays full-art cards for Meadow One, Willow Cove, Pine Bend and Meadow Reach.
+Historical implementation (retired from the library 2026-10-03): Play displayed full-art cards for Meadow One, Willow Cove, Pine Bend and Meadow Reach.
 Each Set up round preselects its immutable course ID in the existing `#setup/golf-sim` form;
 Cancel returns to Play and the course dropdown can choose another hole. The shared round/session
 routes and exits remain unchanged. Active sessions disable all four launch cards and provide
@@ -408,7 +408,9 @@ partial-round End → Play, Meadow active guard → Return → refresh, and resp
 Play → Sheboygan Straits → Set up round preselects the Blue 18-hole package; Cancel returns to
 Play. Shared round routes, active-session guards and exits apply. Hole guide expands in place.
 Completion → Next hole → next tee; Misread can return to the just-completed hole. All eighteen
-holes are preserved for Sessions review. The library also retains Boulder Beach and single holes.
+holes are preserved for Sessions review. The built-in library now contains Sheboygan Straits and
+Boulder Beach; imported holes remain separate. Meadow One, Willow Cove, Pine Bend and Meadow Reach
+are removed from Play/setup choices. Their existing sessions remain reviewable/playable.
 
 Fresh isolated browser verification covered this selection/setup path, hole completion/Next hole,
 Misread back to hole 1, Play menu active guard/Return, End, hole 18 review/Green zoom and Exit.
