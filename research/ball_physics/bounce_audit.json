@@ -1,0 +1,90 @@
+{
+  "angular_velocity_unit": "radians_per_second_anticlockwise_positive",
+  "article_doi": "10.1007/s12283-023-00442-4",
+  "campaigns": {
+    "A": {
+      "contact_slip_sign_reversals": 215,
+      "exact_duplicate_rows": 0,
+      "horizontal_velocity_sign_reversals": 62,
+      "inbound_y_nonnegative": 0,
+      "member": "ESM_2/data_campaignA.csv",
+      "outbound_y_nonpositive": 0,
+      "ranges": {
+        "omega_in": {
+          "max": 953.47,
+          "min": -392.54
+        },
+        "omega_out": {
+          "max": 487.03,
+          "min": -1003.8
+        },
+        "vx_in": {
+          "max": 2258.9,
+          "min": 74.862
+        },
+        "vx_out": {
+          "max": 1162.1,
+          "min": -122.68
+        },
+        "vy_in": {
+          "max": -225.28,
+          "min": -1877.2
+        },
+        "vy_out": {
+          "max": 1129.7,
+          "min": 117.71
+        }
+      },
+      "rows": 330,
+      "sha256": "2bb13a0761f6d813b2d9e3f41e757f6c8ba3e6eafca979dbf53d246538a3dca2"
+    },
+    "B": {
+      "contact_slip_sign_reversals": 539,
+      "exact_duplicate_rows": 0,
+      "horizontal_velocity_sign_reversals": 26,
+      "inbound_y_nonnegative": 0,
+      "member": "ESM_2/data_campaignB.csv",
+      "outbound_y_nonpositive": 0,
+      "ranges": {
+        "omega_in": {
+          "max": 1696.2,
+          "min": -406.62
+        },
+        "omega_out": {
+          "max": 1157.2,
+          "min": -645.8
+        },
+        "vx_in": {
+          "max": 1719.5,
+          "min": 1.1044
+        },
+        "vx_out": {
+          "max": 787.95,
+          "min": -78.766
+        },
+        "vy_in": {
+          "max": -90.075,
+          "min": -1569.4
+        },
+        "vy_out": {
+          "max": 389.85,
+          "min": 32.316
+        }
+      },
+      "rows": 693,
+      "sha256": "e7b6c01b505888a94b856ef3627af80141a76e41cc415eb994fe7d55351008f7"
+    }
+  },
+  "columns": [
+    "vx_in",
+    "vy_in",
+    "omega_in",
+    "vx_out",
+    "vy_out",
+    "omega_out"
+  ],
+  "group_ids_provided": false,
+  "linear_velocity_unit": "ball_radii_per_second",
+  "source_url": "https://media.springernature.com/original/springer-static/esm/art%3A10.1007%2Fs12283-023-00442-4/MediaObjects/12283_2023_442_MOESM2_ESM.zip",
+  "zip_sha256": "7cb5710d8673857ffa544b720aaf0eea16040d1ff9194b4652abfd02aabe421c"
+}

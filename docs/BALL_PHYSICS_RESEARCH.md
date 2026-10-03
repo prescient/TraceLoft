@@ -5,6 +5,11 @@ flight, turf contact, starting lies and simulator approaches, with putting work 
 It supports the immersive 2D-course idea in [BACKLOG.md](../BACKLOG.md). No new engine, coefficients,
 trajectory calculation or animation has been implemented or calibrated by this research.
 
+**Latest update:** [pass 2: data and benchmark preparation](BALL_PHYSICS_RESEARCH_PASS_2.md)
+retrieves flight coefficients, audits the bounce CSVs, reviews putting/cup and bunker evidence,
+and inspects OpenFairway source/tests. It includes repeatable audit results and ordered research tasks.
+The access notes below describe the initial pass; later access improvements are linked where relevant.
+
 The most useful initial direction is a compact model of 3D motion presented through the existing 2D
 map. This is our **proposal**, not a benchmark result. Ground interaction needs particularly careful
 validation, and a starting-lie adjustment must be distinct from the surface on which the ball lands.
@@ -229,7 +234,8 @@ realism or matching Stimp establish integrated stopping distance; see existing p
 
 Digitalhand/OpenFairway, commit `4f3e11be005e7fd118fd0ae6946a85eed4bed8bb`.
 [Pinned README](https://github.com/digitalhand/openfairway/blob/4f3e11be005e7fd118fd0ae6946a85eed4bed8bb/README.md).
-**Access:** README only; algorithms, tests and calibration history await inspection.
+**Initial access:** README only. [Pass 2](BALL_PHYSICS_RESEARCH_PASS_2.md#openfairway-pinned-source-and-test-audit)
+now inspects selected algorithms, tests and the root license; no runtime validation is claimed.
 
 **Vendor/project claim:** Godot/.NET library with aerodynamic fits, Penner-inspired bounce,
 surface overrides and headless simulation; README links comparisons against simulator references.
@@ -288,9 +294,10 @@ controlled isolated comparisons. Do not send experimental shots into the user's 
 Biber, Jones and Green, *Measurements for golf ball bounce*, University of Bristol, available
 19 December 2022. [Dataset record](https://research-information.bris.ac.uk/en/datasets/measurements-for-golf-ball-bounce/),
 [DOI 10.5523/bris.1cwnj42n63q5w2sc843iww7bbd](https://doi.org/10.5523/bris.1cwnj42n63q5w2sc843iww7bbd).
-**Access:** metadata inspected; videos/data files not downloaded or analyzed. The journal also
-links numeric supplementary files. **Next:** confirm data format, units, repeat grouping and permitted
-reuse before creating a small validation fixture. Dataset access is not yet a reproduced benchmark.
+**Initial access:** metadata only. [Pass 2's numeric audit](BALL_PHYSICS_RESEARCH_PASS_2.md#bounce-downloaded-data-and-reproducible-audit)
+now parses the journal's two supplementary CSVs and documents units, hashes and data quality.
+Videos remain unreviewed. **Next:** recover repeat grouping, radius and uncertainty metadata before
+a grouped validation fixture. An inventory is not yet a reproduced model benchmark.
 
 ## Candidate models and preliminary conclusions
 
@@ -342,16 +349,16 @@ model error and simulator disagreement. Comparing against GSPro alone cannot est
 
 | Lead | Status and next question |
 | --- | --- |
-| Ferguson, McNally and McPhee (2022), *Predicting the Flight of a Golf Ball*, DOI 10.5703/1288284317493 | [Purdue metadata](https://docs.lib.purdue.edu/resec-isea/2022/session05/4/) verified; PDF returned 403. Extract original fitted polynomials, dataset and limits before use. |
+| Ferguson, McNally and McPhee (2022), *Predicting the Flight of a Golf Ball*, DOI 10.5703/1288284317493 | [Purdue metadata](https://docs.lib.purdue.edu/resec-isea/2022/session05/4/) verified; conference PDF returned 403. [Pass 2](BALL_PHYSICS_RESEARCH_PASS_2.md) obtains physics coefficients and validation from Ferguson's 2023 thesis; raw flight data remains missing. |
 | Smits and Smith (1994), *A new aerodynamic model of a golf ball in flight* | Original chapter not obtained; cited by academic sources. Verify publication details and original spin-decay/force data. |
 | Quintavalla (2002), *A generally applicable model for the aerodynamic behavior of golf balls*, Science and Golf IV | Located through journal references, not read. Seek original coefficient conventions and validation. |
 | Penner (2002), *The run of a golf ball*, DOI 10.1139/p02-035 | [Author PDF](https://raypenner.com/golf-run.pdf) surfaced in search but direct browsing timed out. Revisit effective-contact-angle model against later bounce evidence. |
-| Penner (2002), *The physics of putting*, DOI 10.1139/p01-137 | [Author PDF](https://raypenner.com/golf-putting.pdf) underlies existing notes; this pass timed out. Re-extract assumptions, slope and cup model rather than rely on old summaries. |
+| Penner (2002), *The physics of putting*, DOI 10.1139/p01-137 | [Author PDF](https://raypenner.com/golf-putting.pdf) remains inaccessible. [Pass 2](BALL_PHYSICS_RESEARCH_PASS_2.md) inspects a paper copy's rolling, slope and capture assumptions; launch/skid validation remains open. |
 | USGA (2012), Stimpmeter instruction booklet | [Official PDF](https://www.usga.org/content/dam/usga/pdf/imported/StimpmeterBookletFINAL.pdf) returned 403. Inspect measurement protocol and release conditions. |
 | USGA/R&A (2021), proposed bounce model for optimum overall distance | [Official proposal page](https://www.usga.org/content/usga/home-page/equipment-standards/technical-library-for-equipment/2021-optimization-proposal.html); PDF blocked. Assess intended testing scope rather than treat it as a complete course model. |
 | Roh and Lee (2010), *Golf ball landing, bounce and roll on turf* | Located in journal references; original paper still to inspect. Compare turf deformation and Stimp treatment. |
-| Sand-wedge particle simulation | [Publisher lead](https://www.witpress.com/elibrary/wit-transactions-on-modelling-and-simulation/41/15225). Bibliography/full method pending; investigate a reduced bunker-launch surrogate rather than simulating every grain. |
-| Uneven lies and hole capture | Seek slope-specific experiments, Holmes' original cup model and modern replication; separate player biomechanics from ball dynamics. |
+| Sand-wedge particle simulation | [Publisher source](https://www.witpress.com/elibrary/wit-transactions-on-modelling-and-simulation/41/15225). [Pass 2](BALL_PHYSICS_RESEARCH_PASS_2.md) reviews the full Koizumi et al. 2005 paper; broader sand-condition coverage remains missing. |
+| Uneven lies and hole capture | [Pass 2](BALL_PHYSICS_RESEARCH_PASS_2.md) inspects Holmes' original introduction, model predictions and experiment. Finish the derivation and seek modern cup/slope validation; separate player biomechanics from ball dynamics. |
 
 ## Search and progress record
 
@@ -367,3 +374,11 @@ model error and simulator disagreement. Comparing against GSPro alone cannot est
 - Captured input constraints, candidate models and a proposed validation matrix. The next research
   pass should obtain coefficient/data coverage, inspect bounce supplementary files, deepen bunker and
   putting/cup work, and audit a second engine's actual equations/tests. No engine has been selected.
+
+### 2026 October 3 second pass
+
+- Completed the [data and benchmark preparation pass](BALL_PHYSICS_RESEARCH_PASS_2.md), including
+  a deterministic bounce-data audit, candidate flight coefficients, original cup experiments,
+  bunker-model limits and pinned engine/test inspection.
+- Staged R1–R6 research tasks with outputs and evidence requirements. Fitting, held-out model
+  evaluation, live integration and physical-device benchmarks remain future work.

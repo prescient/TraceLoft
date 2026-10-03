@@ -182,3 +182,20 @@
 - Updated design principles, navigation paths/guards, D50, course guide, database operations,
   README and backlog. Restarted the idle production service on 8765; state remained idle and the
   new correction API passed a validation-only route check. No production test shots were created.
+
+## 2026-10-03 — Physics research data and benchmark preparation
+
+- Added research pass 2 and staged R1–R6 tasks: bounce grouping, isolated flight baseline,
+  held-out bounce comparisons, putting/cup validation, lie coverage and browser budgets.
+- Retrieved Ferguson's 2023 thesis coefficients and validation details; inspected the bunker paper,
+  Penner's putting model, Holmes' original cup experiment and pinned OpenFairway equations/tests.
+  Recorded experimental domains, approximate capture behavior and simulator-regression limitations.
+- Downloaded and audited Biber's 330/693-row bounce campaigns in temporary storage. Saved an original
+  local-ZIP audit script and derived inventory with hashes, native units, ranges and sign counts;
+  identified absent repeat labels/radius/uncertainty metadata before grouped validation.
+- Verification: audit output reproduced identically and matched the committed JSON; changed-archive
+  rejection passed. Checked coefficient arithmetic and visually verified the typeset coefficients
+  and inconsistent restitution-ratio definition. Checked local Markdown links and focused whitespace.
+- No physics fit, application integration, engine execution or real-device benchmark was performed.
+  Source PDFs/CSVs and downloaded engine code remain outside the repository. Concurrent course work
+  is excluded from this research commit.
