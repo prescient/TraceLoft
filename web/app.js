@@ -1,3 +1,4 @@
+import {resetShotMotion} from './shot-motion.js';
 import {courseLabel} from './round-ui.js';
 import {renderPlay,renderGameSetup,renderGame} from './golf-sim.js';
 import {renderCourseImport} from './course-import.js';
@@ -54,12 +55,14 @@ const shotWord=data=>data?.practice_type==='full_swing'?'shots':'putts';
 const equipmentContext={catalog:()=>state.equipment,notice,save:async(path,body,method)=>update(await api(path,body,method))};
 
 function setView(next, {replace=false}={}) {
+  resetShotMotion();
   navigationRequest++;
   const route=routeFor(next,{practice:state?.practice,review,drill:selectedDrill});
   if(location.hash!==route)history[replace?'replaceState':'pushState'](null,'',route);
   view=next; selectedShot=null;renderKey='';render();window.scrollTo({top:0,behavior:'instant'});
 }
 async function openRoute(hash) {
+  resetShotMotion();
   const ticket=++navigationRequest, route=parseRoute(hash);
   let nextReview=null;
   try {

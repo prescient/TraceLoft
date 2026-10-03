@@ -27,6 +27,21 @@ class GameTests(unittest.TestCase):
         return self.client.post(f"/api/game/{p.data['id']}/simulate",json=dict(distance_yd=distance,
             offline_yd=offline,turn=p.data['game']['turn'] if turn is None else turn))
 
+    def test_presentation_flight_is_saved_without_replacing_source_or_score(self):
+        p=self.launch()
+        estimate={'status':'ready','metrics':{'total_yd':999,'hang_time_s':5},'trajectory':[]}
+        with patch('golf_sim.predict',return_value=estimate) as model:
+            event=simulated_event(p,100)
+            self.assertTrue(p.add(event))
+            shot=p.data['shots'][-1]
+            self.assertEqual(shot['flight'],estimate)
+            self.assertEqual(shot['vals']['total'],100)
+            self.assertEqual(shot['game_outcome']['raw_total_yd'],100)
+            self.assertEqual(p.data['game']['strokes'],1)
+            self.assertEqual(model.call_count,1)
+            self.assertFalse(p.add(event))
+            self.assertEqual(model.call_count,1)
+
     def test_round_putt_completion_and_recoverable_review(self):
         p=self.launch();sid=p.data['id']
         self.assertEqual(self.simulate(p,200).status_code,200)

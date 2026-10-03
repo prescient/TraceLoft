@@ -319,3 +319,14 @@ Course artwork review: generated aerials may drift from their input guides. Trac
 finished hazards and putting surfaces, inspect all holes with scoring outlines, and register
 tee/pin and scale to the final art. Reject texture fragments that would become invisible hazards.
 Keep optional hole strategy in a disclosure and game-physics limits in the existing assumptions.
+
+## Ball replay (2026-10-03)
+
+Recording, scores, completion warnings and correction controls update immediately; animation must
+never gate them. Use source carry/total anchors where available and label modeled shape, hang time,
+landing lateral position and illustrative roll timing. Never imply a reconstructed path is measured
+or that animation adds collision/ground physics. Missing model inputs show an endpoint-only replay.
+Respect reduced motion, provide touch-sized Replay/Skip, baseline session entry/reload, and interrupt
+old playback on a new shot, correction or navigation. Review requires explicit replay. Keep course
+world coordinates and final scored position authoritative; hazard replays return to the saved
+penalty position, and gimme strokes do not become invented ball movements.

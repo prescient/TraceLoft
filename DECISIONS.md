@@ -78,3 +78,19 @@ Full 18 for new and legacy full-course sessions. Completion/review/corrections f
 sequence; corrections remove result snapshots by hole ID, never by assuming index equals number.
 Imported individual holes retain their existing flow. No database migration or old-session rewrite.
 Retire the four starter holes from the catalog while retaining their assets/load compatibility.
+
+## D54 — Source-anchored illustrative ball replay (2026-10-03)
+
+Use reported carry/total when valid; otherwise retain reported total with a modeled carry ratio,
+or use available modeled endpoints on Range. Preserve missing source measurements. Fit the saved
+OpenGolfCoach trajectory to the chosen distance anchors and use its estimated hang time in seconds
+without compressing the flight clock. Landing lateral position and roll timing remain illustrative;
+missing model inputs produce an explicitly labeled endpoint-only replay. Play additionally fits
+the presentation to the frozen scored endpoint and lie adjustment, never rescoring it. Putting
+replays the existing estimated roll endpoint, without invented flight or gimme movement.
+
+Save independent flight predictions on new applied full shots in Play, using the existing versioned
+flight payload; do not backfill old rounds. Use presentation-only clocks, no replay writes, latest
+arrival only for batches, no automatic history replay, Replay/Skip and reduced-motion support.
+This is a limited presentation step; validated bounce/roll, obstacles, terrain and realistic physics
+remain separate backlog work. See [verification](designs/shot-motion/README.md).

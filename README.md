@@ -31,6 +31,12 @@ Play uses a [map-first iPad layout](designs/play-map-first/README.md): a compact
 club row above the full-width course, with distance/lie/putting pace on the map. Expand Club
 dispersion below the map for preview settings; its heatmap remains visible while collapsed.
 
+Range's Flight profile and Play's map animate newly received shots. Source carry/total anchor
+the replay when available; OpenGolfCoach supplies estimated flight shape and hang time. Roll
+timing and the fitted path are illustrative. **Replay ball** and **Skip** never change scores or
+shots. Reduced-motion preferences disable animation; opening/reloading a session does not replay
+history. Play saves flight estimates for new full shots; older rounds keep their original data.
+
 Play also includes **Sheboygan Straits**, an 18-hole lakeside links course with dense bunker
 complexes, Blue tees at **7,142 yards / par 72**, and original aerial artwork. Select it in Play.
 See the [Sheboygan Straits guide](docs/SHEBOYGAN_STRAITS.md) for hole details and scoring rules.

@@ -315,3 +315,28 @@
 - No physics fit, application integration, engine execution or real-device benchmark was performed.
   Source PDFs/CSVs and downloaded engine code remain outside the repository. Concurrent course work
   is excluded from this research commit.
+
+## 2026-10-03 — Range and Play ball animation
+
+- Added source-anchored side/top Range flight replay and a white/cobalt ball and tracer on Play's
+  registered course map. Use OpenGolfCoach's saved estimated hang time at its original duration;
+  fit its path to source carry/total when valid, with explicit estimated lateral landing and roll
+  timing. Keep modeled metric tiles separate. Missing model data uses endpoint-only movement.
+- Save independent flight predictions on new applied full shots in Play. Synthetic demo input now
+  includes zero spin axis to exercise the model. No source/scoring changes, schema migration or
+  historical backfill; replay never writes data or adds strokes.
+- Shared presentation clock baselines entry/reload, preserves elapsed time through redraws, uses
+  only the latest arrival in batches, supports Replay/Skip and reduced motion, and clears on route,
+  hole or correction changes. Completed approach animations retain the overview before normal green
+  zoom resumes. Penalty/putt paths retain the saved endpoint and authoritative final position.
+- Verification: all 48 JavaScript tests and 20 game/correction Python tests passed. Added tests for
+  source anchors, model hang time, missing/invalid data, hazard endpoints, putts, corrected shots,
+  duplicate/batch arrivals, baselines, reduced motion and independent model persistence.
+- Isolated SQLite/service at port 8879: verified range arrival, Replay/Skip, top view, saved review,
+  reload baseline, Play immediate scoring, hole-out/gimme completion, Misread reopen and Next hole.
+  No browser errors. Checked iPad 1366×1024 and 1376×1032, reduced-height 1366×900, desktop
+  1440×900 and 390×844 phone; no page overflow, 44px controls. Physical iPad Safari and realistic
+  bounce/ground physics remain unverified/not implemented. Screenshots in designs/shot-motion.
+- Updated README, design principles, D54, navigation controls, database operations and backlog.
+- Restarted the idle production service on 8765 to load Play prediction saving; it remained idle.
+  Production test shots were not created. Stopped the isolated QA service and restored browser sizing.

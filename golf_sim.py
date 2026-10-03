@@ -7,6 +7,7 @@ import random
 import uuid
 from pathlib import Path
 
+from flight_model import predict
 from course_geometry import classify
 from bundled_courses import load_bundled
 from putting import PuttingSession, timestamp
@@ -206,6 +207,9 @@ class GolfSimSession(PuttingSession):
             g['last_message']=message;outcome['message']=message
             shot.update(scored=True,success=g['holed'])
         outcome['after']=copy.deepcopy(g);shot['game_outcome']=outcome
+        # Independent presentation estimate; never changes the saved game outcome.
+        if outcome['applied'] and not putting:
+            shot['flight']=predict(vals)
         if outcome['applied'] and g['holed'] and 'round' in self.data:
             self.data['round']['results'].append(dict(hole_id=course['id'],hole_number=course['hole_number'],
                 par=course['par'],game=copy.deepcopy(g)))
@@ -249,7 +253,7 @@ def simulated_event(session, distance_yd, offline_yd=0):
         vals=dict(ball_speed=speed,launch_ang=0,launch_dir=hla,total_spin=0)
     else:
         vals=dict(ball_speed=max(1,min(200,distance_yd*.55)),launch_ang=18,launch_dir=0,
-                  total=distance_yd,carry=distance_yd*.93,offline=offline_yd,total_spin=5500)
+                  total=distance_yd,carry=distance_yd*.93,offline=offline_yd,total_spin=5500,spin_axis=0)
     return dict(kind='record',session_id='game-demo-'+session.data['id'],seq=len(session.data['shots'])+1,
         receipt_id=uuid.uuid4().hex,producer_id='golfdata-game-demo-v1',result='validated',simulated=True,
         captured_at=timestamp(),practice_session_id=session.data['id'],vals=vals,

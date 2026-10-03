@@ -450,3 +450,9 @@ Fresh isolated browser checks covered club changes, map tap/pin/numeric aim, pre
 terrain boundaries, green pace, gimme completion → Misread reopen → completion → Next hole,
 End round and saved hole selection. Verified iPad landscape, reduced-height, desktop and phone
 layouts; physical iPad Safari/touch remains unverified. See [design review](designs/play-map-first/README.md).
+
+Ball replay adds no routes. Range Flight profile and the row below Play's map expose Replay ball
+and Skip. New shots animate only while viewing that session; entry/reload/review do not autoplay
+history. Range inspection retains the selected shot until Back to latest. Play completion, Next
+hole, Misread/Mulligan and Exit remain available during playback. A new hole or correction clears
+the previous animation; finishing an approach returns to the normal green camera.

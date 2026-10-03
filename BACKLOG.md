@@ -336,7 +336,14 @@ January 2026 Blue tee distances (6,801 yards/par 72), one durable round, per-hol
 identity, explicit Next hole pause, full-round completion, partial ending and historical hole review.
 Existing bag/club selection, heatmaps, penalties and flat-green putting apply throughout. See
 [course guide and verification](docs/PEBBLE_BOULDER.md). This uses the existing endpoint game;
-animated flight, realistic ground physics, other tee sets and editable multi-hole imports remain planned.
+realistic ground physics, other tee sets and editable multi-hole imports remain planned.
+
+**Illustrative ball replay implemented 2026-10-03:** Range Flight profile and Play animate new
+shots, using source carry/total anchors and OpenGolfCoach estimated shape/hang time where available.
+Play persists independent flight estimates for new full shots. Replay/Skip, reduced motion,
+reload/review baselines, corrections and completion remain independent of scoring. Missing model
+inputs fall back to endpoint-only replay. This does not implement validated bounce/roll or obstacle
+physics; the immersive simulation work below remains planned. See [review](designs/shot-motion/README.md).
 
 **Immersive browser simulation — requested 2026-10-03 · planned:** extend the playable 2D
 course mode with realistic modeled physics and animated ball movement, while keeping it lightweight

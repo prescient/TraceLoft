@@ -204,3 +204,9 @@ Backup/restore includes drafts. They are separate from sessions and immutable `c
 packages. New publications also retain params; old packages remain readable without that field.
 Exported draft JSON is portable but is not a replacement for the complete database backup.
 See [course import workflow](COURSE_IMPORT_WORKFLOW.md).
+
+Play ball replay: new applied full shots retain an independent versioned `flight` prediction in
+their existing session shot payload, as Range already does. Source values and frozen `game_outcome`
+remain authoritative and unchanged. Existing SQLite storage includes the payload in normal
+session saving/backups; no schema migration or historical backfill. Browser replay clocks are not
+persisted and replay/skip actions do not create shots or change scores.
