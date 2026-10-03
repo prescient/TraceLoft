@@ -226,7 +226,12 @@ totals. Pause scoring visibly between holes and require Next hole before accepti
 tee. Keep the scorecard compact during play, expandable by touch/keyboard, and open in saved review.
 Review selects frozen holes without moving the active ball. Distinguish ended-early rounds and
 unplayed holes from completed scores; never count analysis exclusions as mulligans.
-Offer explicit Mulligan and Misread actions with a visible target and separate history/counts.
+Keep Play header actions in order: Mulligan, Misread, End round, Play menu, Exit round.
+Show correction counts in the scorecard summary and tuck the audit history inside its expansion;
+do not add a separate replay card. Button help identifies the latest scored attempt and effect.
+Select the bag in course setup. During play, use the full width for compact Club for next shot
+buttons and reference the selected bag by name, without repeating bag management or selection.
+Practice retains its bag-and-club selector. Preserve the setup bag when changing or clearing a club.
 Completion must not lock out correcting the last shot: allow reopening a hole or round, including
 the previous hole from its untouched next tee. Restore score and position together, including
 penalties/gimmes. Preserve raw readings and original outcomes; misreads default out of analysis,

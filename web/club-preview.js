@@ -66,7 +66,7 @@ export function mountClubPreview(app,data,state,ctx,active) {
     host.innerHTML=`<p class="form-hint">${!active?'Historical review · planning overlay is available in an active round.':'Putting · full-swing preview is hidden on the green.'}</p>`;return;
   }
   const equipment=data.equipment_selection??{};
-  if(!equipment.club_id){host.innerHTML='<p class="form-hint">Select a bag and club above to see its mapped dispersion.</p>';return;}
+  if(!equipment.club_id){host.innerHTML='<p class="form-hint">Select a club above to see its mapped dispersion.</p>';return;}
   const key=JSON.stringify([data.id,equipment.bag_id,equipment.club_id]);
   const pref=preferences.get(data.id)??{mode:'density',source:'reported',metric:'total'};
   preferences.set(data.id,pref);

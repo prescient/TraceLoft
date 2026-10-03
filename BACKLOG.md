@@ -13,6 +13,8 @@
 
 ## Play corrections — implemented 2026-10-03
 
+- [x] Compact Play controls: Mulligan / Misread before End round, Play menu and Exit round;
+  counts/history in the scorecard; setup bag retained with a full-width club-only selector.
 - [x] Separate Mulligan and Misread controls, usable after hole/round completion and in saved review.
 - [x] Restore the latest scored shot's pre-shot state, including penalty/gimme removal; reopen
   previous completed hole from its next tee and final hole after the round ends.

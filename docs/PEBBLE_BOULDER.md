@@ -60,15 +60,19 @@ Artwork provenance and editable geometry references are in [design notes](../des
 
 ## Correcting a shot
 
-Use **Replay a shot → Mulligan** or **Misread** above the scorecard/map. Both remove the latest
+Use **Mulligan** or **Misread** in the header before End round. Both remove the latest
 scored attempt from gameplay and restore its previous position, aim, lie and score. Any penalty or
 gimme added by that attempt is removed too. Mulligan keeps its current analysis inclusion; Misread
 excludes it from analysis. The original reading and original result remain in the shot log with
-an explicit correction label. Expand the correction count to see reasons, holes and timestamps.
+an explicit correction label. Counts appear in the scorecard summary; expand the scorecard and
+**Shot correction history** to see correction types, holes and timestamps.
+
+Choose your bag in course setup. The active round has a compact **Club for next shot** row with
+that bag's name. Changing or clearing the club keeps the same bag and preserves earlier shot tags.
 
 These buttons remain available after a hole finishes, after advancing to the next tee, and after
 hole 18. In Sessions review, correcting explicitly reopens the round and returns to its active
-screen; you cannot displace another active session. The displayed target is always the latest
+screen; you cannot displace another active session. Button help identifies the latest
 scored attempt in the entire round, regardless of which hole is being reviewed. Repeat to go back
 newest-first. Unscored and already corrected attempts are skipped. Abandoned rounds cannot reopen;
 deleted rounds must first be restored. Analysis Include/Exclude alone never changes the score.

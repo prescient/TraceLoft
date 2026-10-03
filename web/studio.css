@@ -189,11 +189,18 @@ tbody tr.excluded{color:#737e90}
 .round-scorecard .round-nines{display:grid;grid-template-columns:1fr 1fr;gap:24px}.round-scorecard table{min-width:510px;width:100%;text-align:center}.round-scorecard caption{text-align:left;font-weight:700;padding:10px 0;color:var(--ink)}.round-scorecard td,.round-scorecard th{padding:10px 8px}.round-total{display:flex;flex-direction:column;text-align:right;gap:4px}.round-total strong{font-size:36px}.round-total small{color:var(--muted)}.round-review-select{max-width:420px}.round-scorecard .current-hole{color:var(--accent);font-weight:800;background:#eef3ff}.hole-complete-banner{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px;border:2px solid #a62d2d;background:#fff6f5;color:#852020;margin:20px 0}.hole-complete-banner strong{font-size:22px}.hole-complete-banner p{margin:8px 0 0}.hole-complete-banner button{flex-shrink:0;min-height:48px}@media(max-width:1100px){.round-scorecard .round-nines{grid-template-columns:1fr}}@media(max-width:650px){.hole-complete-banner{flex-direction:column;align-items:stretch}.round-scorecard .table-head{align-items:flex-start;gap:16px}.round-total strong{font-size:28px}.round-total span{font-size:12px}}
 
 /* Shot corrections remain available after a hole or round ends. */
-.game-corrections{padding:16px 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:center}
-.game-corrections h2{margin-bottom:6px}.game-corrections p{margin:4px 0;max-width:none}
-.correction-actions{display:flex;gap:16px}.correction-actions>div{display:grid;grid-template-rows:48px auto;gap:6px;text-align:center}
-.correction-actions .btn{min-width:130px;min-height:48px}
-.correction-actions small{color:var(--muted);font-size:12px}
-.correction-history{grid-column:1/-1;font-size:13px}.correction-history summary{cursor:pointer;min-height:32px;align-content:center}
+/* Play keeps replay actions in the header and audit details in the scorecard. */
+.game-head-actions{flex-shrink:0}
+.correction-counts{font-size:13px;color:var(--muted);margin:8px 0 0}
+.correction-history{font-size:13px;margin:12px 0}.correction-history summary{cursor:pointer;min-height:44px;align-content:center}
 .correction-history li{margin:8px 0}.correction-label{display:block;color:var(--ink);margin-bottom:6px}
-@media(max-width:700px){.game-corrections{grid-template-columns:1fr}.correction-actions{justify-content:stretch}.correction-actions>div{flex:1;min-width:0}.correction-actions .btn{min-width:0;width:100%}}
+.game-equipment{padding:16px 24px}
+.equipment-clubs-only .equipment-fields{display:block}
+.equipment-clubs-only .club-column{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px}
+.equipment-clubs-only .club-heading{flex-basis:100%;min-height:0;margin:0;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.game-bag-name{color:var(--muted);font-size:13px;font-weight:500;letter-spacing:0;text-transform:none;overflow-wrap:anywhere}
+.equipment-clubs-only .club-buttons{flex:1;min-width:0}
+.equipment-clubs-only .equipment-foot{margin:0;gap:10px}
+.equipment-clubs-only .equipment-status{max-width:220px}
+@media(max-width:1100px){.game-head-actions{flex-shrink:1;max-width:none}}
+@media(max-width:600px){.game-equipment{padding:16px}.equipment-clubs-only .club-buttons{flex-basis:100%}.equipment-clubs-only .equipment-foot{width:100%}}

@@ -1,5 +1,20 @@
 # TraceLoft work log
 
+## 2026-10-03 — Compact Play actions and club selection
+
+- Moved Mulligan and Misread into the round header before End round, Play menu and Exit round;
+  removed the Replay a shot card. Target/effect help and correction eligibility remain intact.
+- Moved correction counts into the scorecard summary with expandable audit history inside it;
+  legacy single-hole games show those details in their hole score panel.
+- Kept bag selection in course setup. Active Play now uses a full-width club row with the setup
+  bag's name; club changes and clearing retain that bag. Practice keeps its full bag selector.
+- Updated design principles, navigation, course instructions, backlog and empty-preview wording.
+- Verification: all 38 JavaScript tests passed. Isolated browser/SQLite service on port 8879 checked
+  setup → launch, repeated club changes, clear/reload, shot tags, header Mulligan, completed-hole
+  Misread reopening, ended-round correction reopening, separate counts and expandable history.
+  Visual checks at 1366×1024 iPad landscape, 1600×1000 desktop and 390×844 phone found no page
+  overflow; club buttons and header actions wrap on phone. Production sessions/data were untouched.
+
 ## 2026-10-03 — Boulder Beach course name
 
 - Renamed the coastal course from Pebble Boulder to Boulder Beach in its package, generator,

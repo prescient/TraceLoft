@@ -2,12 +2,15 @@
 
 ## Mulligan / Misread paths — 2026-10-03
 
-- Active Play → Replay a shot → Mulligan / Misread → previous position on the same active round.
+- Active Play → header Mulligan / Misread → previous position on the same active round.
+  Header order: Mulligan → Misread → End round → Play menu → Exit round.
+  Counts remain visible in the collapsed scorecard; expand it for Shot correction history.
+  Choose the bag in setup; the active round shows its name with a compact club-only selector.
 - Hole complete → either action → reopen that hole; Next hole disappears until it is completed again.
 - Next tee before another scored shot → either action → return to the preceding completed hole.
 - Round ended / Sessions → saved golf review → either action → active Play route for the restored
   hole, including hole 18. Simply viewing review does not resume recording.
-- Target text always identifies the latest scored attempt across the round, even while reviewing
+- Button help identifies the latest scored attempt across the round, even while reviewing
   another hole. Repeated actions rewind newest-first. Corrected and unscored attempts are skipped.
 - No scored attempts, abandoned round or another active session: controls disabled with reason.
   Server also rejects stale turn/key, deleted rounds and pending saves; no concurrent session takeover.

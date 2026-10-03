@@ -1,13 +1,13 @@
 import {escape as esc} from './charts.js';
 
-export function equipmentControls(catalog, selected, setup=false) {
+export function equipmentControls(catalog, selected, setup=false, clubsOnly=false) {
   const bags=catalog?.bags??[], bag=bags.find(b=>b.id===selected?.bag_id)??bags[0];
   const club=bag?.clubs.find(c=>c.id===selected?.club_id), quick=bags.slice(0,3);
   if(bag&&!quick.includes(bag))quick[2]=bag;
   const abbreviations=(bag?.clubs??[]).map(c=>shortClubLabel(c.label));
-  return `<div class="equipment-controls" data-setup="${setup}"><input name="range_bag_id" type="hidden" value="${esc(bag?.id??'')}"><input name="range_club_id" type="hidden" value="${esc(club?.id??'')}">
-    <div class="equipment-fields"><div class="bag-column"><div class="bag-column-head"><span class="eyebrow">BAGS</span></div><div class="bag-tabs" role="group" aria-label="Bags">${quick.map(b=>`<button type="button" class="bag-tab ${b===bag?'selected':''}" data-bag-tab="${esc(b.id)}" aria-pressed="${b===bag}" title="${esc(b.name)}"><span>${esc(b.name)}</span>${b===bag?'<span aria-hidden="true">✓</span>':''}</button>`).join('')}${Array.from({length:Math.max(0,3-quick.length)},(_,i)=>`<button type="button" class="bag-tab add-bag" data-add-bag aria-label="Add bag to slot ${quick.length+i+1}">＋ Add bag</button>`).join('')}</div>${bags.length>3?'<button type="button" class="btn quiet small more-bags" data-more-bags>More bags…</button>':''}<button type="button" class="btn quiet bag-manage" data-manage-bags>Manage bags</button></div>
-    <div class="club-column"><div class="eyebrow">CLUB FOR NEXT SHOT</div><div class="club-buttons" role="group" aria-label="Club for next shot">${(bag?.clubs??[]).map((c,i)=>{const chosen=c.id===club?.id, short=abbreviations[i], duplicate=abbreviations.filter(s=>s===short).length>1;return `<button type="button" class="club-button ${chosen?'selected':''}" data-club-pick="${esc(c.id)}" aria-label="Select ${esc(c.label)}" aria-pressed="${chosen}" title="${esc(c.label)}"><span class="club-short ${short.length>4?'long':''}">${esc(short)}</span>${duplicate?`<small class="club-ordinal" aria-hidden="true">${abbreviations.slice(0,i+1).filter(s=>s===short).length}</small>`:''}${chosen?'<span class="club-check" aria-hidden="true">✓</span>':''}</button>`;}).join('')}</div><div class="equipment-foot"><p class="form-hint equipment-status" role="status">${club?`${setup?'Starting club':'Next shot'}: <strong>${esc(bag.name)} / ${esc(club.label)}</strong>`:'Choose a club before hitting · untagged'}<span>${setup?'You can switch clubs during the drill.':'Earlier shots keep their tags.'}</span></p>${club?'<button type="button" class="btn quiet small" data-clear-club>Clear club</button>':''}</div></div></div></div>`;
+  return `<div class="equipment-controls ${clubsOnly?'equipment-clubs-only':''}" data-setup="${setup}" data-clubs-only="${clubsOnly}"><input name="range_bag_id" type="hidden" value="${esc(bag?.id??'')}"><input name="range_club_id" type="hidden" value="${esc(club?.id??'')}">
+    <div class="equipment-fields">${clubsOnly?'':`<div class="bag-column"><div class="bag-column-head"><span class="eyebrow">BAGS</span></div><div class="bag-tabs" role="group" aria-label="Bags">${quick.map(b=>`<button type="button" class="bag-tab ${b===bag?'selected':''}" data-bag-tab="${esc(b.id)}" aria-pressed="${b===bag}" title="${esc(b.name)}"><span>${esc(b.name)}</span>${b===bag?'<span aria-hidden="true">✓</span>':''}</button>`).join('')}${Array.from({length:Math.max(0,3-quick.length)},(_,i)=>`<button type="button" class="bag-tab add-bag" data-add-bag aria-label="Add bag to slot ${quick.length+i+1}">＋ Add bag</button>`).join('')}</div>${bags.length>3?'<button type="button" class="btn quiet small more-bags" data-more-bags>More bags…</button>':''}<button type="button" class="btn quiet bag-manage" data-manage-bags>Manage bags</button></div>`}
+    <div class="club-column"><div class="eyebrow club-heading">CLUB FOR NEXT SHOT${clubsOnly?`<span class="game-bag-name">${esc(bag?.name??selected?.bag_name??'No bag selected')}</span>`:''}</div><div class="club-buttons" role="group" aria-label="Club for next shot">${(bag?.clubs??[]).map((c,i)=>{const chosen=c.id===club?.id, short=abbreviations[i], duplicate=abbreviations.filter(s=>s===short).length>1;return `<button type="button" class="club-button ${chosen?'selected':''}" data-club-pick="${esc(c.id)}" aria-label="Select ${esc(c.label)}" aria-pressed="${chosen}" title="${esc(c.label)}"><span class="club-short ${short.length>4?'long':''}">${esc(short)}</span>${duplicate?`<small class="club-ordinal" aria-hidden="true">${abbreviations.slice(0,i+1).filter(s=>s===short).length}</small>`:''}${chosen?'<span class="club-check" aria-hidden="true">✓</span>':''}</button>`;}).join('')}</div><div class="equipment-foot"><p class="form-hint equipment-status" role="status">${club?`${setup?'Starting club':'Next shot'}: <strong>${clubsOnly?'':esc(bag.name)+' / '}${esc(club.label)}</strong>`:clubsOnly?'Choose a club':'Choose a club before hitting · untagged'}${clubsOnly?'':`<span>${setup?'You can switch clubs during the drill.':'Earlier shots keep their tags.'}</span>`}</p>${club?'<button type="button" class="btn quiet small" data-clear-club>Clear club</button>':''}</div></div></div></div>`;
 }
 
 function shortClubLabel(label) {
@@ -30,11 +30,11 @@ export function refreshSetupEquipment(root, context) {
 
 export function bindEquipment(root, context, onSelect, current=()=>null) {
   let box=root.querySelector('.equipment-controls');if(!box)return;
-  const setup=box.dataset.setup==='true';
+  const setup=box.dataset.setup==='true',clubsOnly=box.dataset.clubsOnly==='true';
   const draft=()=>({bag_id:box.querySelector('[name=range_bag_id]').value,club_id:box.querySelector('[name=range_club_id]').value});
   const redraw=selected=>{
     box=root.querySelector('.equipment-controls');if(!box)return;
-    box.replaceWith(element(equipmentControls(context.catalog(),selected,setup)));
+    box.replaceWith(element(equipmentControls(context.catalog(),selected,setup,clubsOnly)));
     bindEquipment(root,context,onSelect,current);
   };
   async function change(selected) {
@@ -51,7 +51,7 @@ export function bindEquipment(root, context, onSelect, current=()=>null) {
     const selected=draft();await manageBags(context,selected.bag_id,create);
     redraw(setup?selected:current());
   }
-  box.querySelector('[data-manage-bags]').onclick=()=>manage();
+  const manager=box.querySelector('[data-manage-bags]');if(manager)manager.onclick=()=>manage();
   box.querySelectorAll('[data-add-bag]').forEach(b=>b.onclick=()=>manage(true));
   const more=box.querySelector('[data-more-bags]');if(more)more.onclick=async()=>{
     const selected=draft(), id=await chooseBag(context.catalog(),selected.bag_id);
