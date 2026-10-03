@@ -59,3 +59,12 @@
   updated HTML with no-store headers. Added a distinct black/blue asset filename and pointed
   the favicon link to it to bypass retained browser favicon identity.
 - Verified the new live asset matches the approved SVG and the live HTML references it.
+
+## 2026-10-03 — Sim page backlog and GSPro club contract
+
+- Logged the requested minimal Sim page: bag/club selection and shot logging, reusing storage
+  and shot-time equipment tags. Navigation/session guards remain implementation work.
+- Checked official GSPro Open Connect v1 and in-game UI documentation: incoming ClubData has
+  club measurements, no documented club-name/selection setter; Code 201 returns Player.Club.
+  Logged live verification and explicit mapping/precedence as follow-up, without claiming sync.
+- Documentation-only verification: checked backlog scope, source link and git whitespace.

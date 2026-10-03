@@ -1,5 +1,20 @@
 # TraceLoft backlog
 
+## Sim page — requested 2026-10-03 · planned
+
+Add a minimal simulator companion page focused on bag/club selection and shot logging.
+Reuse the existing equipment controls and durable shot/session storage, freeze the selected club
+on each shot, and show recording state with clear session exits. Keep the pure-white Vector layout.
+No drill targets, course rendering or scoring are required for this page. Define its navigation
+and active-session guards when implementing; this entry does not add a working route.
+
+GSPro integration follow-up: verify actual club behavior with a live connection. The documented
+[Open Connect v1](https://gsprogolf.com/GSProConnectV1.html) incoming ClubData contains measured
+club metrics, not a club identifier/name or a command to change GSPro's selected club. GSPro can
+send its own selection back through Code 201 Player.Club. Do not promise selection sync from
+TraceLoft to GSPro; any future automatic tagging must explicitly map simulator codes to the bag
+and resolve manual-selection precedence before being enabled.
+
 ## Application separation and direct Relay — 2026-10-03
 
 Implemented: independent source repository, SQLite authority, always-listening localhost Open Connect
