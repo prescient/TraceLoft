@@ -1,5 +1,16 @@
 # TraceLoft work log
 
+## 2026-10-03 — Boulder Beach course name
+
+- Renamed the coastal course from Pebble Boulder to Boulder Beach in its package, generator,
+  current documentation, library, setup, round heading, scorecard, attribution and session-list display.
+- Retained course/artwork IDs, document paths and immutable saved rounds. A presentation alias
+  shows the new name for existing snapshots; original generation prompts/screenshots remain historical.
+- Verification: 38 JavaScript tests passed; direct saved-scorecard rendering/immutability check passed.
+  Compared the entire course package to HEAD: only name/attribution strings changed. Running API
+  and browser library/setup both show Boulder Beach with the same 18 holes, 6,801 yards and par 72.
+  No service restart, database writes, new session or geometry changes needed.
+
 ## 2026-10-03 — Sheboygan Straits complete course
 
 - Reviewed current architecture, backlog, decisions, Vector design principles/navigation and the

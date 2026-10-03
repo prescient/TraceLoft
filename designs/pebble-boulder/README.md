@@ -1,4 +1,4 @@
-# Pebble Boulder artwork
+# Boulder Beach artwork
 
 Eighteen original coastal aerial images were generated with the built-in image generation tool on
 2026-10-03. No satellite imagery or real-course artwork was copied. Only published Blue yardages
@@ -18,3 +18,6 @@ and whitewater do not create additional collision or penalty rules.
 
 Version 1 geometry and artwork must stay immutable for saved rounds. Future material or layout
 corrections require a new course/version identity. See [course guide](../../docs/PEBBLE_BOULDER.md).
+
+Course renamed from Pebble Boulder to Boulder Beach on 2026-10-03. The original generation
+prompt and screenshots are historical evidence and retain the name used when they were created.

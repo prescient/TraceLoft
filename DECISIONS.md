@@ -16,7 +16,7 @@ rounds and competing active session ownership. Save score, exclusion and audit a
 SQLite before publishing the resumed context. No schema migration or raw-shot deletion.
 
 
-## D49 — Pebble Boulder round package (2026-10-03)
+## D49 — Boulder Beach round package (2026-10-03)
 
 Use the official January 2026 Blue scorecard (6,801 yards/par 72) for yardage/pars only, with
 eighteen original coastal layouts and generated, registered aerials. Freeze every hole in the

@@ -1,4 +1,7 @@
-# Pebble Boulder
+# Boulder Beach
+
+Renamed from Pebble Boulder on 2026-10-03. The `pebble-boulder-blue-v1` ID and artwork paths
+remain stable. Existing round snapshots retain their original data; the interface shows the current name.
 
 Requested 2026-10-03: an original eighteen-hole coastal course inspired by Pebble Beach, with the
 same Blue tee yardages and pars but distinct layouts, hazards and lies. The Sim companion feature
@@ -39,7 +42,7 @@ or elevation, water/OB replay with one penalty. Coastal art does not add undiscl
 
 ## Playing and reviewing
 
-1. Open Play and choose **Pebble Boulder → Set up round**. Choose demo or acknowledged live input,
+1. Open Play and choose **Boulder Beach → Set up round**. Choose demo or acknowledged live input,
    lie effects, Stimp, gimme radius and equipment. Launch starts hole 1.
 2. Select a club, tap the map to aim or choose Aim at pin. The existing bag mapping/wedge profiles
    supply the optional historical dispersion overlay. Distance follows the current aim; it is not

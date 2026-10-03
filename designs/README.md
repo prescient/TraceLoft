@@ -1,6 +1,6 @@
 # Interface references
 
-[Pebble Boulder artwork](pebble-boulder/README.md) records the original eighteen-hole coastal
+[Boulder Beach artwork](pebble-boulder/README.md) records the original eighteen-hole coastal
 references, generation prompt and registration approach used in Play.
 
 The implemented interface uses pure-white Vector surfaces, navy text, square cards and cobalt

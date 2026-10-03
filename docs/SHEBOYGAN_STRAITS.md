@@ -39,7 +39,7 @@ geographic reconstruction. No official photos, logo, course rating or slope are 
 
 There are **354 separate scoring sand areas**, including connected bunker complexes. Their
 lobed shapes, staggered positions, narrow landing zones and fescue shoulders make misses more
-costly than on Pebble Boulder. Lake edges and two inland ponds are water hazards. The pale sand
+costly than on Boulder Beach. Lake edges and two inland ponds are water hazards. The pale sand
 areas use the configured sand reduction; golden fescue uses the existing nature rule.
 
 ## Geometry and game rules
@@ -54,7 +54,7 @@ The existing endpoint rules apply: default sand reduction 20%, rough 7%, nature 
 lie variation; water/OB replay with +1 penalty. Flat putting uses the selected Stimp/model.
 A gimme adds one putt; Mulligan/Misread restore the latest scored shot's prior state even after
 completion. Both retain an audit; misreads also exclude from analysis. See
-[Pebble Boulder controls](PEBBLE_BOULDER.md) for the shared round contract.
+[Boulder Beach controls](PEBBLE_BOULDER.md) for the shared round contract.
 
 ## Delivery and verification
 

@@ -1,5 +1,8 @@
 # TraceLoft backlog
 
+- [x] Rename Pebble Boulder to **Boulder Beach** across the library and round/review displays;
+  retain stable course IDs and historical session data (2026-10-03).
+
 ## Sheboygan Straits — implemented 2026-10-03
 
 - [x] Complete original 18-hole Whistling-Straits-inspired lakeside course, Blue 7,142 yd / par 72.
@@ -308,7 +311,7 @@ confirmation checks pass with isolated test data.
 
 ### 9. Basic 2D golf simulator (idea requested 2026-10-01)
 
-**Pebble Boulder implemented 2026-10-03:** eighteen original coastal layouts and generated aerials,
+**Boulder Beach implemented 2026-10-03:** eighteen original coastal layouts and generated aerials,
 January 2026 Blue tee distances (6,801 yards/par 72), one durable round, per-hole scores and shot
 identity, explicit Next hole pause, full-round completion, partial ending and historical hole review.
 Existing bag/club selection, heatmaps, penalties and flat-green putting apply throughout. See

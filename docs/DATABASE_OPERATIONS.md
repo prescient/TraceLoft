@@ -28,7 +28,7 @@ two services cannot independently score drills against the same file.
   score/position, removed completion snapshots, exclusion and audit commit in one transaction.
   No schema upgrade is needed. Existing sessions without correction fields continue to load.
 
-- Pebble Boulder rounds freeze all eighteen hole packages in the SQLite session payload, with
+- Boulder Beach rounds freeze all eighteen hole packages in the SQLite session payload, with
   per-hole result snapshots, current-hole index and monotonic turn. Attempts retain `hole_id` and
   `hole_number` alongside the existing immutable game outcomes. Normal restart resumes the same
   hole or between-hole pause. No schema migration, measured-shot rewrite or database reset is needed.

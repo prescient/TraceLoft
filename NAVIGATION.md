@@ -13,9 +13,9 @@
   Server also rejects stale turn/key, deleted rounds and pending saves; no concurrent session takeover.
 
 
-## Pebble Boulder full-course navigation — 2026-10-03
+## Boulder Beach full-course navigation — 2026-10-03
 
-Play → Pebble Boulder card → existing round setup → Launch → hole 1 of 18. Completing holes 1–17
+Play → Boulder Beach card → existing round setup → Launch → hole 1 of 18. Completing holes 1–17
 keeps the session active and shows a red pause banner; Next hole advances the same saved round.
 The previous hole cannot accept further scored shots. Hole 18 ends the round with the standard red
 Session over banner. End/abandon/exit remain available between holes. Play menu leaves the round
@@ -405,7 +405,7 @@ partial-round End → Play, Meadow active guard → Return → refresh, and resp
 Play → Sheboygan Straits → Set up round preselects the Blue 18-hole package; Cancel returns to
 Play. Shared round routes, active-session guards and exits apply. Hole guide expands in place.
 Completion → Next hole → next tee; Misread can return to the just-completed hole. All eighteen
-holes are preserved for Sessions review. The library also retains Pebble Boulder and single holes.
+holes are preserved for Sessions review. The library also retains Boulder Beach and single holes.
 
 Fresh isolated browser verification covered this selection/setup path, hole completion/Next hole,
 Misread back to hole 1, Play menu active guard/Return, End, hole 18 review/Green zoom and Exit.

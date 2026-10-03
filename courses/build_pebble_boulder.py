@@ -93,7 +93,7 @@ def build(index):
                    transform=[scale,0,0,scale,-tx*scale,-ty*scale]),
         provenance=dict(kind='original_generated',created='2026-10-03',geometry_review='designed_coastal_v1',
             route_yards=yard,straight_yards=round(math.dist(route[0],route[-1])*scale,1),
-            attribution='Pebble Boulder · original coastal design · AI artwork',
+            attribution='Boulder Beach · original coastal design · AI artwork',
             yardage_source='https://www.pebblebeach.com/content/uploads/PebbleBeach-Scorecard.pdf',
             scorecard_edition='January 2026 Blue tees'),
         warnings=['Original coastal layout; Blue yardages inspired by the January 2026 Pebble Beach scorecard.',
@@ -121,7 +121,7 @@ if __name__=='__main__':
     for i in range(18):
         c,p=build(i);holes.append(c)
         if '--guides' in sys.argv:guides(c,p)
-    package=dict(id='pebble-boulder-blue-v1',name='Pebble Boulder',tee_label='Blue',par=sum(PARS),yards=sum(YARDS),
+    package=dict(id='pebble-boulder-blue-v1',name='Boulder Beach',tee_label='Blue',par=sum(PARS),yards=sum(YARDS),
         description='Eighteen original coastal holes. Rugged shores, cypress groves and dune-lined approaches.',
         holes=holes,version=1)
     (ROOT/'courses/pebble-boulder-blue-v1.json').write_text(json.dumps(package,indent=2)+'\n',encoding='utf-8')
