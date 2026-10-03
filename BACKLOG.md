@@ -288,6 +288,27 @@ confirmation checks pass with isolated test data.
 
 ### 9. Basic 2D golf simulator (idea requested 2026-10-01)
 
+**Immersive browser simulation — requested 2026-10-03 · planned:** extend the playable 2D
+course mode with realistic modeled physics and animated ball movement, while keeping it lightweight
+enough to run smoothly in a browser. Aim for modestly greater immersion within the top-down format.
+
+- Animate flight, landing, bounce and roll through the final resting position; use a restrained
+  tracer, ball shadow/height cue and smooth camera tracking where helpful.
+- Develop and validate full-shot flight and ground interaction, including spin, wind, terrain/lie
+  effects and surface-dependent bounce/roll; support putting speed, Stimp and slope where course
+  data permits. Retain a simpler fallback when required inputs or terrain data are unavailable.
+- Keep measured launch data separate from simulated trajectories/outcomes. Version the physics
+  and course inputs so saved shots can replay consistently; Python remains authoritative for the
+  accepted outcome, with browser animation presenting that result without changing scoring.
+- Prefer lightweight 2D rendering; establish frame-rate, load-time and memory targets on iPad
+  landscape, desktop and phone before choosing a physics/rendering approach. Include replay,
+  skip animation and reduced-motion support.
+- Start with one hole and compare flight/roll against reference cases, then expand to full courses.
+  This is future work, not a claim of realistic physics in the current endpoint prototype.
+
+This updates the earlier relaxed accuracy direction: realistic physics is now a development goal,
+with explicit validation and browser performance limits; a detailed 3D engine is not required.
+
 **Course visuals implemented 2026-10-02:** AI terrain textures inside existing Meadow One shapes,
 scoring-boundary overlay, simple rendering option, map/coordinate aiming plus Aim at pin.
 **Proposed real-course importer:** combine OSM geometry, georeferenced aerial imagery and course

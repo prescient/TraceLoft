@@ -101,3 +101,13 @@
   Distinguished existing Play persistence from unverified external simulator results.
 - Documentation-only verification: relative links exist, research URLs match the prior investigation,
   deferred statuses agree and git whitespace checks pass. No code or runtime changes.
+
+## 2026-10-03 — Immersive 2D simulation backlog
+
+- Added the requested browser-friendly playable courses with realistic physics and animated
+  flight, bounce and roll to the existing 2D simulator entry. Recorded lightweight rendering,
+  validation, immutable model/replay provenance and optional reduced-motion/skip controls.
+- Marked it planned and distinguished it from the current endpoint prototype; the new goal
+  supersedes the earlier relaxed realism direction. Implementation and performance targets remain open.
+- Documentation verification: checked consistency with the current game architecture and whitespace.
+  Concurrent course implementation files were left untouched.
