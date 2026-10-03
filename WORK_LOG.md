@@ -1,5 +1,16 @@
 # TraceLoft work log
 
+## 2026-10-03 — Fit full courses to the wide map
+
+- Replaced square/letterboxed camera framing with a responsive viewBox. Landscape overview trims
+  peripheral scenery; green view fills the panel and stays inside registered artwork. All layers
+  retain uniform world scale. Phone overview keeps the full saved frame. No course files changed.
+- Automated checks cover tee/pin/playing-line visibility, aspect ratio and artwork bounds for all
+  36 holes at three landscape ratios, plus legacy/narrow framing and immutable coordinates.
+  Isolated browser verified Boulder overview/green at 1366×900, aligned boundary overlay and map
+  center tap converting to the correct world coordinates. Saved screenshot in design notes.
+- Updated the approved layout notes and design principles to replace the former letterbox behavior.
+
 ## 2026-10-03 — Retire standalone starter holes
 
 - Removed Meadow One, Willow Cove, Pine Bend and Meadow Reach from the built-in catalog and new

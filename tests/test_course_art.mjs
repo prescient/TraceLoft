@@ -71,7 +71,7 @@ test('overview and green zoom share texture coordinates and never mutate saved s
   const before=JSON.stringify(data);
   const hole=courseMap(data,true,false),green=courseMap(data,true,true,{boundaries:true});
   assert.match(hole,/viewBox="-20 -85 410 170"/);
-  assert.match(green,/viewBox="336 -20 48 48"/);
+  assert.match(green,/viewBox="294 -20 96 48"/);
   assert.match(hole,/cx="360" cy="4"/);assert.match(green,/cx="360" cy="4"/);
   assert.equal(JSON.stringify(data),before);
 });

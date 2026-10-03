@@ -275,3 +275,6 @@ body:has(.play-map-stage) .topbar{min-height:56px}
 @media(max-width:760px){.play-title{display:block}.play-map-stage .game-map,.play-map-stage .game-map.zoomed{height:auto;max-height:450px;min-height:200px}.play-map-stage .play-feedback{position:static;max-width:none;width:100%;border-top:1px solid var(--border);margin:0}.play-map-stage .game-map.zoomed{height:350px}.round-relative{text-align:right}}
 
 #app:has(.play-map-stage) .equipment-controls:has(.club-button:disabled) .equipment-status{position:static;width:auto;height:auto;clip-path:none;overflow:visible;color:var(--amber);font-size:12px}
+
+/* Course cameras fill the panel; phones retain the complete overview at its natural ratio. */
+@media(max-width:760px){.play-map-stage .game-map:not(.zoomed){height:auto;min-height:0;max-height:none;aspect-ratio:2}.play-map-stage .game-map.zoomed{height:280px;min-height:0}}

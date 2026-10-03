@@ -1,5 +1,8 @@
 # TraceLoft backlog
 
+- [x] Fit Boulder Beach and Sheboygan Straits overview/green cameras to the wide map panel,
+  preserving yardages and scoring-overlay registration; responsive framing across all 36 holes.
+
 - [x] Retire Meadow One, Willow Cove, Pine Bend and Meadow Reach from Play/setup; keep archived
   course assets and saved-round compatibility. New default rounds use Boulder Beach (2026-10-03).
 

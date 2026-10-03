@@ -2,6 +2,7 @@ import {courseLabel,holeShots,roundScorecard,reviewHoleData} from './round-ui.js
 import {effectiveShot,latestPlayedShot,correctionControls,correctionCounts,correctionHistory} from './game-corrections.js';
 import {mountClubPreview} from './club-preview.js';
 import {courseLayers} from './course-art.js';
+import {courseCamera,fitCourseCamera} from './course-camera.js';
 import {escape as esc} from './charts.js';
 import {equipmentControls,bindEquipment} from './equipment.js';
 import {recordingWarnings} from './recording.js';
@@ -28,7 +29,7 @@ export function aimReadout(data) {
 
 export function courseMap(data,interactive=false,zoom=false,display={}) {
   const c=data.course,g=data.game,p=c.pin;
-  const bounds=zoom?`${p[1]-24} ${p[0]-24} 48 48`:(c.viewbox??[-20,-85,410,170]).join(' ');
+  const bounds=courseCamera(c,g,zoom,2).join(' ');
   const scale=zoom?.45:(c.viewbox?.[2]??410)/420;
   return `<svg class="game-map ${zoom?'zoomed':''}" viewBox="${bounds}" role="img" aria-label="${esc(c.name)} course, ball and saved shot endpoints${interactive?'. Tap to aim; keyboard aim controls are below.':''}">
     ${courseLayers(c,display)}
@@ -96,6 +97,7 @@ export function renderGame(app,data,summary,state,review,sessionNotice,ctx) {
   app.querySelectorAll('[data-play-panel]').forEach(el=>el.ontoggle=()=>{if(el.isConnected){if(el.open)openPanels.add(el.dataset.playPanel);else openPanels.delete(el.dataset.playPanel);}});
   const card=app.querySelector('.round-scorecard');if(card)card.ontoggle=()=>{roundCardOpen=card.open;};
   mountClubPreview(app,data,state,ctx,active);
+  fitCourseCamera(app.querySelector('.game-map'),data,zoom);
   app.querySelectorAll('[data-game-zoom]').forEach(b=>b.onclick=()=>{zoomChoice=b.dataset.gameZoom==='green';ctx.redraw();});
   for(const kind of ['detailed','boundaries'])app.querySelector(`[data-map-${kind}]`).onchange=e=>{if(kind==='detailed')mapDetailed=e.target.checked;else mapBoundaries=e.target.checked;ctx.redraw();app.querySelector('[data-play-panel=map]').open=true;app.querySelector(`[data-map-${kind}]`).focus({preventScroll:true});};
   const attempt=async work=>{try{await work();}catch(e){ctx.notice(e.message);}};

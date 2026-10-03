@@ -240,7 +240,11 @@ Below it, collapse dispersion controls and the live shot log by default. Collaps
 never turn off the heatmap; show club, endpoint source, sample count and overlay state in the summary.
 Put map options, keyboard aim coordinates and hole guidance in a disclosure. Keep stop/exit actions
 and recording/completion warnings directly visible. On phones, move map readouts outside the art
-and wrap controls. Preserve the map aspect ratio and scoring registration at every viewport.
+and wrap controls. Preserve uniform world scale and scoring registration at every viewport.
+Fit the camera to the panel's aspect ratio; overview may trim peripheral scenery while keeping
+the tee, pin and playing route in view. Green framing stays inside the registered artwork to avoid
+empty sidebars. Never stretch the course or alter yardages to fill a display. Narrow overview
+screens retain the whole saved course frame.
 Completion must not lock out correcting the last shot: allow reopening a hole or round, including
 the previous hole from its untouched next tee. Restore score and position together, including
 penalties/gimmes. Preserve raw readings and original outcomes; misreads default out of analysis,

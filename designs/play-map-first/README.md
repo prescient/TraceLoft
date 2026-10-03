@@ -13,8 +13,10 @@ The summary retains club, Carry/Total, sample count, source and overlay status. 
 log, map options/hole guide, demo input and bag suggestions also expand in place. Scorecard
 and shot log open in ended/review states. Existing corrections and explicit exits remain visible.
 
-The map preserves its aspect ratio and coordinate registration. Reduced-height windows may
-letterbox the course rather than distort or crop it. Phone readouts move outside the image.
+The responsive camera fills the wide panel with uniform world scale. Overview trims peripheral
+scenery on shorter landscape screens, preserving tee, pin and playing route. Green view matches
+the panel aspect ratio and clamps inside the artwork. Phone overview retains the complete course;
+readouts move outside the image. Scoring polygons, aim and density share the same camera transform.
 
 ## References
 
@@ -22,6 +24,8 @@ letterbox the course rather than distort or crop it. Phone readouts move outside
 - [Implemented iPad landscape](ipad-landscape.png): 1376×1032 browser viewport, isolated demo
   Sheboygan Straits round with synthetic Tour mapping. This is the application, not generated art
   composited into a UI mockup.
+- [Responsive course fit](course-fit-ipad.png): 1366×900 Boulder Beach overview with scoring
+  boundaries enabled, after replacing the letterboxed camera.
 
 Verified browser viewports: 1366×1024, 1376×1032, reduced-height 1366×900, desktop 1600×1000
 and phone 390×844. No physical iPad Safari/touch or LAN verification was performed.
