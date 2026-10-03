@@ -45,3 +45,10 @@
 - Final complete run: **115 Python tests passed**, plus **34 JavaScript tests**. Separate private
   acquisition suite: **43 passed**. Current public tree contains no fs_bridge/fs_ui_worker, cv2 or
   tesserocr importable module; document link targets and git whitespace checks passed.
+
+## 2026-10-03 — Black and blue TL browser icon
+
+- Changed the browser icon to a black background, white T and Vector cobalt blue L; preserved
+  its existing monogram geometry. Versioned the favicon URL so browsers request the new asset.
+- Updated the interface reference. Verified SVG parsing, palette, geometry and favicon link;
+  inspected Chromium renders at 16, 32 and 64 pixels. No service or session state changed.
