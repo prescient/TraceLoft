@@ -1,0 +1,31 @@
+{
+  "tool": "Built-in imagegen",
+  "prompt": "Use case ui-mockup/style-transfer. Image1 is actual functional TraceLoft app screen to restyle; Image2 is approved pure-white styling reference ONLY. EDIT Image1 preserving all visible functionality, labels, data, section order, control locations and original whole screenshot aspect ratio/crop. Never simplify/remove controls or tables. Pure white page/header/sections #FFFFFF, near black typography, cobalt primary/selected actions, squared90degree edges, thin straight neutral divider lines. NO gray backgrounds, NO shadows, NO rounded cards or pill controls. Circular club selectors remain circles. Preserve semantic amber stopped/demo warnings red ended/errors and green success, with labels. Replace GolfData branding with TraceLoft. Consistent practical sans serif type hierarchy page32 panel20 body14 units13 metrics36; preserve latest-shot priority without random giant type. Translate dark cards into open white sections or square sections divided by hairlines. Chart axes/units/bands and sample counts stay explicit; preserve unavailable dashes, estimated labels, exclusion disclaimers and session controls. Preserve photographic course artwork and geometry untouched if present, restyle only surroundingUI; preserve blue heatmap. Do not invent yardages, guarantees or measured physics. Label bottom DESIGN CONCEPT • DEMO DATA without covering any control. Strict actual-app functionality, clean Vector aesthetic.",
+  "items": [
+    [
+      "wedge-matrix",
+      "wedge-matrix-ipad.png"
+    ],
+    [
+      "distance-ladder",
+      "distance-ladder-equipment-web.png"
+    ],
+    [
+      "putting-ladder",
+      "putting-ladder-web.png"
+    ],
+    [
+      "gapping",
+      "bag-mapping-ipad.png"
+    ],
+    [
+      "play",
+      "fictional-holes/pine-play-ipad.jpg"
+    ],
+    [
+      "analysis",
+      "analyze-charts-ipad.png"
+    ]
+  ],
+  "styleReference": "white-range.png"
+}

@@ -1,0 +1,9 @@
+{
+  "tool": "Built-in imagegen",
+  "prompt": "Edit this exact TraceLoft hybrid screenshot. Preserve every visible control, reading, label, current panel arrangement, type hierarchy and crop. Change styling only to pristine Vector cleanliness: PURE WHITE #FFFFFF page AND panels AND header; absolutely no gray background, no gradients, no shadows, no floating rounded cards. All panels square sharp90degree corners, thin straight neutral divider lines, mostly open sections separated by horizontal rules, vertical straight rules between metrics and between bags/clubs. Buttons/dropdowns rectangular square corners. Preserve circular club selectors as functional recognizable circles; these are the sole circle exception. Cobalt blue primary actions and selected states, near black typography. All latest metrics same font size36, headings consistent20, page heading32, controls14 units13. Retain amber text for warning/demo status with white background and thin amber rule, green healthy/classification, red End session. Keep all seven readings if present, every bag management/control, every filter and explanatory text. No added content. Make this clean flat white technical Swiss design retaining current app functionality, as opposed to rounded card-dashboard. Footer PURE VECTOR HYBRID • DEMO DATA.",
+  "references": [
+    "hybrid-range.png",
+    "hybrid-practice.png",
+    "hybrid-analyze.png"
+  ]
+}

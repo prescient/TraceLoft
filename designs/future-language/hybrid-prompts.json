@@ -1,0 +1,18 @@
+{
+  "tool": "Built-in imagegen",
+  "prompt": "Use case ui-mockup / style-transfer. EDIT the attached actual app screenshot into a conservative Vector/current-app hybrid mockup. Preserve EXACT screen composition, panel positions, all visible controls, labels, dropdowns, buttons, readings and scroll position. Do not redesign or remove functionality; do not move equipment below readings; do not invent controls. Keep screen crop and viewport. Change only visual styling: warm pale grey page background #F3F5F7, white cards, dark navy near-black text #152333, subtle neutral borders, restrained cobalt #245BDB selected controls and primary buttons instead of mint. Preserve amber warnings, red ended/error states and green healthy state with labels. Brand text must be TraceLoft replacing GolfData. Consistent practical typography using one sans-serif: page titles32px semibold, card titles20px semibold, all controls/body14px, secondary labels13px, all main metric values36px semibold same size, units13px. No huge editorial numbers, no varied fonts, no uppercase branding slogan. Retain current rounded cards and functional density; refine alignment/spacing slightly only. All seven range measurements must remain if present. Demo label remains explicit. No photos or decorative graphics. This is a visual reskin of the actual screen preserving its workflow, not a speculative new dashboard. Add a small footer overlay HYBRID CONCEPT • DEMO DATA without covering controls.",
+  "specs": [
+    [
+      "range",
+      "designs/range-ipad-pro-landscape.png"
+    ],
+    [
+      "practice",
+      "designs/practice-categories-ipad.png"
+    ],
+    [
+      "analyze",
+      "designs/analyze-ipad.png"
+    ]
+  ]
+}

@@ -1,0 +1,20 @@
+GolfData uses OpenGolfCoach 0.3.0, Copyright OpenLaunchLabs and contributors.
+https://github.com/OpenLaunchLabs/open-golf-coach
+https://pypi.org/project/opengolfcoach/0.3.0/
+Licensed under Apache License 2.0; the license accompanies this notice.
+
+Installed dependency: pinned PyPI native Python distribution opengolfcoach==0.3.0.
+API/source inspection: upstream commit 5a9dcc43ef86c8005ded5a9dfd56a7d586962d4d.
+The inspected main revision is recorded separately from the packaged distribution; no claim is
+made that their source trees are identical. Runtime contract checks cover the pinned binary API.
+No upstream source was modified. GolfData's independent adapter is in flight_model.py.
+
+Estimates are not measured outcomes. Inputs are ball speed (mph converted to m/s), vertical and
+horizontal launch, total spin and spin axis. Positive lateral coordinates point right. No Foresight
+carry, total, offline, apex or descent output is passed into prediction.
+Defaults: 25 C, 101325 Pa, 50% relative humidity, sea level, no wind, typical fairway rollout.
+Trajectory is sampled at 10 Hz; the landing frame is retained. Total endpoint reconstruction uses
+the model's total distance radius and horizontal landing-velocity heading; library offline is at carry.
+Flight shape is the model's handed classification, not observed curvature or a player-quality grade.
+No inferred club speed/path/face/smash outputs are presented as measurements.
+Full-swing capture/source definitions and agreement against held-out Foresight shots remain unverified.

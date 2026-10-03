@@ -1,0 +1,297 @@
+{
+  "format": "golfdata.metric_mapping",
+  "version": 1,
+  "profiles": [
+    {
+      "id": "traceloft.normalized.v1",
+      "status": "active",
+      "source": {
+        "acquisition": "external_protocol",
+        "input_shape": "GSPro Open Connect v1 normalized fields",
+        "source_units_profile": "mph_degrees_rpm_yards_peak_height_feet_seconds",
+        "note": "Values supplied by a source adapter; method/semantics require source-specific validation."
+      },
+      "missing": {
+        "absent": "not_supplied",
+        "null": "unavailable",
+        "invalid": "invalid_preserve_raw",
+        "zero": "preserve_zero_when_valid"
+      },
+      "fields": [
+        {
+          "source_field": "ball_speed",
+          "metric": "ball.speed",
+          "definition_version": 1,
+          "source_unit": "mph",
+          "canonical_unit": "m/s",
+          "transform": {
+            "operation": "scale",
+            "factor": 0.44704
+          },
+          "semantic_variant": "initial_ball_speed_source_reported",
+          "method": "provider_unknown"
+        },
+        {
+          "source_field": "launch_ang",
+          "metric": "ball.launch_angle",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity"
+          },
+          "semantic_variant": "source_launch_reference_plane",
+          "method": "provider_unknown"
+        },
+        {
+          "source_field": "launch_dir",
+          "metric": "ball.launch_direction",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity"
+          },
+          "reference_frame": "target_relative_right_positive",
+          "semantic_variant": "initial_horizontal_target_angle",
+          "method": "provider_unknown",
+          "parser_note": "Existing sided_dec parsing converts L to negative and R to positive."
+        },
+        {
+          "source_field": "total_spin",
+          "metric": "ball.spin_rate",
+          "definition_version": 1,
+          "source_unit": "rpm",
+          "canonical_unit": "rpm",
+          "transform": {
+            "operation": "identity"
+          },
+          "semantic_variant": "source_total_spin_initial",
+          "method": "provider_unknown"
+        },
+        {
+          "source_field": "spin_axis",
+          "metric": "ball.spin_axis",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity"
+          },
+          "semantic_variant": "source_L_negative_R_positive_axis_unverified_geometric_frame",
+          "method": "provider_unknown",
+          "comparison_status": "requires_native_axis_definition_verification"
+        },
+        {
+          "source_field": "back_spin",
+          "metric": "ball.backspin",
+          "definition_version": 1,
+          "source_unit": "rpm",
+          "canonical_unit": "rpm",
+          "transform": {
+            "operation": "identity"
+          },
+          "semantic_variant": "source_reported_backspin_component",
+          "method": "provider_unknown",
+          "note": "Retain provider derivation semantics; do not assert an independent spin sensor channel."
+        },
+        {
+          "source_field": "side_spin",
+          "metric": "ball.sidespin",
+          "definition_version": 1,
+          "source_unit": "rpm",
+          "canonical_unit": "rpm",
+          "transform": {
+            "operation": "identity"
+          },
+          "semantic_variant": "source_L_negative_R_positive_component_frame_unverified",
+          "method": "provider_unknown",
+          "comparison_status": "requires_native_axis_definition_verification"
+        },
+        {
+          "source_field": "total",
+          "metric": "flight.total_distance",
+          "definition_version": 1,
+          "source_unit": "yd",
+          "canonical_unit": "m",
+          "transform": {
+            "operation": "scale",
+            "factor": 0.9144
+          },
+          "semantic_variant": "foresight_table_total_endpoint_definition_unverified",
+          "method": "provider_reported",
+          "comparison_status": "source_definition_not_verified_for_cross_provider_or_sim_comparison"
+        },
+        {
+          "source_field": "carry",
+          "metric": "flight.carry_distance",
+          "definition_version": 1,
+          "source_unit": "yd",
+          "canonical_unit": "m",
+          "transform": {
+            "operation": "scale",
+            "factor": 0.9144
+          },
+          "semantic_variant": "foresight_table_carry_endpoint_definition_unverified",
+          "method": "provider_reported",
+          "comparison_status": "source_definition_not_verified_for_cross_provider_or_sim_comparison"
+        },
+        {
+          "source_field": "offline",
+          "metric": "flight.total_side",
+          "definition_version": 1,
+          "source_unit": "yd",
+          "canonical_unit": "m",
+          "transform": {
+            "operation": "scale",
+            "factor": 0.9144
+          },
+          "semantic_variant": "foresight_table_offline_L_negative_R_positive_endpoint_unverified",
+          "method": "provider_reported",
+          "comparison_status": "source_definition_not_verified_for_cross_provider_or_sim_comparison"
+        },
+        {
+          "source_field": "descent_ang",
+          "metric": "flight.descent_angle",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity"
+          },
+          "semantic_variant": "foresight_table_descent_landing_reference_unverified",
+          "method": "provider_reported",
+          "comparison_status": "source_definition_not_verified_for_cross_provider_or_sim_comparison"
+        },
+        {
+          "source_field": "peak_height",
+          "metric": "flight.apex_height",
+          "definition_version": 1,
+          "source_unit": "ft",
+          "canonical_unit": "m",
+          "transform": {
+            "operation": "scale",
+            "factor": 0.3048
+          },
+          "semantic_variant": "foresight_table_peak_height_elevation_reference_unverified",
+          "method": "provider_reported",
+          "comparison_status": "source_definition_not_verified_for_cross_provider_or_sim_comparison"
+        },
+        {
+          "source_field": "curve",
+          "metric": "flight.curve",
+          "definition_version": 1,
+          "source_unit": "yd",
+          "canonical_unit": "m",
+          "transform": {
+            "operation": "scale",
+            "factor": 0.9144
+          },
+          "semantic_variant": "foresight_table_curve_L_negative_R_positive_reference_unverified",
+          "method": "provider_reported",
+          "comparison_status": "source_definition_not_verified_for_cross_provider_or_sim_comparison"
+        },
+        {
+          "source_field": "hang_time",
+          "metric": "flight.flight_time",
+          "definition_version": 1,
+          "source_unit": "s",
+          "canonical_unit": "s",
+          "transform": {
+            "operation": "identity"
+          },
+          "semantic_variant": "foresight_table_hang_time_landing_reference_unverified",
+          "method": "provider_reported",
+          "comparison_status": "source_definition_not_verified_for_cross_provider_or_sim_comparison"
+        },
+        {
+          "source_field": "club_speed",
+          "metric": "club.speed",
+          "definition_version": 1,
+          "source_unit": "mph",
+          "canonical_unit": "m/s",
+          "transform": {
+            "operation": "scale",
+            "factor": 0.44704
+          },
+          "semantic_variant": "open_connect_source_reported",
+          "method": "provider_unknown"
+        },
+        {
+          "source_field": "attack_angle",
+          "metric": "club.attack_angle",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity",
+            "factor": 1
+          },
+          "semantic_variant": "open_connect_source_reported",
+          "method": "provider_unknown"
+        },
+        {
+          "source_field": "face_angle",
+          "metric": "club.face_angle",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity",
+            "factor": 1
+          },
+          "semantic_variant": "open_connect_source_reported",
+          "method": "provider_unknown"
+        },
+        {
+          "source_field": "dynamic_lie",
+          "metric": "club.dynamic_lie",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity",
+            "factor": 1
+          },
+          "semantic_variant": "open_connect_source_reported",
+          "method": "provider_unknown"
+        },
+        {
+          "source_field": "dynamic_loft",
+          "metric": "club.dynamic_loft",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity",
+            "factor": 1
+          },
+          "semantic_variant": "open_connect_source_reported",
+          "method": "provider_unknown"
+        },
+        {
+          "source_field": "club_path",
+          "metric": "club.path",
+          "definition_version": 1,
+          "source_unit": "deg",
+          "canonical_unit": "deg",
+          "transform": {
+            "operation": "identity",
+            "factor": 1
+          },
+          "semantic_variant": "open_connect_source_reported",
+          "method": "provider_unknown"
+        }
+      ],
+      "non_metric_routes": {
+        "fs_shot": "ingest_events.source_shot_number",
+        "count": "ingest_events.source_display_count",
+        "latency_ms": "ingest_events.capture_latency_ms",
+        "raw_fields": "ingest_events.raw_ocr",
+        "sent_spin_fields": "delivery_events.outgoing_payload",
+        "sent": "delivery_events.transport_status_with_note_and_evidence",
+        "club": "shot_contexts.original_reported_club_label_not_physical_club_id"
+      }
+    }
+  ]
+}

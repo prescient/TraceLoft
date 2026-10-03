@@ -1,0 +1,6 @@
+# Independent TraceLoft runtime: no screen capture or OCR dependencies.
+fastapi==0.142.2
+uvicorn==0.54.0
+websockets==17.1
+httpx==0.28.1
+opengolfcoach==0.3.0
