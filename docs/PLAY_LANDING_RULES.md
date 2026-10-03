@@ -39,6 +39,10 @@ Course heatmaps remain historical dispersion previews, not predictions adjusted 
 Saved course polygons determine surfaces. Artwork alignment must be checked separately; the QA
 found an existing Boulder Beach hole 1 offset and recorded a backlog item for registration review.
 
+That audit is now complete across both 18-hole courses. New rounds use reviewed v2 boundaries;
+existing rounds keep their original frozen geometry. Refresh and start a new round to use the
+corrections. See [finished-art review](../designs/course-registration/README.md).
+
 Verification: 31 Python game/landing/correction/nine-hole tests and all 49 JavaScript tests passed.
 An isolated service/database verified setup defaults, explicit carry, sand stopping before source
 total, animation/Skip, log evidence, reload and Misread. iPad 1366×1024/1376×1032, reduced-height

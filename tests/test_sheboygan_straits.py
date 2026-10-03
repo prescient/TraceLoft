@@ -60,7 +60,11 @@ class RoundTests(unittest.TestCase):
         r=self.client.post(self.url+'/aim',json=dict(x=target[0],y=target[1],turn=g['turn']))
         self.assertEqual(r.status_code,200,r.text)
         factor=1-p.data['game_settings'].get(g['lie']+'_percent',0)/100
-        r=self.client.post(self.url+'/simulate',json=dict(distance_yd=math.dist(g['position'],target)/factor,offline_yd=0,turn=g['turn']))
+        # Endpoint/lifecycle fixture: explicit no-roll carry; landing behavior is tested separately.
+        travel=math.dist(g['position'],target)/factor
+        params=dict(distance_yd=travel,offline_yd=0,turn=g['turn'])
+        if g['lie']!='green':params['carry_yd']=travel
+        r=self.client.post(self.url+'/simulate',json=params)
         self.assertEqual(r.status_code,200,r.text)
     def next(self,turn=None):
         return self.client.post(self.url+'/next',json={'turn':self.p.data['game']['turn'] if turn is None else turn})

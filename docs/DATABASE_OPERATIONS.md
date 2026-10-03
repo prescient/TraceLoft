@@ -216,3 +216,8 @@ adjusted endpoint, carry ratio, estimated landing position/lie, reduction and be
 Round settings save rough/OB rollout percentages. Existing active rounds without them use defaults
 for new shots, frozen into each outcome. Prior shots/results remain untouched. This lives in the
 existing SQLite shot/session payload and normal backups; no schema migration or historical rescoring.
+
+The current bundled course catalog uses finished-art v2 packages. A new round freezes its selected
+course/hole geometry in the existing session payload. Old active/review rounds retain their saved
+v1 layouts and outcomes, including across restart. Both original packages remain loadable, and
+their raster assets are unchanged. This catalog update needs no SQLite migration or backfill.

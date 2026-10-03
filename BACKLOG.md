@@ -352,11 +352,13 @@ Missing/invalid carry retains endpoint-only scoring with a message. Demo carry i
 See [rules and verification](docs/PLAY_LANDING_RULES.md). Continuous ground interaction and terrain-
 adjusted heatmap previews remain future work.
 
-**P1 — Boulder Beach scoring/art registration audit (found 2026-10-03):** hole 1's saved sand/green
-outlines are visibly offset from artwork in green view. Landing rules correctly follow the polygons,
-but visual terrain can suggest a different lie. Reconcile the finished art and geometry, scan all
-18 holes and version corrections for new rounds without rewriting frozen rounds. Estimate 2–4 hours
-for initial hole/scan; 1–2 days if the full course needs retracing. Separate from rollout-rule work.
+**Scoring/art registration audit — completed 2026-10-03:** reviewed all 36 holes and published
+separate v2 packages for new rounds. Boulder Beach's guide geometry was fully retraced from final
+art, including greens/tees, 50 bunkers, shoreline and four ponds. Sheboygan Straits' fairway edges
+and hole 10 green were refined, preserving 354 bunkers. Fixed pixel probes and immutable asset/
+geometry hashes guard drift; original v1 packages and saved rounds remain intact. See
+[full review and evidence](designs/course-registration/README.md). Simplified edges/soft textures
+remain distinct from validated physical terrain; later artwork changes need another review/version.
 
 **Immersive browser simulation — requested 2026-10-03 · planned:** extend the playable 2D
 course mode with realistic modeled physics and animated ball movement, while keeping it lightweight

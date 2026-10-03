@@ -72,5 +72,10 @@ completion. Both retain an audit; misreads also exclude from analysis. See
 Generation guides and the exact base prompt are in [design notes](../designs/sheboygan-straits/README.md).
 Saved rounds freeze their own course package; later course versions must not rewrite their geometry.
 
+New rounds now use `sheboygan-straits-blue-v2`: all eighteen fairway outlines were refined against
+the finished artwork and hole 10's putting surface was recovered in full. Sand/water contours and
+yard registration remain intact. The v1 package stays available for historical rounds; start a new
+round to use the revised edges. See the [36-hole review](../designs/course-registration/README.md).
+
 UI journeys verified at 1366×1024, 1536×960 and 390×844 CSS viewports. Production course library
 and all eighteen artwork URLs verified after restart. See [work log](../WORK_LOG.md) for test counts.

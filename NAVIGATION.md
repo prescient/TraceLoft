@@ -461,3 +461,9 @@ Round setup adds Landing in rough / Landing out of bounds rollout sliders, separ
 Shot from rough / Shot from sand distance settings. Demo shot input exposes optional reported
 carry. No route changes. Launch saves settings; the live log/review shows landing adjustments and
 original source carry/total/offline. Correction, end/review and exits keep their existing paths.
+
+Finished-art course registration changes no routes. Play → course setup → launch now selects the
+reviewed v2 packages; active/saved rounds keep their frozen versions. Start a new round to use the
+revised boundaries. Fresh isolated browser verification covered Boulder setup → live map/Green →
+boundary toggle → bunker shot → End/review → Play menu, then Straits setup → Back 9 → hole 10
+Green/terrain toggle → End/review. Map boundaries use the same geometry with or without artwork.

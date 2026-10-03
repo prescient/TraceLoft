@@ -11,4 +11,7 @@ Verified iPad landscape, desktop and phone sizing with no page overflow and 48px
 Scoring follows the saved boundaries. Checking the boundary overlay on Boulder Beach hole 1
 revealed a visible art/geometry offset, now tracked as a separate P1 backlog item.
 
+Follow-up: the [full finished-art audit](../course-registration/README.md) corrected new-round
+packages for all 36 holes. The screenshot below remains evidence of the earlier landing-rule review.
+
 ![Setup percentages](ipad-setup.png)

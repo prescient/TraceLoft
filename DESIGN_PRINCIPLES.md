@@ -320,6 +320,12 @@ finished hazards and putting surfaces, inspect all holes with scoring outlines, 
 tee/pin and scale to the final art. Reject texture fragments that would become invisible hazards.
 Keep optional hole strategy in a disclosure and game-physics limits in the existing assumptions.
 
+Audit every finished course hole with registered surface outlines, including green zoom and the
+wide/narrow overview. Pair visual review with asset hashes and fixed image-pixel landmarks; neither
+geometry validity nor matching aspect ratios prove terrain alignment. Correct released layouts in
+new immutable course/hole versions, preserve older packages and frozen rounds, and state when a
+new round is needed to use the revised layout. Keep image-analysis dependencies out of the app.
+
 ## Ball replay (2026-10-03)
 
 Recording, scores, completion warnings and correction controls update immediately; animation must

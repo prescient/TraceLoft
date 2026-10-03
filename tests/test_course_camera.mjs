@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {courseCamera} from '../web/course-camera.js';
 
-test('all 36 holes fill landscape cameras without changing scale or cropping the playing line',()=>{
-  for(const id of ['pebble-boulder-blue-v1','sheboygan-straits-blue-v1']){
+test('all current and legacy holes fill landscape cameras without changing scale or cropping the playing line',()=>{
+  for(const id of ['pebble-boulder-blue-v1','sheboygan-straits-blue-v1','pebble-boulder-blue-v2','sheboygan-straits-blue-v2']){
     const packageData=JSON.parse(readFileSync(new URL(`../courses/${id}.json`,import.meta.url)));
     for(const c of packageData.holes){
       const before=JSON.stringify(c),[bx,by,bw,bh]=c.viewbox;

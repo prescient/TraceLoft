@@ -67,7 +67,7 @@ class PracticeParams(BaseModel):
     game_rollout_ob: float = Field(default=100,ge=0,le=100,allow_inf_nan=False)
     game_variation: float = Field(default=0,ge=0,le=10,allow_inf_nan=False)
     game_gimme: float = Field(default=3,ge=0,le=10,allow_inf_nan=False)
-    game_course_id: str = Field(default='pebble-boulder-blue-v1',max_length=80)
+    game_course_id: str = Field(default='pebble-boulder-blue-v2',max_length=80)
     game_holes: Literal['full','front','back'] = 'full'
     game_geometry: str = 'downrange'
     game_acknowledged: bool = False

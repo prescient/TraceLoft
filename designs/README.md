@@ -21,3 +21,6 @@ original guides, the generation prompt and the final artwork-to-scoring registra
 [Ball replay](shot-motion/README.md) documents source-anchored Range/Play animation and responsive QA.
 
 [Landing rollout rules](landing-rollout/README.md) records setup/log changes and boundary-based QA.
+
+[Course registration audit](course-registration/README.md) records the complete 36-hole review,
+corrected v2 layouts, fixed pixel probes and iPad boundary evidence.

@@ -21,3 +21,7 @@ corrections require a new course/version identity. See [course guide](../../docs
 
 Course renamed from Pebble Boulder to Boulder Beach on 2026-10-03. The original generation
 prompt and screenshots are historical evidence and retain the name used when they were created.
+
+The original guide registration was found to drift from finished artwork on 2026-10-03.
+New rounds now use the fully retraced v2 package; the original v1 remains frozen. This supersedes
+the initial sampled-boundary review above. See [all 36 reviewed holes](../course-registration/README.md).

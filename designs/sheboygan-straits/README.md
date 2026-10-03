@@ -27,3 +27,6 @@ slate-blue lake water and treeless mown corridors. No source photographs were do
 The sand fields range from small isolated pockets to connected scalloped complexes. Shadows and
 raised lips are visual texture. Runtime scoring remains the documented flat endpoint game.
 The final PNG files are in [web/art](../../web/art); all base guides are retained here.
+
+The 2026-10-03 follow-up [course audit](../course-registration/README.md) refines fairway edges
+and hole 10's green in a separate v2 package. Original v1 art and geometry remain unchanged.

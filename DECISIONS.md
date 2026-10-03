@@ -108,3 +108,13 @@ readings and all prior outcomes; legacy active rounds use default rollout settin
 Animation consumes saved landing/final points, preserving flight landing when rollout shortens.
 This does not add bounce, continuous terrain interaction, new putting physics or adjusted heatmap
 predictions. See [operation and verification](docs/PLAY_LANDING_RULES.md).
+
+## D56 — Finished-art course registration (2026-10-03)
+
+Audit every hole against the finished raster artwork, using registered overlays and reviewed pixel
+landmarks. Publish corrected Boulder Beach and Sheboygan Straits as immutable v2 packages for new
+rounds. Retain original assets/v1 packages and frozen session layouts; never change the surface or
+score of a previously saved shot through a catalog update. Soft vegetation and surf transitions use
+simplified vector edges, and the playable image perimeter remains an explicit game OB boundary.
+Keep extraction dependencies in design tooling, outside the running app. Hash artwork/geometry and
+retain fixed classification probes to detect drift. See [review](designs/course-registration/README.md).

@@ -369,3 +369,34 @@
   the complete active practice snapshot before/after: the two-shot round was preserved exactly.
   No production test shots were created. Stopped the isolated service, closed its tab and restored
   browser sizing.
+
+## 2026-10-03 — Finished-art boundaries across both courses
+
+- Reviewed all 36 holes against unmodified final artwork. Boulder Beach v1 retained schematic
+  guide geometry that drifted in AI rendering. Retraced tees, greens, fairways, rough/nature edges,
+  50 bunkers, shoreline and four ponds; rejected tree shadows mistaken for water. Sheboygan Straits
+  retained its 354 traced bunkers/water and tee/pin/scale, with refined fairway edges and the full
+  lobed hole 10 green. Soft turf/surf boundaries remain simplified vectors; image perimeter is game OB.
+- Published immutable v2 JSON packages and switched new-round catalog/defaults. Original v1 JSON
+  and all raster assets are unchanged. Existing active/saved rounds keep frozen geometry and scores.
+  Added design-only deterministic registration/render scripts, six whole-course overlay sheets,
+  green detail/browser screenshots and a manifest with asset/geometry/legacy hashes and 588 approved
+  pixel classification probes. Reproduction against existing v2 passed the overwrite guard.
+- Verification: full Python suite 146 passed; all 49 JavaScript tests passed. New tests cover every
+  current hole, probes, uniform coordinate scale, original package/asset integrity, full 18-hole
+  progression on each v2 course, bunker landing/Misread and old active v1 round reload. Camera tests
+  cover all 72 current/legacy holes. Full-suite testing exposed two old demo helpers that assumed
+  total travel despite default 93% carry; those endpoint tests now provide explicit carry=total.
+  Separate landing-rule tests continue to verify sand/rough/OB rollout behavior.
+- Isolated SQLite/service on 8879: Boulder full-round setup → overview/green boundary overlays →
+  visible bunker landing at carry 366.2 / total 386.2 yd → sand/zero rollout → ended review → Play
+  menu; Straits Back 9 setup → hole 10 green → artwork/vector terrain toggles → ended review.
+  Checked 1366×1024/1376×1032 iPad, 1366×900 reduced height, 1440×900 desktop and 390×844 phone;
+  no horizontal overflow or browser errors. Physical Safari/live-monitor geometry remains unverified.
+- Updated design/operation/storage/navigation docs, decision D56 and completed the P1 registration
+  backlog item. Gracefully restarted production on 8765; confirmed the new v2 catalog. Current demo
+  range session ID/settings were retained. Its pre-restart memory had zero shots, while SQLite held
+  40 existing simulated shots; reload rehydrated those saved shots and normalized the same start
+  instant to UTC. Restored its prior Driver selection through the normal API without changing the
+  saved shots. No production shots were generated or deleted. Stopped QA, closed its browser tab
+  and reset viewport sizing. Full review evidence: designs/course-registration/README.md.

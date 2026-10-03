@@ -67,11 +67,14 @@ class FictionalPlayTests(unittest.TestCase):
         r=self.client.post(f'/api/game/{sid}/aim',json=dict(x=target[0],y=target[1],turn=g['turn']))
         self.assertEqual(r.status_code,200,r.text)
         factor=1-p.data['game_settings'].get(g['lie']+'_percent',0)/100
-        r=self.client.post(f'/api/game/{sid}/simulate',json=dict(distance_yd=d/factor,offline_yd=0,turn=g['turn']))
+        # Endpoint/lifecycle fixture: explicit no-roll carry avoids unrelated landing rules.
+        params=dict(distance_yd=d/factor,offline_yd=0,turn=g['turn'])
+        if g['lie']!='green':params['carry_yd']=d/factor
+        r=self.client.post(f'/api/game/{sid}/simulate',json=params)
         self.assertEqual(r.status_code,200,r.text)
     def test_library_and_full_rounds_putting_review_and_exclusion(self):
         rows=self.client.get('/api/courses').json()
-        self.assertEqual([c['id'] for c in rows],['sheboygan-straits-blue-v1','pebble-boulder-blue-v1'])
+        self.assertEqual([c['id'] for c in rows],['sheboygan-straits-blue-v2','pebble-boulder-blue-v2'])
         for identity in PIXELS:
             with self.subTest(hole=identity):
                 p=self.launch(identity);c=p.data['course'];sid=p.data['id']

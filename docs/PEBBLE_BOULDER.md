@@ -1,7 +1,11 @@
 # Boulder Beach
 
-Renamed from Pebble Boulder on 2026-10-03. The `pebble-boulder-blue-v1` ID and artwork paths
-remain stable. Existing round snapshots retain their original data; the interface shows the current name.
+Renamed from Pebble Boulder on 2026-10-03. New rounds use `pebble-boulder-blue-v2` with terrain
+traced from the finished artwork. The older v1 package and original artwork paths remain intact.
+Existing round snapshots retain their original data; the interface shows the current name.
+All 18 holes' greens, tees, sand, water and grass regions were reviewed and registered again;
+see the [complete course audit](../designs/course-registration/README.md). Start a new round to
+use the corrections; refreshing an earlier round preserves its geometry and outcomes.
 
 Requested 2026-10-03: an original eighteen-hole coastal course inspired by Pebble Beach, with the
 same Blue tee yardages and pars but distinct layouts, hazards and lies. The Sim companion feature
