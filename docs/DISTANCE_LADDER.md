@@ -75,5 +75,5 @@ clubs across bags, loft/specification revisions and bag mapping/wedge analysis r
 Automated and isolated browser tests verify drill logic, saved targets and display behavior. They
 do not establish live numeric full-swing OCR accuracy. Compare several actual wedge/iron carry and
 total readings to the source table before relying on scored live results; see
-[VDD validation](VDD_CAPTURE.md). Bag mapping, wedge matrices, random approaches, pressure/retry
+[VDD validation](RELAY.md). Bag mapping, wedge matrices, random approaches, pressure/retry
 rules and cross-session analytics remain backlog work.

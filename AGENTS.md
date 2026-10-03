@@ -10,17 +10,16 @@ they change an established project preference; update the affected documentation
 - For storage/backup work, read [DATABASE_PROPOSAL.md](DATABASE_PROPOSAL.md) and
   [docs/DATABASE_OPERATIONS.md](docs/DATABASE_OPERATIONS.md); distinguish implemented core storage
   from proposed analytics and remote backups.
-- For VDD source/calibration work, read [docs/VDD_CAPTURE.md](docs/VDD_CAPTURE.md); preserve independent
-  profiles and verify both the capture geometry and glyph reads after changing display/table layout.
+- For input/relay work, read [docs/RELAY.md](docs/RELAY.md). Keep acquisition code out of this repository.
 - For interface, navigation, drill, game or analysis work, read
   [DESIGN_PRINCIPLES.md](DESIGN_PRINCIPLES.md) and [NAVIGATION.md](NAVIGATION.md) before implementing.
-  Consult [designs/README.md](designs/README.md) and the selected dark studio concept for visual work.
+  Consult [designs/README.md](designs/README.md) and the approved pure-white Vector concept for visual work.
 
 ## Product requirements
 
 - Apply the design principles: readable latest-shot feedback, modular practice, explicit exits,
   distinct live/review identity, obvious recording state and clearly labeled estimates.
-- Keep the Python service authoritative for shared capture and practice state. Preserve capture
+- Keep the Python service authoritative for shared recording and practice state. Preserve single input
   ownership and localhost access without pairing unless the user requests a change.
 - Keep measured data and existing sessions intact. Use isolated data/service instances for
   state-changing verification; preserve active sessions when a necessary reload affects them.

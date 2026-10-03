@@ -1,3 +1,14 @@
+# Source separation update — 2026-10-03
+
+SQLite remains authoritative at the same path. TraceLoft stores raw Open Connect packets and mapped
+observations, plus session state atomically. The source app keeps its own private outbox and cannot
+read/write this database. TraceLoft acknowledges only after commit. See [Relay](RELAY.md) for retry,
+unit and forwarding semantics. `relay_settings.v1` and `active_session.v1` metadata preserve destination
+and normal-restart session continuity. No destructive schema change or data move is required.
+
+Older operational notes below describe legacy import evidence. Acquisition, VDD calibration and crop
+backups now belong to the separate private source application.
+
 # SQLite storage and recovery
 
 The web Python service owns TraceLoft's authoritative shot/session database. Default location:
@@ -24,7 +35,7 @@ two services cannot independently score drills against the same file.
   fields retain their v1 mapping. Expanded table rows add seven optional flight fields through the
   separately archived v2 mapping: total, carry, offline, descent, peak height, curve and hang time.
   Original observations are unchanged; numeric flight reads still need live verification. See
-  [VDD units and calibration](VDD_CAPTURE.md). Vendor adapters, series ingestion, equipment specification revisions, courses,
+  the private VDD calibration documentation. Vendor adapters, series ingestion, equipment specification revisions, courses,
   cross-session cleanup and automatic outliers remain proposed. Analyze now reads saved session attempts
   with date/session/equipment/intent filters, median/IQR and CSV; repeated physical shots used in
   multiple sessions can appear once per session, explicitly labeled in the UI.

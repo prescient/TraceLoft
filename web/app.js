@@ -325,13 +325,14 @@ function renderRelay() {
 }
 function updateRelay() {
   const source=app.querySelector('#relay-source');if(!source)return;
-  source.innerHTML=`<strong>${esc(state.capture.status)}</strong><p>${esc(state.input.device||'No source connected')} · ${state.input.received} stored this run</p>${state.input.error?`<p class="session-error">${esc(state.input.error)}</p>`:''}`;
+  source.innerHTML=`<strong>${esc(state.capture.status)}</strong><p>${esc(state.input.device||'No source connected')} · ${state.input.received} records stored this run</p>${state.input.error?`<p class="session-error">${esc(state.input.error)}</p>`:''}`;
   const relay=state.relay;
   app.querySelector('#relay-output').innerHTML=`<strong>${esc(relay.status)}</strong><p>${relay.sent} shots sent this run</p>${relay.enabled&&!relay.connected?'<p class="form-hint">Open the selected simulator. Relay reconnects automatically; earlier shots are not replayed.</p>':''}`;
   const select=app.querySelector('#relay-destination');if(!select.disabled)select.value=relay.destination;
   app.querySelector('#relay-logs').textContent=state.logs.join('\n');
+  const units={ball_speed:'mph',launch_ang:'°',launch_dir:'°',total_spin:'rpm',spin_axis:'°',back_spin:'rpm',side_spin:'rpm',carry:'yd',total:'yd',offline:'yd',peak_height:'ft',descent_ang:'°',curve:'yd',hang_time:'s',club_speed:'mph',attack_angle:'°',face_angle:'°',dynamic_lie:'°',dynamic_loft:'°',club_path:'°'};
   const vals=state.read?.vals;
-  app.querySelector('#relay-read').innerHTML=vals?`<h2>Latest measurements</h2><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${Object.entries(vals).map(([k,v])=>`<tr><td>${esc(k.replaceAll('_',' '))}</td><td>${esc(v??'—')}</td></tr>`).join('')}</tbody></table>`:'<p class="form-hint">Waiting for the first shot.</p>';
+  app.querySelector('#relay-read').innerHTML=vals?`<h2>Latest measurements</h2><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${Object.entries(vals).map(([k,v])=>`<tr><td>${esc(k.replaceAll('_',' '))}${units[k]?' · '+units[k]:''}</td><td>${esc(v??'—')}</td></tr>`).join('')}</tbody></table>`:'<p class="form-hint">Waiting for the first shot.</p>';
 }
 
 document.addEventListener('click',async event=>{

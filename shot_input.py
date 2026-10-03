@@ -67,6 +67,7 @@ class Relay:
         self.lock=asyncio.Lock()
 
     async def configure(self,settings,input_port):
+        if not isinstance(settings,dict):raise ValueError('Destination settings must be an object.')
         destination=settings.get('destination','off')
         if destination not in ('off','gspro','infinite_tees'):raise ValueError('Select Off, GSPro or Infinite Tees.')
         host=settings.get('host','127.0.0.1')
@@ -158,6 +159,9 @@ class ShotInput:
             source_configuration=extension.get('Source',dict(acquisition='open_connect',device=packet['DeviceID'])),
             raw_packet=copy.deepcopy(packet),**{k:context.get(k) for k in
                 ('practice_session_id','equipment_selection','range_context','collection_context','game_context')})
+        evidence=extension.get('Evidence',{})
+        if not isinstance(evidence,dict):raise ValueError('Invalid source evidence.')
+        event.update({k:copy.deepcopy(evidence[k]) for k in ('raw','count','latency','source_time','note','sent_fields','club') if k in evidence})
         event,live=validate(dict(schema='traceloft.shot.v1',event=event,recovered=extension.get('Recovered',False)))
         event['wire_digest']=digest(encoded(packet).encode())
         async with self.accept_lock:
@@ -246,11 +250,13 @@ class ShotInput:
             self.service.capture.update(running=False,status='Waiting for shot source');self.relay.ready=False
 
     async def close(self):
-        if self.server:self.server.close();await self.server.wait_closed()
+        if self.server:self.server.close()
         self.state['listening']=False
         for writer in list(self.clients):writer.close()
         if self.tasks:
             _,pending=await asyncio.wait(self.tasks,timeout=2)
             for task in pending:task.cancel()
             if pending:await asyncio.gather(*pending,return_exceptions=True)
+        # Python 3.12 waits for client transports too: close them before waiting.
+        if self.server:await self.server.wait_closed()
         await self.relay.close()

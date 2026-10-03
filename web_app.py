@@ -238,15 +238,24 @@ def create_app(service=None):
     async def input_context():
         return service.input.context()
 
+    forwarding_lock=asyncio.Lock()
+
     @app.post('/api/input/forwarding')
     async def forwarding(request: Request):
         settings = await request.json()
-        await service.input.relay.configure(settings, service.input.port)
-        if service.store:
-            with service.store.transaction():
-                service.store.connection.execute("INSERT OR REPLACE INTO metadata VALUES('relay_settings.v1',?)",(json.dumps(settings),))
-        service.settings = {k:service.input.relay.state[k] for k in ('host','port','enabled')}
-        return service.snapshot()
+        if not isinstance(settings,dict):raise ValueError('Destination settings must be an object.')
+        async with forwarding_lock:
+            previous={k:service.input.relay.state[k] for k in ('destination','host','port')}
+            await service.input.relay.configure(settings, service.input.port)
+            try:
+                if service.store:
+                    with service.store.transaction():
+                        service.store.connection.execute("INSERT OR REPLACE INTO metadata VALUES('relay_settings.v1',?)",(json.dumps(settings),))
+            except (OSError,sqlite3.Error):
+                await service.input.relay.configure(previous,service.input.port)
+                raise
+            service.settings = {k:service.input.relay.state[k] for k in ('host','port','enabled')}
+            return service.snapshot()
 
     @app.get("/api/drills")
     async def drills():
@@ -497,8 +506,12 @@ def main():
     parser.add_argument("--resume-session", help=argparse.SUPPRESS)
     args = parser.parse_args()
     service = GolfService()
-    if args.resume_session:
-        service.resume_practice(args.resume_session)
+    saved=service.store.connection.execute("SELECT value FROM metadata WHERE key='active_session.v1'").fetchone()
+    resume=args.resume_session or (json.loads(saved[0]) if saved else None)
+    if resume:
+        try:service.resume_practice(resume)
+        except (FileNotFoundError,ValueError):
+            if args.resume_session:raise
     service.access.update(lan=args.lan, port=args.port,
         addresses=[f"http://{socket.gethostbyname(socket.gethostname())}:{args.port}"] if args.lan else [])
     app = create_app(service)

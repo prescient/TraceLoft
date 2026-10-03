@@ -67,10 +67,10 @@ class GolfService:
         self.capture_lock = asyncio.Lock()
         self.capture = dict(running=False, stopping=False, mode=None, status="Waiting for shot source", connected=False,
                             fps=0, drops=0, image=None, error="")
-        self.settings = dict(host='127.0.0.1', port=922, enabled=False)
+        self.settings = dict(host='127.0.0.1', port=921, enabled=False)
         self.displays = []
         self.input_context = {}
-        self.input = ShotInput(self, port=int(os.environ.get('TRACELOFT_INPUT_PORT', '900')))
+        self.input = ShotInput(self, port=int(os.environ.get('TRACELOFT_INPUT_PORT', '900')) if self.root == ROOT else 0)
         self.history, self.logs = deque(maxlen=50), deque(maxlen=100)
         self.latest_read = None
         self.pending = deque()
@@ -202,6 +202,9 @@ class GolfService:
         if self.store:
             try:
                 self.publish_context()
+                with self.store.transaction():
+                    self.store.connection.execute("INSERT OR REPLACE INTO metadata VALUES('active_session.v1',?)",
+                        (json.dumps(self.practice.data['id'] if self.practice and not self.practice.data['ended'] else None),))
                 self.store.backup()
             finally:
                 self.store.close()

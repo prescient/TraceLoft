@@ -40,12 +40,15 @@ Use the shared flow: **Practice selector → drill/game setup → active session
   original concept while retaining at least 44 px touch targets; wrap them on narrow screens.
   More bags keeps every bag reachable; three quick choices are not a storage limit. Empty slots offer
   Add bag. Render the actual editable club list, without imposing the illustrative 14-club limit.
+  Keep bag controls within the rail's padded width with a clear gutter before its vertical divider;
+  long names use ellipsis with accessible full-name labels. Stack full-width More bags and Manage bags
+  beneath the tabs, leaving BAGS as a standalone heading. Keep primary controls at least44px tall.
 - Offer fixed and random targets when appropriate. Make the mode and next target explicit;
   retain each shot's actual target so scoring and review remain meaningful.
 
 ## 3. No screen should be a dead end
 
-- Main navigation follows **Capture → Practice → Play → Analyze → Sessions**. Play contains the game and Analyze contains comparisons; both retain global navigation and
+- Main navigation follows **Relay → Practice → Play → Analyze → Sessions**. Play contains the game and Analyze contains comparisons; both retain global navigation and
   explicit exits. New placeholders must be clearly labeled until implemented.
 
 - Keep the screen title, selected navigation section and action labels consistent with its purpose.
@@ -75,6 +78,10 @@ that the drill on screen is accepting putts.
 
 Keep the completion warning visible while scrolling. Pair status colors with text or icons;
 the golfer should not have to infer recording state from a small connection dot or frozen graph.
+
+Detailed capture configuration/errors belong to TraceCapture, rather than a second raw error box
+in practice. Keep practice recording-state warnings and generic capture-attention feedback visible;
+session/save errors remain specific to practice.
 
 ## 5. Use graphs to explain feedback
 
@@ -114,24 +121,20 @@ the golfer should not have to infer recording state from a small connection dot 
 
 ## 7. Maintain the chosen visual language
 
-The user requested a futuristic design exploration on 2026-10-02. See
-[Orbit, Vector and Aura](designs/future-language/README.md) for layout alternatives. These proposals
-establish Vector (white, black and cobalt) as the user's preferred exploration direction. The current
-studio remains implemented until replacement components and layouts are verified. The user's
-refinement is to retain the current app's functional layout and controls, apply Vector styling,
-and use a consistent practical type scale rather than oversized editorial panels. See hybrid
-studies in the same concept notes; this supersedes treating Vector's new layouts as the target.
-The latest refinement removes the grey page and rounded-card treatment: use pure white surfaces,
-square edges, straight thin dividers and no shadows, retaining functional circular club selectors.
+Vector is the implemented web visual language as of 2026-10-03. Use the approved
+[pure-white hybrid studies](designs/future-language/README.md), preserving the existing functional
+layout and every control. Earlier dark studio and alternate layouts are historical references.
 
-The selected direction is the dark studio in
-[putting-studio-dark-concept.png](designs/putting-studio-dark-concept.png): navy backgrounds,
-raised slate cards, clear light text, mint accents, generous spacing and restrained borders.
-
-- Reuse the colors, typography, spacing and component patterns in [studio.css](web/studio.css).
-  Prefer shared tokens and components to a new visual treatment for every drill.
-- Use mint for primary actions, targets and success; amber for misses and recoverable warnings;
-  red for ended recording, errors and destructive actions. Always include a readable label.
+- Use pure-white page and panel surfaces, square panel/control edges, thin straight dividers and
+  no shadows. Retain circular club selectors, status dots and info icons.
+- Reuse shared tokens in [studio.css](web/studio.css): navy text, cobalt primary actions/selection,
+  green healthy/success feedback, amber warnings and red errors/destructive actions. Keep the
+  sticky Session over banner solid red with white text.
+- Use page headings at 32 px (28 px on phones), panel headings at 20 px, body/controls at 14 px,
+  units/secondary labels around 13 px and latest metrics at 36 px. Wrap instead of shrinking
+  the whole interface. Primary controls remain at least 44 px high.
+- Chart labels and club colors must contrast against white. Selected scatter points use a dark
+  outline; excluded points retain a lighter tint of the bag/club color and dashed edge.
 - Compare implementations with the selected concept for hierarchy, chart prominence and overall feel.
   Concept numbers are illustrative; real charts and acceptance evidence use recorded or labeled test data.
 - Avoid adding unrelated themes, decorative course imagery or dense settings to the practice runner.
@@ -157,7 +160,7 @@ raised slate cards, clear light text, mint accents, generous spacing and restrai
 
 ## 9. Keep the service responsive and the user's data recoverable
 
-- The background Python service owns capture and shared practice state; browsers present and control it.
+- The background Python service owns shot input, storage and shared practice state; browsers present and control it.
   UI rendering and network requests must not block shot detection or create competing workers.
 - Preserve the user's local workflow: localhost access without pairing; LAN access is an explicit
   launcher option. Keep GSPro sending explicit and off by default on service startup.
@@ -199,7 +202,7 @@ identity and cannot accept live shots. Cleanup exposes scope/counts, a reason, h
 all-recorded comparisons preserve evidence of inconsistency. See [range operation](docs/DRIVING_RANGE.md).
 
 Range scatter uses bag/club colors with a labeled legend; preserve club color on selection and use
-a white outline/size change for focus. Excluded points keep a lighter tint of their club color and a
+a dark outline/size change for focus. Excluded points keep a lighter tint of their club color and a
 dashed edge; untagged points use neutral gray. Show excluded context in the default chart, while
 the default table and summaries remain included-only. Removed shots stay hidden by default.
 
@@ -258,7 +261,7 @@ contrast backing over detailed terrain. Keep range scatter colors specific to ea
 ## Product name
 
 Use **TraceLoft** in visible app copy, window/page titles and launch instructions. The wordmark
-uses light Trace and mint Loft within the existing dark studio design. Historical GolfData
+uses navy Trace and cobalt Loft within the pure-white Vector design. Historical GolfData
 artwork and internal compatibility identifiers may retain the old name.
 
 
@@ -268,3 +271,11 @@ edit/reopen clears review approval; failed edits retain the last valid geometry.
 source and coordinate registration, offer keyboard equivalents to map taps and Undo, and never
 modify existing rounds when publishing corrections. Structural validation is not geographic
 verification. Save/export applies only finished shapes; communicate pending drawing clearly.
+
+## Relay simplicity and separate acquisition (2026-10-03)
+
+TraceLoft listens automatically; users choose Off, GSPro or Infinite Tees once. Save that choice
+immediately and restore it on restart. Hide optional port overrides in Connection details. Show
+source readiness separately from simulator connectivity. Keep OCR/calibration in the private source
+app. Replace in-drill Start/Stop capture with a Relay link. Input disconnected/unready shows an
+actionable warning; healthy recording uses only the header. Keep raw diagnostics out of practice.

@@ -1,10 +1,20 @@
+# Current Relay navigation update — 2026-10-03
+
+Global order: **Relay → Practice → Play → Analyze → Sessions**. `#relay` opens the source/destination
+screen. Old `#capture` bookmarks resolve to Relay. Active putting, ladder, range and game runners link
+to Relay; global Practice/Play and Return to active session restore the runner. Visiting Relay does
+not end practice. Destination selection auto-saves and affects only future forwards. No capture
+start/stop, calibration or preview routes remain in this application.
+
+The detailed drill/game map below is retained; older references to Capture mean source input status.
+
 # TraceLoft web navigation
 
 This map covers every direct screen transition and its guards. Longer journeys are combinations
 of these paths. Choosing another screen does not stop capture or finish a drill; only End session,
 confirmed Exit session, and confirmed Abandon session end the active drill.
 
-Main navigation order: **Capture → Practice → Play → Analyze → Sessions**. Analyze has cross-session comparisons and filtered export. Play contains the original-hole library and 2D game.
+Main navigation order: **Relay → Practice → Play → Analyze → Sessions**. Analyze has cross-session comparisons and filtered export. Play contains the original-hole library and 2D game.
 
 ```mermaid
 flowchart TD
@@ -37,7 +47,7 @@ flowchart TD
     D -->|Restore or Undo| S
     G[Main navigation on every screen] -->|Practice or GolfData home| P
     G -->|Sessions| S
-    G -->|Capture| C[Capture and diagnostics]
+    G -->|Relay| C[Relay and input status]
     G -->|Play| L[Play: original-hole library]
     G -->|Analyze| N[Analyze: filters, trends and comparisons]
     L -->|Go to practice| P
