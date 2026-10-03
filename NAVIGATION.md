@@ -1,5 +1,22 @@
 # Current Relay navigation update — 2026-10-03
 
+## Pebble Boulder full-course navigation — 2026-10-03
+
+Play → Pebble Boulder card → existing round setup → Launch → hole 1 of 18. Completing holes 1–17
+keeps the session active and shows a red pause banner; Next hole advances the same saved round.
+The previous hole cannot accept further scored shots. Hole 18 ends the round with the standard red
+Session over banner. End/abandon/exit remain available between holes. Play menu leaves the round
+active and Return to active session restores it; a competing launch remains blocked.
+
+The scorecard expands in place during play. Ended round/Sessions → Review → Review a hole selects
+its frozen map, distance, score and shot log without changing the current hole or stored state.
+Unplayed holes remain unplayed. Exit review returns to Sessions; Play menu returns to the library.
+New round / edit setup preserves the full-course choice. Legacy cards remain single-hole rounds.
+Fresh isolated checks covered setup, launch, next tee, partial ending, full completion, review hole
+selection and exits at iPad Pro landscape and phone sizes; see docs/PEBBLE_BOULDER.md.
+
+## Relay routes
+
 Global order: **Relay → Practice → Play → Analyze → Sessions**. `#relay` opens the source/destination
 screen. Old `#capture` bookmarks resolve to Relay. Active putting, ladder, range and game runners link
 to Relay; global Practice/Play and Return to active session restore the runner. Visiting Relay does

@@ -27,6 +27,12 @@ Windows launch scripts are the verified distribution path.
 - **Analyze**: session/date/equipment filters, robust summaries, trends and CSV export.
 - **Sessions**: review, end/abandon, recoverable deletion and restoration.
 
+Play includes **Pebble Boulder**, an original 18-hole coastal course using the January 2026 Pebble
+Beach Blue tee yardages: **6,801 yards, par 72**. Choose Play → Pebble Boulder → Set up round.
+Complete each hole, then tap Next hole. The round saves automatically in SQLite; its scorecard and
+individual holes are available in Sessions. End round saves a partial round. See the
+[course guide](docs/PEBBLE_BOULDER.md) for controls, source details and current game limits.
+
 This repository contains no OCR, screen capture, calibration, training glyphs or private adapter
 implementation. TraceCapture is a separate private application; TraceLoft does not import or launch
 it. Any compatible local Open Connect producer can supply shots. The original combined repository

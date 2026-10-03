@@ -1,5 +1,18 @@
 # TraceLoft architecture decisions
 
+## D49 — Pebble Boulder round package (2026-10-03)
+
+Use the official January 2026 Blue scorecard (6,801 yards/par 72) for yardage/pars only, with
+eighteen original coastal layouts and generated, registered aerials. Freeze every hole in the
+SQLite session; keep per-hole result snapshots, hole-tagged attempts and a monotonic turn across
+the round. Require an explicit next-tee action after intermediate completion. Paused or stale
+inputs remain unscored evidence and cannot move a later hole. Preserve the existing endpoint rules,
+legacy one-hole sessions and separate raw measurements from simulated outcomes.
+
+The course is available through the existing Play/setup/session routes. Other tee sets, real-course
+multi-hole imports, animated trajectories and more realistic physics remain separate backlog work.
+See [delivery and operating guide](docs/PEBBLE_BOULDER.md).
+
 ## D48 — Independent application and direct Relay (2026-10-03)
 
 TraceLoft and TraceCapture are sibling repositories with clean independent history. The combined

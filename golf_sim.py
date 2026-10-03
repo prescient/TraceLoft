@@ -52,6 +52,8 @@ class GolfSimSession(PuttingSession):
         if course is None:
             if game_course_id=='meadow-one-v1':course=COURSE
             else:course=load_bundled(game_course_id)
+        package=copy.deepcopy(course) if course.get('holes') else None
+        if package:course=package['holes'][0]
         self.folder,self.store=Path(folder),store
         self.data=dict(id=uuid.uuid4().hex,started=timestamp(),ended=None,drill='2D golf',
             practice_type='full_swing',session_kind='golf_sim',random_pace=False,target=0,demo=demo,
@@ -61,14 +63,29 @@ class GolfSimSession(PuttingSession):
                 acknowledged=game_acknowledged,putting=model_context(stimp)),
             game=dict(position=copy.deepcopy(course['tee']),aim=copy.deepcopy(course['pin']),lie='tee',turn=0,strokes=0,penalties=0,
                       concessions=0,holed=False,last_message='Aim, choose a club, then hit your first shot.'))
+        if package:
+            self.data['round']=dict(course_id=package['id'],name=package['name'],tee_label=package.get('tee_label','Blue'),
+                holes=package['holes'],index=0,results=[],par=package['par'],yards=package['yards'])
         self.save()
 
     def context(self):
         g=self.data['game']
-        return {k:copy.deepcopy(g[k]) for k in ('turn','position','aim','lie')}
+        result={k:copy.deepcopy(g[k]) for k in ('turn','position','aim','lie')}
+        if 'round' in self.data:result['hole_id']=self.data['course']['id']
+        return result
+
+    def next_hole(self,turn):
+        r=self.data.get('round');g=self.data['game']
+        if not r or self.data['ended'] or not g['holed'] or turn!=g['turn'] or r['index']+1>=len(r['holes']):
+            raise ValueError('Complete the current hole before moving to the next tee.')
+        r['index']+=1;c=copy.deepcopy(r['holes'][r['index']]);self.data['course']=c
+        self.data['game']=dict(position=copy.deepcopy(c['tee']),aim=copy.deepcopy(c['pin']),lie='tee',
+            turn=g['turn']+1,strokes=0,penalties=0,concessions=0,holed=False,
+            last_message=f"Hole {c['hole_number']} · choose a club and aim.")
+        self.save()
 
     def set_aim(self,x,y,turn):
-        if self.data['ended'] or turn!=self.data['game']['turn']:
+        if self.data['ended'] or self.data['game']['holed'] or turn!=self.data['game']['turn']:
             raise ValueError('The round advanced or ended. Refresh before aiming.')
         left,right,near,far=self.data['course']['bounds']
         if not numeric(x,left,right) or not numeric(y,near,far) or distance([x,y],self.data['game']['position'])<.1:
@@ -85,6 +102,7 @@ class GolfSimSession(PuttingSession):
         shot=dict(key=key,captured=event.get('captured_at') or timestamp(),receipt_id=event.get('receipt_id'),
             vals=copy.deepcopy(vals),excluded=False,success=False,scored=False,simulated=self.data['demo'],
             **copy.deepcopy(event.get('equipment_selection',self.data.get('equipment_selection')) or {}))
+        shot.update(hole_id=course['id'],hole_number=course.get('hole_number',1))
         outcome=dict(version='endpoint-golf-v1',course_id=course['id'],context=context,settings=copy.deepcopy(settings),
                      before=before,applied=False,penalty_strokes=0,conceded_strokes=0)
         reason=None;putting=g['lie']=='green'
@@ -93,7 +111,8 @@ class GolfSimSession(PuttingSession):
             and isinstance(context.get('aim'),list) and len(context['aim'])==2
             and numeric(context['aim'][0],left,right) and numeric(context['aim'][1],near,far)
             and distance(context['aim'],g['position'])>=.1)
-        if not valid_context:reason='Shot saved, ball unchanged: aim/turn context is missing or stale. Wait for the updated round before hitting.'
+        if g['holed']:reason='Shot saved, not scored: hole complete. Select Next hole before hitting.'
+        elif not valid_context or ('round' in self.data and context.get('hole_id')!=course['id']):reason='Shot saved, ball unchanged: aim/turn context is missing or stale. Wait for the updated round before hitting.'
         elif putting and not (numeric(vals.get('ball_speed'),0,15) and numeric(vals.get('launch_dir'),-45,45)):
             reason='Shot saved, ball unchanged: putting needs speed 0–15 mph and start line.'
         elif not putting and not (numeric(vals.get('total'),0,600) and numeric(vals.get('offline'),-600,600)):
@@ -133,27 +152,44 @@ class GolfSimSession(PuttingSession):
                 conceded=not holed and final_lie=='green' and remaining*3<=settings['gimme_ft']
                 if holed or conceded:
                     g['holed']=True;g['strokes']+=int(conceded);g['concessions']+=int(conceded)
-                    outcome['conceded_strokes']=int(conceded);self.data['ended']=timestamp()
+                    outcome['conceded_strokes']=int(conceded)
+                    r=self.data.get('round')
+                    if not r or r['index']==len(r['holes'])-1:self.data['ended']=timestamp()
                     message='Hole complete · one conceded putt added.' if conceded else 'Hole complete · endpoint inside the simulated cup.'
                 else:message=f'Green · {remaining*3:.1f} ft to the pin.' if final_lie=='green' else f'{final_lie.capitalize()} · {remaining:.1f} yd to the pin.'
                 g['aim']=copy.deepcopy(course['pin'])
             g['last_message']=message;outcome['message']=message
             shot.update(scored=True,success=g['holed'])
         outcome['after']=copy.deepcopy(g);shot['game_outcome']=outcome
+        if outcome['applied'] and g['holed'] and 'round' in self.data:
+            self.data['round']['results'].append(dict(hole_id=course['id'],hole_number=course['hole_number'],
+                par=course['par'],game=copy.deepcopy(g)))
         self.data['shots'].append(shot);self.save();return True
 
     def summary(self):
         g=self.data['game'];shots=self.data['shots'];remaining=distance(g['position'],self.data['course']['pin'])
         putting=g['lie']=='green' and not g['holed']
         pace=required_speed_mph(max(.5,remaining*3),self.data['game_settings']['putting']['stimp_ft']) if putting and remaining*3<=300 else None
-        return dict(count=sum(not s['excluded'] for s in shots),recorded=len(shots),successes=int(g['holed']),
+        result=dict(count=sum(not s['excluded'] for s in shots),recorded=len(shots),successes=int(g['holed']),
             scored=sum(s['scored'] for s in shots),strokes=g['strokes'],penalties=g['penalties'],
             concessions=g['concessions'],remaining_yd=remaining,required_pace_mph=pace,holed=g['holed'])
+        r=self.data.get('round')
+        if r:
+            previous=[v for v in r['results'] if v['hole_id']!=self.data['course']['id']]
+            completed_par=sum(v['par'] for v in r['results'])
+            completed_score=sum(v['game']['strokes'] for v in r['results'])
+            result.update(strokes=g['strokes']+sum(v['game']['strokes'] for v in previous),
+                penalties=g['penalties']+sum(v['game']['penalties'] for v in previous),
+                concessions=g['concessions']+sum(v['game']['concessions'] for v in previous),
+                holes_completed=len(r['results']),hole_count=len(r['holes']),hole_strokes=g['strokes'],
+                round_complete=len(r['results'])==len(r['holes']),to_par=completed_score-completed_par,
+                course_name=r['name'])
+        return result
 
 
 def simulated_event(session, distance_yd, offline_yd=0):
     """Explicit deterministic test input, recorded as synthetic and isolated from live sessions."""
-    if not session.data['demo'] or session.data['ended']:
+    if not session.data['demo'] or session.data['ended'] or session.data['game']['holed']:
         raise ValueError('Simulated shots require an active demo round.')
     if not numeric(distance_yd,.01,600) or not numeric(offline_yd,-200,200):
         raise ValueError('Choose a valid simulated distance and offline amount.')

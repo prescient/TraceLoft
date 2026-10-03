@@ -288,6 +288,13 @@ confirmation checks pass with isolated test data.
 
 ### 9. Basic 2D golf simulator (idea requested 2026-10-01)
 
+**Pebble Boulder implemented 2026-10-03:** eighteen original coastal layouts and generated aerials,
+January 2026 Blue tee distances (6,801 yards/par 72), one durable round, per-hole scores and shot
+identity, explicit Next hole pause, full-round completion, partial ending and historical hole review.
+Existing bag/club selection, heatmaps, penalties and flat-green putting apply throughout. See
+[course guide and verification](docs/PEBBLE_BOULDER.md). This uses the existing endpoint game;
+animated flight, realistic ground physics, other tee sets and editable multi-hole imports remain planned.
+
 **Immersive browser simulation — requested 2026-10-03 · planned:** extend the playable 2D
 course mode with realistic modeled physics and animated ball movement, while keeping it lightweight
 enough to run smoothly in a browser. Aim for modestly greater immersion within the top-down format.
@@ -320,7 +327,8 @@ scoring-boundary overlay, simple rendering option, map/coordinate aiming plus Ai
 **Proposed real-course importer:** combine OSM geometry, georeferenced aerial imagery and course
 scorecards; propose missing boundaries, review them, then AI-restyle through fixed masks. Start with
 one real hole/tee set; preserve source/license metadata and immutable course versions. Multi-surface
-polygons are implemented; multiple tee sets and holes require simulator extensions. [Research and pipeline](docs/COURSE_ART_AND_IMPORTS.md).
+polygons and bundled multi-hole rounds are implemented; multiple tee sets and multi-hole import publication
+remain future work. [Research and pipeline](docs/COURSE_ART_AND_IMPORTS.md).
 Jackson Park is the bundled, incomplete test source; no verified complete real course is published.
 
 **Club preview implemented 2026-10-02:** selected bag/club overlays included mapping endpoints

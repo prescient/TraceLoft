@@ -21,6 +21,11 @@ two services cannot independently score drills against the same file.
 
 ## Implemented foundation
 
+- Pebble Boulder rounds freeze all eighteen hole packages in the SQLite session payload, with
+  per-hole result snapshots, current-hole index and monotonic turn. Attempts retain `hole_id` and
+  `hole_number` alongside the existing immutable game outcomes. Normal restart resumes the same
+  hole or between-hole pause. No schema migration, measured-shot rewrite or database reset is needed.
+
 - Course import packages now live in versioned `course_import.v1.*` metadata records, with original
   source JSON, geometry, scale transform, attribution and review timestamp. Rounds freeze a copy.
   SQLite snapshots include these records; no imagery downloads or SQL schema upgrade are involved.

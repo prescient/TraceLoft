@@ -126,3 +126,32 @@
 - Documentation verification: checked local Markdown targets, source/citation consistency and
   focused Git whitespace. No model experiments, simulator injections, runtime or device tests were
   performed. Concurrent course code, artwork and documentation changes remain outside this commit.
+
+## 2026-10-03 — Pebble Boulder full coastal course
+
+- Delivered 18 original coastal holes with registered continuous AI aerials, editable geometry
+  references and prompt provenance. Verified January 2026 Blue yardages: 6,801 yards/par 72;
+  hole 15 is 392 yards. Yardage follows the route; straight-line map distance remains distinct.
+- Added durable per-hole state, monotonic turns and hole-tagged attempts to the existing SQLite
+  session payload. Intermediate completion pauses until Next hole; final completion ends the round.
+  Paused/stale inputs stay unscored, failed saves roll back and legacy one-hole games remain intact.
+- Added compact expandable scorecard, next-tee banner, completed/partial round summaries and frozen
+  per-hole review. Current-hole log/score/map filter by hole; exclusions cannot erase strokes.
+  Review uses that hole's distance, and saved suggestions do not imply current planning results.
+- Updated operating guide, design principles, navigation, decisions, artwork references and backlog.
+  Sim companion remains deferred; animated/realistic physics and additional tees remain planned.
+- Verification: 118 Python tests and 36 JavaScript tests passed. New full-course API journey played
+  every route, approached/putted every green and checked totals, SQLite reload, deletion/restore,
+  exclusions, pause/resume, late input and rollback. Additional all-asset checks passed for PNG
+  registration, hazards and Blue scorecard. Full legacy importer/game/relay regression suite passed.
+- Fresh isolated browser review (HTTP 8879, separate SQLite and ephemeral input port): library/setup,
+  club tagging, first-hole finish, Next hole, active guard/return, partial ending, full 18-hole saved
+  review, earlier-hole selection, review exit and phone Next hole. Checked 1366x1024, 1376x1032,
+  1440x900 and 390x844; no page-level horizontal overflow. Physical Safari/iPad testing remains open.
+  All generated artwork was visually inspected; registered boundary overlays were sampled in Play.
+- No measured sessions or private capture files changed. Verification data stays in the isolated
+  temporary service. Production was idle before the planned normal service reload.
+- Completed a normal reload of the idle production service on 8765; verified the new 18-hole
+  catalog entry and first artwork return successfully, with no active session introduced.
+  Documentation relative links and git whitespace checks pass. Saved an isolated iPad runner
+  screenshot in designs/pebble-boulder/qa-ipad-round.png.

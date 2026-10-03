@@ -69,6 +69,11 @@ class PracticeParams(BaseModel):
     game_acknowledged: bool = False
 
 
+class GameTurnParams(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    turn: int = Field(ge=0)
+
+
 class GameAimParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
     x: float = Field(ge=-5000,le=5000,allow_inf_nan=False)
@@ -353,6 +358,11 @@ def create_app(service=None):
     @app.post('/api/game/{session_id}/simulate')
     async def game_simulate(session_id: str, params: GameDemoParams):
         service.game_action(session_id,'simulate',params.model_dump())
+        return service.snapshot()
+
+    @app.post('/api/game/{session_id}/next')
+    async def game_next(session_id: str, params: GameTurnParams):
+        service.game_action(session_id,'next',params.model_dump())
         return service.snapshot()
 
     @app.get('/api/game/{session_id}/preview')

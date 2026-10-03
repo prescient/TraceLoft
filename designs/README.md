@@ -1,5 +1,8 @@
 # Interface references
 
+[Pebble Boulder artwork](pebble-boulder/README.md) records the original eighteen-hole coastal
+references, generation prompt and registration approach used in Play.
+
 The implemented interface uses pure-white Vector surfaces, navy text, square cards and cobalt
 selection. Circular club buttons remain. Follow [design principles](../DESIGN_PRINCIPLES.md).
 The TL browser icon uses a black background, white T and cobalt blue L, matching the interface accent.

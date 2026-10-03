@@ -1,3 +1,4 @@
+from bundled_courses import COURSE_IDS
 import asyncio
 import copy
 import json
@@ -77,19 +78,19 @@ class ImportAPITests(unittest.TestCase):
         self.assertEqual(self.client.post('/api/courses/save',json=p).status_code,409)
         c=self.client.post('/api/courses/save',json=dict(p,reviewed=True)).json()
         self.assertEqual(self.client.post('/api/courses/save',json=dict(p,reviewed=True)).json()['id'],c['id'])
-        self.assertEqual(len(catalog(self.service.store)),5)
+        self.assertEqual(len(catalog(self.service.store)),len(COURSE_IDS)+1)
         r=self.client.post('/api/practice',json=dict(drill='2D golf',demo=True,game_course_id=c['id']))
         self.assertEqual(r.status_code,200,r.text);active=copy.deepcopy(self.service.practice.data)
         p['name']='Revision two';save(self.service.store,p,True)
         self.assertEqual(self.service.practice.data,active)
         self.assertEqual(self.service.load_session(active['id']).data['course'],c)
-        self.assertEqual(len(catalog(self.service.store)),6)
+        self.assertEqual(len(catalog(self.service.store)),len(COURSE_IDS)+2)
         self.assertTrue(self.service.store.backup().exists())
         self.assertEqual(self.client.post('/api/practice',json=dict(drill='2D golf',demo=True,game_course_id=c['id'])).status_code,409)
 
     def test_invalid_course_and_preview_never_save(self):
         self.assertEqual(self.client.post('/api/courses/preview',json=params()).status_code,200)
-        self.assertEqual(len(catalog(self.service.store)),4)
+        self.assertEqual(len(catalog(self.service.store)),len(COURSE_IDS))
         self.assertIsNone(self.service.practice)
         r=self.client.post('/api/practice',json=dict(drill='2D golf',demo=True,game_course_id='../../evil'))
         self.assertEqual(r.status_code,409)

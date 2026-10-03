@@ -1,3 +1,4 @@
+from bundled_courses import COURSE_IDS
 import copy
 import json
 from contextlib import closing
@@ -38,7 +39,7 @@ class WorkbenchTests(unittest.TestCase):
         self.assertEqual(second['revision'],2)
         self.assertEqual(self.client.post('/api/course-drafts',json={'params':p,'id':first['id'],'revision':1}).status_code,409)
         self.assertEqual(len(self.client.get('/api/course-drafts').json()),1)
-        self.assertEqual(len(catalog(self.service.store)),4)
+        self.assertEqual(len(catalog(self.service.store)),len(COURSE_IDS))
         c=self.client.post('/api/courses/save',json=dict(p,reviewed=True)).json()
         self.client.post('/api/practice',json=dict(drill='2D golf',demo=True,game_course_id=c['id']))
         active=copy.deepcopy(self.service.practice.data)

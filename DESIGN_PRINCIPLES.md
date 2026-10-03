@@ -221,6 +221,12 @@ rate is not an automated outlier/mishit rate. Warn when mixed clubs/intents make
 
 ## Simple golf games
 
+Multi-hole rounds keep the current hole's played shots, penalties and gimmes separate from round
+totals. Pause scoring visibly between holes and require Next hole before accepting play at the next
+tee. Keep the scorecard compact during play, expandable by touch/keyboard, and open in saved review.
+Review selects frozen holes without moving the active ball. Distinguish ended-early rounds and
+unplayed holes from completed scores; never count analysis exclusions as mulligans.
+
 Default to an explicit demo experience when physical geometry is unverified. Keep aim, next equipment,
 lie, remaining distance and score easy to find. Use feet on the green. Match map surfaces to the scorer;
 show endpoint connectors without implying a flight path. Freeze played course/settings and per-shot
