@@ -1,5 +1,8 @@
 # Sim page concept — 2026-10-03
 
+**Deferred by user on 2026-10-03.** Preserve this concept for future review. Implementation and GSPro
+outcome-file investigation are on hold under the [Sim feature backlog](../BACKLOG.md).
+
 ![Vector Sim concept](sim-page-vector-v1.png)
 
 Requested mockup, pending user review; no Sim route or outcome-tagging behavior is implemented by

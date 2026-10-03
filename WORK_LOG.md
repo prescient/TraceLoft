@@ -90,3 +90,14 @@
 - Visually inspected the bitmap and checked document links/whitespace. Generated table targets
   still require touch sizing in implementation. No application code, routes, live data or services
   changed; no responsive/runtime test is claimed for a bitmap mockup.
+
+## 2026-10-03 — Defer Sim and consolidate outcome research
+
+- Marked Sim explicitly on hold until reprioritized, including the mockup, manual outcome tagging,
+  club/mode following and GSPro file investigation. Cross-referenced the deferred status from design
+  notes and the relay feedback item; existing Relay and Play remain unchanged.
+- Captured log location/rotation, currentRound.dat as an unverified research lead, documented practice
+  CSV exports, protocol limits, controlled-event validation and read-only enrichment requirements.
+  Distinguished existing Play persistence from unverified external simulator results.
+- Documentation-only verification: relative links exist, research URLs match the prior investigation,
+  deferred statuses agree and git whitespace checks pass. No code or runtime changes.

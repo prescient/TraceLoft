@@ -2,8 +2,8 @@
 
 ## Relay improvements inspired by rēlā — requested 2026-10-03 · planned
 
-Backlog only; no implementation or new rēlā dependency. First priorities are the shot delivery
-inspector and simulator club/mode feedback. Refine existing reconnect, saved destinations and
+Backlog only; no implementation or new rēlā dependency. The shot delivery inspector remains a
+recommended priority; simulator club/mode feedback is deferred with the Sim feature below. Refine existing reconnect, saved destinations and
 independent local recording rather than rebuilding them. Preserve the TraceCapture boundary.
 
 - **High — Shot delivery inspector:** compact history of received input, SQLite save, forwarded
@@ -11,7 +11,7 @@ independent local recording rather than rebuilding them. Preserve the TraceCaptu
   from historical/resolved log entries (such as the stale missing-mss message). Distinguish socket
   writes from simulator responses; do not infer per-shot receipt from uncorrelated Code 200 replies.
   Keep raw acquisition diagnostics in TraceCapture; TraceLoft shows protocol/storage/delivery evidence.
-- **High — Simulator club/mode feedback:** extend the planned Sim page below with opt-in following
+- **Deferred with Sim — Simulator club/mode feedback:** extend the Sim page below with opt-in following
   of simulator-reported club/mode where supported. Map simulator codes to physical clubs in the
   selected bag, resolve ambiguous matches and define manual override precedence. Freeze selection
   and its source on each shot. Verify real simulator behavior; Open Connect Player.Club feedback
@@ -43,7 +43,11 @@ References: [rēlā user guide](https://docs.rela.golf/rela/user-guide/) (instal
 Implement independently against published interfaces; the example's MIT license does not cover the
 core rēlā application. Do not copy core code/assets under the example's license.
 
-## Sim page — requested 2026-10-03 · planned
+## Sim feature — requested 2026-10-03 · deferred by user
+
+**On hold as of 2026-10-03.** Retain the design and research below in the backlog; do not implement
+the Sim page, its annotations, simulator club/mode following or GSPro file readers until the user
+reprioritizes this feature. Existing Relay and built-in Play functionality remain in place.
 
 Add a minimal simulator companion page focused on bag/club selection and shot logging.
 Reuse the existing equipment controls and durable shot/session storage, freeze the selected club
@@ -65,6 +69,49 @@ club metrics, not a club identifier/name or a command to change GSPro's selected
 send its own selection back through Code 201 Player.Club. Do not promise selection sync from
 TraceLoft to GSPro; any future automatic tagging must explicitly map simulator codes to the bag
 and resolve manual-selection precedence before being enabled.
+
+### GSPro results acquisition — deferred investigation within Sim
+
+Before expanding manual entry, investigate whether read-only local file ingestion can supply
+simulator outcomes and enrich shots already saved through the relay. Candidate sources:
+
+- **Diagnostic log:** GSPro documents
+  `%USERPROFILE%\AppData\LocalLow\GSPro\GSPro\output_log.txt`. The official guide warns the log is
+  replaced on restart. Shot/game-state field coverage is unverified; do not promise destination lie,
+  hole, score or penalties merely because a diagnostic log exists.
+- **Round file:** `currentRound.dat` is reported by another developer as a source of ball-flight
+  and spin data. No local sample, verified schema/path or reliable outcome coverage is established.
+- **Practice CSV:** official Practice Range and On-Course Practice exports are a documented import
+  path. Inspect real headers, units, session context and available results before mapping fields;
+  do not assume scored-round export or complete outcome coverage.
+- **Open Connect feedback:** use documented player/club information where available; the published
+  v1 contract does not describe a full post-shot lie/score/penalty feed. Keep this distinct from files.
+
+When resumed, compare snapshots from a controlled session containing fairway, rough, bunker, water,
+OB, putt and mulligan events. Verify hole/player identity, starting/final lie, carry/total, remaining
+distance, penalties, score and timestamps individually against the UI; mark absent fields unknown.
+The initial check found no documented log directory or default GSPro installation on this PC, so
+local parsing and field availability remain unverified.
+
+Read simulator files without modifying them. Handle partial writes, truncation/rotation, restarts,
+duplicate events, mulligans and multiple players. Match enrichment to existing stable shot IDs using
+verified evidence; flag ambiguous matches for review instead of guessing or adding duplicate shots.
+Preserve raw evidence, parser/version provenance and simulator outcomes separately from launch-monitor
+measurements and manual annotations. Never replay imported shots to a live simulator or active drill.
+Keep manual tags as an optional fallback and make correction precedence explicit. Choose an external
+acquisition adapter consistent with the TraceCapture boundary; do not reintroduce a private code or
+database dependency into TraceLoft. Define any outcome-enrichment contract before implementation.
+
+Related Play evidence: internal starting/destination lies, endpoints, remaining distance, penalties,
+concessions and resulting scores already persist in SQLite session/attempt payloads. They are
+internally simulated results, not proof of equivalent GSPro/Infinite Tees telemetry. Future outcome
+analytics should distinguish these sources; the proposed manual tags are not an 18Birdies integration.
+
+Research references (reviewed 2026-10-03):
+- [Official GSPro log location and lifecycle](https://gspro.gitbook.io/gspro-knowledge-base/troubleshooting-and-support/how-to-grab-gspro-log-files)
+- [Official Practice Range CSV export](https://gspro.gitbook.io/gspro-knowledge-base/practice-main-menu/practice-range)
+- [Official On-Course Practice CSV export](https://gspro.gitbook.io/gspro-knowledge-base/practice-main-menu/on-course-practice)
+- [Developer report of currentRound.dat ingestion](https://maxwellsilverstein.com/work/golfcoach)
 
 ## Application separation and direct Relay — 2026-10-03
 
