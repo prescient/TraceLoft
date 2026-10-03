@@ -13,7 +13,7 @@ from putting import PuttingSession, timestamp
 from putting_distance import distance_ft, required_speed_mph, model_context, DEFAULT_MODEL_ID
 from distance_ladder import numeric
 
-GAME_FIELDS = ('game_rough', 'game_sand', 'game_variation', 'game_gimme', 'game_geometry', 'game_acknowledged', 'game_course_id')
+GAME_FIELDS = ('game_rough', 'game_sand', 'game_variation', 'game_gimme', 'game_geometry', 'game_acknowledged', 'game_course_id', 'game_holes')
 COURSE = dict(id='meadow-one-v1', name='Meadow One', par=4, yards=350, tee=[0,0], pin=[0,350],
     bounds=[-80,80,-15,385], green_radius=18,
     fairway=[[-18,0],[18,0],[22,140],[8,250],[10,335],[-15,335],[-32,240],[-25,130]],
@@ -41,7 +41,7 @@ def lie_at(point, course):
 class GolfSimSession(PuttingSession):
     def __init__(self, folder, store=None, equipment_selection=None, demo=True, stimp=10,
                  game_rough=7, game_sand=20, game_variation=0, game_gimme=3,
-                 game_geometry='downrange', game_acknowledged=False, game_course_id='pebble-boulder-blue-v1', course=None):
+                 game_geometry='downrange', game_acknowledged=False, game_course_id='pebble-boulder-blue-v1', game_holes='full', course=None):
         if any(not numeric(v,lo,hi) for v,lo,hi in ((game_rough,0,60),(game_sand,0,80),
             (game_variation,0,10),(game_gimme,0,10),(stimp,3,20))):
             raise ValueError('Choose valid lie, putting and variation settings.')
@@ -53,6 +53,15 @@ class GolfSimSession(PuttingSession):
             if game_course_id=='meadow-one-v1':course=COURSE
             else:course=load_bundled(game_course_id)
         package=copy.deepcopy(course) if course.get('holes') else None
+        if game_holes not in ('full','front','back'):
+            raise ValueError('Choose Full 18, Front 9 or Back 9.')
+        if game_holes!='full':
+            if not package or [c.get('hole_number') for c in package['holes']]!=list(range(1,19)):
+                raise ValueError('Front 9 and Back 9 require an eighteen-hole course.')
+            package['holes']=package['holes'][:9] if game_holes=='front' else package['holes'][9:]
+        if package:
+            package['par']=sum(c['par'] for c in package['holes'])
+            package['yards']=sum(c['yards'] for c in package['holes'])
         if package:course=package['holes'][0]
         self.folder,self.store=Path(folder),store
         self.data=dict(id=uuid.uuid4().hex,started=timestamp(),ended=None,drill='2D golf',
@@ -65,7 +74,7 @@ class GolfSimSession(PuttingSession):
                       concessions=0,holed=False,last_message='Aim, choose a club, then hit your first shot.'))
         if package:
             self.data['round']=dict(course_id=package['id'],name=package['name'],tee_label=package.get('tee_label','Blue'),
-                holes=package['holes'],index=0,results=[],par=package['par'],yards=package['yards'])
+                holes=package['holes'],index=0,results=[],par=package['par'],yards=package['yards'],selection=game_holes)
         self.save()
 
     def context(self):
@@ -100,16 +109,17 @@ class GolfSimSession(PuttingSession):
         r=self.data.get('round')
         index=next((i for i,c in enumerate(r['holes']) if c['id']==shot['hole_id']),None) if r else None
         if r and index is None:raise ValueError('The original hole is unavailable.')
+        affected_holes={c['id'] for c in r['holes'][index:]} if r else set()
         audit=dict(id=uuid.uuid4().hex,kind=kind,shot_key=key,at=timestamp(),
             hole_id=shot.get('hole_id',self.data['course']['id']),hole_number=shot.get('hole_number',1),
             previous_game=copy.deepcopy(self.data['game']),previous_ended=self.data['ended'],
             previous_excluded=shot['excluded'],previous_round_index=r['index'] if r else None,
-            removed_results=copy.deepcopy([v for v in r['results'] if v['hole_number']>=index+1]) if r else [])
+            removed_results=copy.deepcopy([v for v in r['results'] if v['hole_id'] in affected_holes]) if r else [])
         restored=copy.deepcopy(shot['game_outcome']['before'])
         restored.update(turn=turn+1,last_message=f"{kind.capitalize()} recorded · previous position restored. Ready to replay.")
         if r:
             r['index']=index
-            r['results']=[v for v in r['results'] if v['hole_number']<index+1]
+            r['results']=[v for v in r['results'] if v['hole_id'] not in affected_holes]
             self.data['course']=copy.deepcopy(r['holes'][index])
         self.data.update(game=restored,ended=None)
         shot['game_correction']={k:audit[k] for k in ('id','kind','at')}
@@ -220,7 +230,7 @@ class GolfSimSession(PuttingSession):
                 concessions=g['concessions']+sum(v['game']['concessions'] for v in previous),
                 holes_completed=len(r['results']),hole_count=len(r['holes']),hole_strokes=g['strokes'],
                 round_complete=len(r['results'])==len(r['holes']),to_par=completed_score-completed_par,
-                course_name=r['name'])
+                course_name=r['name'],round_selection=r.get('selection','full'))
         return result
 
 

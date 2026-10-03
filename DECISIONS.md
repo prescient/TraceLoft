@@ -69,3 +69,12 @@ Put planning settings and secondary tools in disclosures below the map. Closing 
 does not change heatmap visibility. Preserve explicit exits, recording/completion warnings, frozen
 review and the authoritative scoring model. Course scaling preserves aspect ratio and registration.
 See [approved concept and implemented review](designs/play-map-first/README.md).
+
+## D53 — Selected-nine rounds (2026-10-03)
+
+Offer Full 18, Front 9 and Back 9 for the two full courses. Freeze only the selected hole packages
+and their original numbers in the round, with selected totals and a `selection` key. Default to
+Full 18 for new and legacy full-course sessions. Completion/review/corrections follow that saved
+sequence; corrections remove result snapshots by hole ID, never by assuming index equals number.
+Imported individual holes retain their existing flow. No database migration or old-session rewrite.
+Retire the four starter holes from the catalog while retaining their assets/load compatibility.

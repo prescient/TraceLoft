@@ -18,7 +18,13 @@ def bundled_catalog():
     for course_id in COURSE_IDS:
         c=load_bundled(course_id)
         first=c.get('holes',[c])[0]
+        holes=c.get('holes',[c])
+        options=[dict(id='full',label=f'Full {len(holes)}' if len(holes)>1 else 'Single hole',par=c['par'],yards=c['yards'])]
+        if len(holes)==18:
+            options += [dict(id=key,label=label,par=sum(h['par'] for h in selected),yards=sum(h['yards'] for h in selected))
+                for key,label,selected in [('front','Front 9',holes[:9]),('back','Back 9',holes[9:])]]
         result.append(dict(id=c['id'],name=c['name'],par=c['par'],yards=c['yards'],imported=False,
             image=first['image']['href'],hole_count=len(c.get('holes',[c])),tee_label=c.get('tee_label'),
+            round_options=options,
             description=c.get('description','A generous fairway, water and two greenside bunkers.')))
     return result

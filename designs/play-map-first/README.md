@@ -20,6 +20,10 @@ readouts move outside the image. Scoring polygons, aim and density share the sam
 
 ## References
 
+Course setup now offers Full 18, Front 9 and Back 9 as touch-sized radio cards with selected
+par/yardage. Course changes update totals; Back 9 retains hole numbers 10–18. Only selected holes
+appear in the expanded scorecard and saved review. [iPad setup review](round-options-ipad.png).
+
 - [Approved generated concept](approved-concept.png): visual direction, not application evidence.
 - [Implemented iPad landscape](ipad-landscape.png): 1376×1032 browser viewport, isolated demo
   Sheboygan Straits round with synthetic Tour mapping. This is the application, not generated art

@@ -1,5 +1,8 @@
 # TraceLoft backlog
 
+- [x] Full 18 / Front 9 / Back 9 for Boulder Beach and Sheboygan Straits, selected yardage/par,
+  original numbering, selected-hole scorecards/review, completion and corrections (2026-10-03).
+
 - [x] Fit Boulder Beach and Sheboygan Straits overview/green cameras to the wide map panel,
   preserving yardages and scoring-overlay registration; responsive framing across all 36 holes.
 

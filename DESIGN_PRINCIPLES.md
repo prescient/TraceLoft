@@ -224,6 +224,11 @@ rate is not an automated outlier/mishit rate. Warn when mixed clubs/intents make
 Multi-hole rounds keep the current hole's played shots, penalties and gimmes separate from round
 totals. Pause scoring visibly between holes and require Next hole before accepting play at the next
 tee. Keep the scorecard compact during play, expandable by touch/keyboard, and open in saved review.
+Offer Full 18, Front 9 and Back 9 during course setup with touch-sized choices and selected
+yardage/par. Freeze that selection when launching; keep original hole numbers. The scorecard,
+completion boundary and review choices contain only selected holes. Corrections must use saved
+hole identity so back-nine scores survive reopening the final hole. Imported single holes keep
+their single-hole flow without irrelevant nine-hole controls.
 Review selects frozen holes without moving the active ball. Distinguish ended-early rounds and
 unplayed holes from completed scores; never count analysis exclusions as mulligans.
 Keep Play header actions in order: Mulligan, Misread, End round, Play menu, Exit round.

@@ -28,7 +28,11 @@ two services cannot independently score drills against the same file.
   score/position, removed completion snapshots, exclusion and audit commit in one transaction.
   No schema upgrade is needed. Existing sessions without correction fields continue to load.
 
-- Boulder Beach rounds freeze all eighteen hole packages in the SQLite session payload, with
+- Full-course rounds freeze the selected nine or eighteen hole packages in the SQLite session payload,
+  with `round.selection` (`full`, `front`, `back`), selected par/yardage totals and original hole numbers.
+  Older rounds without this field retain their original full-course behavior. Corrections identify
+  completion snapshots by saved hole IDs, not by assuming hole number equals array index + 1. No
+  schema migration or update to existing session payloads is required. These rounds also retain
   per-hole result snapshots, current-hole index and monotonic turn. Attempts retain `hole_id` and
   `hole_number` alongside the existing immutable game outcomes. Normal restart resumes the same
   hole or between-hole pause. No schema migration, measured-shot rewrite or database reset is needed.

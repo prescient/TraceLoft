@@ -1,5 +1,24 @@
 # TraceLoft work log
 
+## 2026-10-03 — Full 18 / Front 9 / Back 9
+
+- Added touch-sized round choices with par/yardage in setup. Freeze selected holes/totals in the
+  session; Back 9 starts at 10, Front 9 ends at 9. Scorecards/review contain only selected holes.
+  Sessions identify Front/Back 9; edit setup retains selection. Imports retain the single-hole flow.
+- Corrected the older replay assumption that hole number equals array index + 1: completion
+  snapshots now follow saved hole IDs, preserving earlier back-nine scores during correction.
+- Verification: full Python suite 131 tests passed; all 42 JavaScript tests passed. New API journeys
+  complete both nines on both courses, check pause/resume/persistence, final-hole Misread/recompletion,
+  selected totals and invalid choices. Existing full-course and correction tests remain passing.
+- Isolated browser/SQLite at 8879 verified both course totals, Back 9 starting hole 10, scorecard
+  10–18, holeout → Next 11 → Misread 10, End/review selection and edit setup → Front 9 start 1.
+  Checked 1376×1032 iPad setup, 1366×900 map, 1600×1000 desktop and 390×844 phone. Phone has no
+  horizontal page overflow. Saved setup screenshot in design notes. No physical iPad Safari/touch
+  or LAN testing; no production simulated shots.
+- Updated design/navigation/decisions, course guides, SQLite operating notes, README and backlog.
+  Restarted production service on 8765 to load the API additions; it was idle before restart and
+  remained idle afterward. Verified live catalog and all selected-nine totals. Existing data retained.
+
 ## 2026-10-03 — Fit full courses to the wide map
 
 - Replaced square/letterboxed camera framing with a responsive viewBox. Landscape overview trims

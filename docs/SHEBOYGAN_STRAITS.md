@@ -2,7 +2,10 @@
 
 A complete original 18-hole lakeside links course, inspired by Whistling Straits' open dunes,
 pale bunker complexes and Lake Michigan shoreline. Blue tees: **7,142 yards, par 72**.
-Select **Play → Sheboygan Straits → Set up round**, choose demo or live input, then Launch round.
+Select **Play → Sheboygan Straits → Set up round**, choose Full 18 / Front 9 / Back 9 and demo
+or live input, then Launch round. Front 9 plays 1–9 (3,597 yd/par 36); Back 9 plays 10–18
+(3,545 yd/par 36). Full 18 remains the default. The last selected hole ends the round; review,
+correction and restart retain the chosen holes and original numbering.
 The course includes bag/club tagging, historical dispersion, a scorecard, per-hole guides,
 explicit Next hole, saved review, and Mulligan/Misread corrections through the existing Play engine.
 
@@ -45,7 +48,7 @@ areas use the configured sand reduction; golden fescue uses the existing nature 
 ## Geometry and game rules
 
 Each finished aerial has traced, simplified polygons for sand, water, fairway, tee, green and
-nature, plus its own uniform yard scale and tee/pin placement. Map display → Show scoring
+nature, plus its own uniform yard scale and tee/pin placement. Map options & hole guide → Show scoring
 boundaries reveals the exact game edges. The artwork is not a physical terrain model: small
 textured lips/shadows and simplified polygon edges can differ slightly. Bunker depth, dunes,
 wind, elevation, green slopes and intermediate ball-path collisions are not simulated.

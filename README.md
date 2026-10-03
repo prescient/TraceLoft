@@ -40,6 +40,8 @@ holes are retired from new-round choices; saved rounds and imported courses rema
 
 Play includes **Boulder Beach**, an original 18-hole coastal course using the January 2026 Pebble
 Beach Blue tee yardages: **6,801 yards, par 72**. Choose Play → Boulder Beach → Set up round.
+Both courses offer **Full 18**, **Front 9 (1–9)** and **Back 9 (10–18)**. Setup shows each option's
+par and yardage; the round ends at the final selected hole. Existing rounds keep their selection.
 Complete each hole, then tap Next hole. The round saves automatically in SQLite; its scorecard and
 individual holes are available in Sessions. End round saves a partial round. **Mulligan** and
 **Misread** replay the latest scored shot, even after a hole or round ends. Both are tracked;

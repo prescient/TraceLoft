@@ -1,5 +1,23 @@
 # Current Relay navigation update — 2026-10-03
 
+## Nine-hole round selection — 2026-10-03
+
+Play → course setup → Full 18 / Front 9 / Back 9 → Launch. Front starts at hole 1 and ends at 9;
+Back starts at 10 and ends at 18. Setup displays each choice's par/yardage. Switching course updates
+those totals; New round / edit setup restores the saved selection. Reset settings returns Full 18.
+Only selected holes appear in scorecards and review; Sessions labels Front/Back 9. Imported single
+holes hide the nine-hole choices. Existing full rounds keep all eighteen holes.
+
+Shared active-session guards/exits remain. Intermediate completion pauses until Next hole; final
+selected-hole completion ends the round. Misread/Mulligan can reopen it without clearing earlier
+selected-hole results. Course cameras resize with the panel; Map options & hole guide retains
+scoring boundaries, and map taps still use the saved world coordinates.
+
+Fresh isolated browser checks: both course choices/totals, Back 9 launch at 10 → complete → Next
+11 → Misread back to 10 → End → selected-hole review → edit setup → Front 9 launch at 1. Reviewed
+iPad landscape, reduced-height, desktop and phone layouts. API tests complete both nines on both
+courses and reopen the final selected hole. Physical iPad Safari/touch remains unverified.
+
 ## Mulligan / Misread paths — 2026-10-03
 
 - Active Play → header Mulligan / Misread → previous position on the same active round.

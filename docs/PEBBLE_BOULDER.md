@@ -43,16 +43,19 @@ or elevation, water/OB replay with one penalty. Coastal art does not add undiscl
 ## Playing and reviewing
 
 1. Open Play and choose **Boulder Beach → Set up round**. Choose demo or acknowledged live input,
-   lie effects, Stimp, gimme radius and equipment. Launch starts hole 1.
+   Full 18 / Front 9 / Back 9, lie effects, Stimp, gimme radius and equipment. Full/Front starts
+   hole 1; Back starts hole 10. Blue totals: Full 6,801/par 72; Front 3,310/par 36; Back 3,491/par 36.
 2. Select a club, tap the map to aim or choose Aim at pin. The existing bag mapping/wedge profiles
    supply the optional historical dispersion overlay. Distance follows the current aim; it is not
    a terrain-aware club recommendation.
-3. Play to the green, then putt using the displayed estimated pace. Completing holes 1–17 pauses
-   scoring until **Next hole**. The hole score explains played shots, penalties and gimmes.
+3. Play to the green, then putt using the displayed estimated pace. Completing an intermediate hole
+   pauses scoring until **Next hole**. The hole score explains played shots, penalties and gimmes.
 4. Tap the compact **scorecard** to see front/back scores. End round saves a partial round; Exit
    round confirms ending and returns to Play. Merely visiting Play/Practice leaves it active.
-5. Hole 18 ends the round. Sessions → Review → **Review a hole** inspects its map, shot log and
-   score. Excluding shots affects analytics only. Delete remains recoverable through Sessions.
+5. Hole 9 ends Front 9; hole 18 ends Back 9 or Full 18. Sessions → Review → **Review a hole**
+   inspects its map, shot log and score. Only selected holes appear; back-nine numbering remains
+   10–18. Excluding shots affects analytics only. Delete remains recoverable through Sessions.
+   Misread/Mulligan can reopen the final selected hole while preserving earlier scores.
 
 The map spans the full content width. The scorecard strip above it shows the current hole's played
 shots + penalties + gimmes = total, separately from the round total and correction counts. Distance,
