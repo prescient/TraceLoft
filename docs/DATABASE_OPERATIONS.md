@@ -21,6 +21,13 @@ two services cannot independently score drills against the same file.
 
 ## Implemented foundation
 
+- Play corrections persist in the session's `game_corrections` history and per-attempt
+  `game_correction` overlay, plus `audit_events` with action `game_correction`. The original
+  `game_outcome` and raw observation remain unchanged. New Misread exclusions carry reason
+  `game_misread` in `inclusion_decisions`; later manual inclusion edits remain manual. Restored
+  score/position, removed completion snapshots, exclusion and audit commit in one transaction.
+  No schema upgrade is needed. Existing sessions without correction fields continue to load.
+
 - Pebble Boulder rounds freeze all eighteen hole packages in the SQLite session payload, with
   per-hole result snapshots, current-hole index and monotonic turn. Attempts retain `hole_id` and
   `hole_number` alongside the existing immutable game outcomes. Normal restart resumes the same

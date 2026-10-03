@@ -364,8 +364,12 @@ class Store:
                 if previous:
                     shot_id, obs_id = previous['shot_id'], previous['observation_id']
                     if previous['excluded'] != int(shot['excluded']):
+                        correction=shot.get('game_correction')
+                        new_misread=(correction and correction['kind']=='misread'
+                            and not json.loads(previous['payload_json']).get('game_correction'))
                         self.connection.execute('INSERT INTO inclusion_decisions VALUES(?,?,?,?,?,?)',
-                            (uuid.uuid4().hex,sid,shot['key'],int(shot['excluded']),'manual_session_only',now()))
+                            (uuid.uuid4().hex,sid,shot['key'],int(shot['excluded']),
+                             'game_misread' if new_misread else 'manual_session_only',now()))
                 else:
                     receipt_id = shot.get('receipt_id')
                     candidates = self.connection.execute('SELECT id FROM ingest_events WHERE legacy_key=? AND import_file_id IS NOT NULL', (shot['key'],)).fetchall() if imported else []

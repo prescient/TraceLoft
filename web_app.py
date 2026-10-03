@@ -8,6 +8,7 @@ import sqlite3
 import webbrowser
 from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, Response
@@ -79,6 +80,11 @@ class GameAimParams(BaseModel):
     x: float = Field(ge=-5000,le=5000,allow_inf_nan=False)
     y: float = Field(ge=-5000,le=5000,allow_inf_nan=False)
     turn: int = Field(ge=0)
+
+
+class GameCorrectionParams(GameTurnParams):
+    kind: Literal['mulligan','misread']
+    key: str = Field(min_length=1,max_length=256)
 
 
 class GameDemoParams(BaseModel):
@@ -363,6 +369,12 @@ def create_app(service=None):
     @app.post('/api/game/{session_id}/next')
     async def game_next(session_id: str, params: GameTurnParams):
         service.game_action(session_id,'next',params.model_dump())
+        return service.snapshot()
+
+    @app.post('/api/game/{session_id}/correct')
+    async def game_correct(session_id: str, params: GameCorrectionParams):
+        try:service.correct_game(session_id,params.model_dump())
+        except FileNotFoundError:raise HTTPException(404,'This round is unavailable. Restore it before correcting a shot.')
         return service.snapshot()
 
     @app.get('/api/game/{session_id}/preview')

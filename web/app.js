@@ -243,6 +243,7 @@ function renderRunner() {
       aim:params=>change(`/api/game/${data.id}/aim`,params),
       simulate:params=>change(`/api/game/${data.id}/simulate`,params),
       next:params=>change(`/api/game/${data.id}/next`,params),
+      correct:async params=>{const next=await api(`/api/game/${data.id}/correct`,params);review=null;update(next);setView('runner',{replace:true});},
       preview:()=>api(`/api/game/${data.id}/preview`),
       recommendations:()=>api(`/api/game/${data.id}/recommendations`),
       exclude:async key=>{if(review)review=await api(`/api/sessions/${data.id}/exclude`,{key});else update(await api(`/api/practice/${data.id}/exclude`,{key}));redraw();}

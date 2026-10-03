@@ -352,6 +352,24 @@ class GolfService:
         self.publish_context();self.sessions_revision+=1
         if saved.data['ended']:self.backup_after_session()
 
+    def correct_game(self, session_id, params):
+        self.drain_worker();self.flush_practice()
+        if self.pending:raise ValueError('Resolve pending saves before correcting the round.')
+        if self.practice and self.practice.data['id']!=session_id and not self.practice.data['ended']:
+            raise ValueError('Finish or abandon the active session before reopening this round.')
+        saved=self.practice if self.practice and self.practice.data['id']==session_id else self.load_session(session_id)
+        if not isinstance(saved,GolfSimSession):raise ValueError('Choose a golf round.')
+        previous=copy.deepcopy(saved.data)
+        try:
+            with self.store.transaction() if self.store else contextlib.nullcontext():
+                audit=saved.correct_shot(params['kind'],params['key'],params['turn'])
+                if self.store:self.store._audit(session_id,'game_correction',audit)
+        except (OSError,sqlite3.Error,ValueError):
+            saved.data=previous
+            raise
+        self.practice=saved
+        self.publish_context();self.sessions_revision+=1
+
     def game_preview(self, session_id):
         from club_preview import build_preview
         saved=self.practice if self.practice and self.practice.data['id']==session_id else self.load_session(session_id)

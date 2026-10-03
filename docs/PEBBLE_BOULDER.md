@@ -55,6 +55,21 @@ The full course package is `courses/pebble-boulder-blue-v1.json`. A normal servi
 an unfinished round or its between-hole pause. No database migration or reset is required.
 Artwork provenance and editable geometry references are in [design notes](../designs/pebble-boulder/README.md).
 
+## Correcting a shot
+
+Use **Replay a shot → Mulligan** or **Misread** above the scorecard/map. Both remove the latest
+scored attempt from gameplay and restore its previous position, aim, lie and score. Any penalty or
+gimme added by that attempt is removed too. Mulligan keeps its current analysis inclusion; Misread
+excludes it from analysis. The original reading and original result remain in the shot log with
+an explicit correction label. Expand the correction count to see reasons, holes and timestamps.
+
+These buttons remain available after a hole finishes, after advancing to the next tee, and after
+hole 18. In Sessions review, correcting explicitly reopens the round and returns to its active
+screen; you cannot displace another active session. The displayed target is always the latest
+scored attempt in the entire round, regardless of which hole is being reviewed. Repeat to go back
+newest-first. Unscored and already corrected attempts are skipped. Abandoned rounds cannot reopen;
+deleted rounds must first be restored. Analysis Include/Exclude alone never changes the score.
+
 ## Verification
 
 The isolated API test plays all eighteen holes along their routes, approaches each green, putts out,

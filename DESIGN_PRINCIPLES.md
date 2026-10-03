@@ -226,6 +226,12 @@ totals. Pause scoring visibly between holes and require Next hole before accepti
 tee. Keep the scorecard compact during play, expandable by touch/keyboard, and open in saved review.
 Review selects frozen holes without moving the active ball. Distinguish ended-early rounds and
 unplayed holes from completed scores; never count analysis exclusions as mulligans.
+Offer explicit Mulligan and Misread actions with a visible target and separate history/counts.
+Completion must not lock out correcting the last shot: allow reopening a hole or round, including
+the previous hole from its untouched next tee. Restore score and position together, including
+penalties/gimmes. Preserve raw readings and original outcomes; misreads default out of analysis,
+mulligans retain the analysis selection. Review only resumes after an explicit correction, with
+active-session ownership enforced. Keep correction buttons touch-sized and available above the map.
 
 Default to an explicit demo experience when physical geometry is unverified. Keep aim, next equipment,
 lie, remaining distance and score easy to find. Use feet on the green. Match map surfaces to the scorer;

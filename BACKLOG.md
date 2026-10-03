@@ -1,5 +1,17 @@
 # TraceLoft backlog
 
+## Play corrections — implemented 2026-10-03
+
+- [x] Separate Mulligan and Misread controls, usable after hole/round completion and in saved review.
+- [x] Restore the latest scored shot's pre-shot state, including penalty/gimme removal; reopen
+  previous completed hole from its next tee and final hole after the round ends.
+- [x] Preserve original readings/outcomes and track separate counts, timestamps and shot-log labels.
+  Misread excludes from analysis; mulligan keeps the existing analysis selection.
+- [x] Atomic SQLite audit, stale-input/double-click guards and active-session ownership protection.
+- [x] Newest-first repeated corrections; arbitrary earlier-shot editing/replaying later shots is
+  outside this feature. See [course controls](docs/PEBBLE_BOULDER.md).
+
+
 ## Relay improvements inspired by rēlā — requested 2026-10-03 · planned
 
 Backlog only; no implementation or new rēlā dependency. The shot delivery inspector remains a

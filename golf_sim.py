@@ -84,6 +84,41 @@ class GolfSimSession(PuttingSession):
             last_message=f"Hole {c['hole_number']} · choose a club and aim.")
         self.save()
 
+    def latest_played_shot(self):
+        return next((s for s in reversed(self.data['shots'])
+                     if s.get('game_outcome',{}).get('applied') and not s.get('game_correction')),None)
+
+    def correct_shot(self,kind,key,turn):
+        """Rewind the latest effective stroke; retain immutable readings and outcomes."""
+        shot=self.latest_played_shot()
+        if self.data.get('abandoned'):
+            raise ValueError('Abandoned rounds cannot be reopened.')
+        if kind not in ('mulligan','misread'):
+            raise ValueError('Choose Mulligan or Misread.')
+        if not shot or shot['key']!=key or turn!=self.data['game']['turn']:
+            raise ValueError('The round changed. Refresh before correcting the latest shot.')
+        r=self.data.get('round')
+        index=next((i for i,c in enumerate(r['holes']) if c['id']==shot['hole_id']),None) if r else None
+        if r and index is None:raise ValueError('The original hole is unavailable.')
+        audit=dict(id=uuid.uuid4().hex,kind=kind,shot_key=key,at=timestamp(),
+            hole_id=shot.get('hole_id',self.data['course']['id']),hole_number=shot.get('hole_number',1),
+            previous_game=copy.deepcopy(self.data['game']),previous_ended=self.data['ended'],
+            previous_excluded=shot['excluded'],previous_round_index=r['index'] if r else None,
+            removed_results=copy.deepcopy([v for v in r['results'] if v['hole_number']>=index+1]) if r else [])
+        restored=copy.deepcopy(shot['game_outcome']['before'])
+        restored.update(turn=turn+1,last_message=f"{kind.capitalize()} recorded · previous position restored. Ready to replay.")
+        if r:
+            r['index']=index
+            r['results']=[v for v in r['results'] if v['hole_number']<index+1]
+            self.data['course']=copy.deepcopy(r['holes'][index])
+        self.data.update(game=restored,ended=None)
+        shot['game_correction']={k:audit[k] for k in ('id','kind','at')}
+        if kind=='misread':shot['excluded']=True
+        audit['restored_game']=copy.deepcopy(restored)
+        self.data.setdefault('game_corrections',[]).append(audit)
+        self.save()
+        return audit
+
     def set_aim(self,x,y,turn):
         if self.data['ended'] or self.data['game']['holed'] or turn!=self.data['game']['turn']:
             raise ValueError('The round advanced or ended. Refresh before aiming.')
@@ -171,8 +206,10 @@ class GolfSimSession(PuttingSession):
         putting=g['lie']=='green' and not g['holed']
         pace=required_speed_mph(max(.5,remaining*3),self.data['game_settings']['putting']['stimp_ft']) if putting and remaining*3<=300 else None
         result=dict(count=sum(not s['excluded'] for s in shots),recorded=len(shots),successes=int(g['holed']),
-            scored=sum(s['scored'] for s in shots),strokes=g['strokes'],penalties=g['penalties'],
+            scored=sum(s['scored'] and not s.get('game_correction') for s in shots),strokes=g['strokes'],penalties=g['penalties'],
             concessions=g['concessions'],remaining_yd=remaining,required_pace_mph=pace,holed=g['holed'])
+        result.update({kind+'s':sum(a['kind']==kind for a in self.data.get('game_corrections',[]))
+                       for kind in ('mulligan','misread')})
         r=self.data.get('round')
         if r:
             previous=[v for v in r['results'] if v['hole_id']!=self.data['course']['id']]

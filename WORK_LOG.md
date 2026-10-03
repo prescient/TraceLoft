@@ -155,3 +155,30 @@
   catalog entry and first artwork return successfully, with no active session introduced.
   Documentation relative links and git whitespace checks pass. Saved an isolated iPad runner
   screenshot in designs/pebble-boulder/qa-ipad-round.png.
+
+
+## 2026-10-03 — Mulligan and Misread corrections
+
+- Implemented explicit newest-first correction actions for Play, including single-hole completion,
+  between-hole pause, an untouched next tee, manually ended rounds and completed hole 18 in review.
+  Reopening review returns to the active Play route. Another active session cannot be displaced.
+- Restore frozen pre-shot position/aim/lie/score and undo associated penalties/gimmes. Advance the
+  current turn to invalidate delayed inputs. Keep original readings/outcomes, overlay the correction,
+  record separate counts and a timestamped audit, and remove only affected hole-completion results.
+  Misreads are excluded from analysis with a `game_misread` inclusion reason; mulligans preserve
+  the existing inclusion flag. Atomic SQLite rollback protects failures after a session save.
+- Added touch-sized controls above the scorecard/map, visible target, expandable correction history
+  and shot-log correction labels. Effective shot counts and map endpoints ignore corrected attempts;
+  ordinary analysis exclusions continue to preserve game scores.
+- Verification: full Python suite passed (124 tests), then the expanded correction suite passed
+  (7 tests, including the additional live-mode/manual-end case). All 38 JavaScript tests passed.
+  Tests cover raw evidence preservation, penalty/gimme reversal, repeated/stale requests, late shots,
+  18-hole completion/recompletion, persistence, ownership/deletion/abandon guards and disk rollback.
+- Isolated service/database on 8879: browser confirmed Misread after hole completion, Mulligan after
+  advancing to the next tee, and Misread from final-round saved review reopening hole 18. Reviewed
+  1366×1024 and 1376×1032 iPad landscape, 1440×900 desktop and 390×844 phone; no horizontal page
+  overflow and correction buttons at least 48px high. Screenshot in
+  [design review](designs/game-corrections/ipad-replay-controls.png).
+- Updated design principles, navigation paths/guards, D50, course guide, database operations,
+  README and backlog. Restarted the idle production service on 8765; state remained idle and the
+  new correction API passed a validation-only route check. No production test shots were created.

@@ -1,5 +1,21 @@
 # TraceLoft architecture decisions
 
+## D50 — Audited game corrections (2026-10-03)
+
+Mulligan and Misread rewind the latest effective scored attempt, restoring its frozen pre-shot
+position, aim, lie and score (including associated penalty/gimme strokes). They are separate
+from analysis inclusion: a mulligan preserves the current analysis flag; a misread excludes the
+reading. Original measurements and game outcomes remain immutable, with a correction overlay and
+an append-only audit containing time, reason, target, previous state and restored state.
+
+Completion is reversible: reopen the current hole, the previous hole from an untouched next tee,
+or hole 18 from saved review. Corrections work newest-first; undo later shots before an earlier
+shot. Remove affected completion snapshots, never earlier results, and increment the current turn
+rather than reusing the historical turn. Reject stale key/turn, pending saves, abandoned/deleted
+rounds and competing active session ownership. Save score, exclusion and audit atomically in
+SQLite before publishing the resumed context. No schema migration or raw-shot deletion.
+
+
 ## D49 — Pebble Boulder round package (2026-10-03)
 
 Use the official January 2026 Blue scorecard (6,801 yards/par 72) for yardage/pars only, with

@@ -30,7 +30,9 @@ Windows launch scripts are the verified distribution path.
 Play includes **Pebble Boulder**, an original 18-hole coastal course using the January 2026 Pebble
 Beach Blue tee yardages: **6,801 yards, par 72**. Choose Play → Pebble Boulder → Set up round.
 Complete each hole, then tap Next hole. The round saves automatically in SQLite; its scorecard and
-individual holes are available in Sessions. End round saves a partial round. See the
+individual holes are available in Sessions. End round saves a partial round. **Mulligan** and
+**Misread** replay the latest scored shot, even after a hole or round ends. Both are tracked;
+misreads are excluded from analysis, while mulligans retain their analysis selection. See the
 [course guide](docs/PEBBLE_BOULDER.md) for controls, source details and current game limits.
 
 This repository contains no OCR, screen capture, calibration, training glyphs or private adapter
