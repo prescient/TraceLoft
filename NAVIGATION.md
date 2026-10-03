@@ -399,3 +399,14 @@ routes and exits remain unchanged. Active sessions disable all four launch cards
 Return to active session. Each launch is a single-hole round, not a multi-hole tournament.
 Fresh isolated browser review verified all three new card selections, Willow completion/banner,
 partial-round End → Play, Meadow active guard → Return → refresh, and responsive card/runner layouts.
+
+## Sheboygan Straits — 2026-10-03
+
+Play → Sheboygan Straits → Set up round preselects the Blue 18-hole package; Cancel returns to
+Play. Shared round routes, active-session guards and exits apply. Hole guide expands in place.
+Completion → Next hole → next tee; Misread can return to the just-completed hole. All eighteen
+holes are preserved for Sessions review. The library also retains Pebble Boulder and single holes.
+
+Fresh isolated browser verification covered this selection/setup path, hole completion/Next hole,
+Misread back to hole 1, Play menu active guard/Return, End, hole 18 review/Green zoom and Exit.
+Viewport checks: iPad 1366×1024, desktop 1536×960, phone 390×844; no document overflow.

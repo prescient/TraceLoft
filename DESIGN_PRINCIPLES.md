@@ -291,3 +291,8 @@ immediately and restore it on restart. Hide optional port overrides in Connectio
 source readiness separately from simulator connectivity. Keep OCR/calibration in the private source
 app. Replace in-drill Start/Stop capture with a Relay link. Input disconnected/unready shows an
 actionable warning; healthy recording uses only the header. Keep raw diagnostics out of practice.
+
+Course artwork review: generated aerials may drift from their input guides. Trace/reconcile the
+finished hazards and putting surfaces, inspect all holes with scoring outlines, and register
+tee/pin and scale to the final art. Reject texture fragments that would become invisible hazards.
+Keep optional hole strategy in a disclosure and game-physics limits in the existing assumptions.

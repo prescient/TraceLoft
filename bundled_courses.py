@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-COURSE_IDS = ('pebble-boulder-blue-v1', 'meadow-one-v2', 'willow-cove-155-v1', 'pine-bend-365-v1', 'meadow-reach-525-v1')
+COURSE_IDS = ('sheboygan-straits-blue-v1', 'pebble-boulder-blue-v1', 'meadow-one-v2', 'willow-cove-155-v1', 'pine-bend-365-v1', 'meadow-reach-525-v1')
 
 
 def load_bundled(course_id):

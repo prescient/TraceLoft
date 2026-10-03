@@ -1,5 +1,33 @@
 # TraceLoft work log
 
+## 2026-10-03 — Sheboygan Straits complete course
+
+- Reviewed current architecture, backlog, decisions, Vector design principles/navigation and the
+  supplied official Straits hole gallery. Used official Blue pars/yardages: 7,142 yd / par 72.
+- Built eighteen original routes and bunker complexes, then generated eighteen independent aerials
+  with the built-in image generation tool. Retained original guides, base prompt and provenance.
+- Traced the finished artwork into simplified scoring polygons; adjusted tee/pin/route registration,
+  rejected reviewed rock/fescue fragments and stored asset hashes. Final package has 354 scoring sand
+  areas, 11–27 per hole. OpenCV/NumPy tracing runs only in a temporary design environment; the app
+  keeps its existing dependencies and reads JSON/PNG. No source photography is bundled.
+- Added Sheboygan Straits to Play and optional per-hole strategy disclosures. Existing round,
+  equipment, dispersion, putting, scorecard, correction and saved-review behavior is reused.
+- Verification: complete suite **128 Python tests passed**, followed by the expanded course suite
+  **4/4 passed** (129 distinct Python cases now); **38 JavaScript tests passed**. The course tests
+  play all eighteen holes, verify putting/score/persistence/delete-restore, paused/stale input,
+  bunker recovery, water penalty and corrections after completion. All geometry and asset hashes pass.
+- Visual QA: all eighteen finished art/boundary overlays inspected; iPad Pro landscape 1366×1024,
+  desktop 1536×960 and phone 390×844 CSS viewports checked (not physical-device tests). Exercised
+  selection/setup, tagged demo shot, hole completion, Next hole, Misread back to previous hole,
+  active-session library guard/return, End, final-hole historical review/green zoom and Exit.
+  No horizontal document overflow. QA used isolated Temp/straits-qa SQLite/input/service on 8879.
+- Production restarted normally on 8765 after confirming no active practice session; input remains
+  on 900. Verified new library card and all eighteen image URLs (200 image/png). No production
+  synthetic shots or data migration. Course docs, design principles, navigation and backlog updated.
+- Known model limits remain explicit: flat endpoint scoring, configurable lie reduction, no dune
+  elevation/bunker-face collision or green slope simulation. TraceLoft/TraceCapture separation kept.
+
+
 ## 2026-10-03 — Independent application and direct Relay
 
 - Created a clean sibling repository without capture/OCR code, source calibration, glyphs or the

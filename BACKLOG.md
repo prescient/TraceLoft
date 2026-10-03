@@ -1,5 +1,13 @@
 # TraceLoft backlog
 
+## Sheboygan Straits — implemented 2026-10-03
+
+- [x] Complete original 18-hole Whistling-Straits-inspired lakeside course, Blue 7,142 yd / par 72.
+- [x] Dense bunker complexes, generated aerials, traced scoring surfaces and compact hole guides.
+- [x] Existing equipment/dispersion, scoring, putting, next-hole, saved review and corrections.
+- [x] Complete-round tests and visual boundary review. [Course guide](docs/SHEBOYGAN_STRAITS.md).
+- Future physics remain separate: elevation, bunker-face escape, wind and sloping greens.
+
 ## Play corrections — implemented 2026-10-03
 
 - [x] Separate Mulligan and Misread controls, usable after hole/round completion and in saved review.

@@ -12,3 +12,6 @@ capture concepts remain in the private combined archive; generated concepts are 
 
 [Sim page concept](SIM_PAGE.md): large bag/club selection, latest-shot tiles, optional manual
 outcome tags and detailed shot log. Pending review; no application route or behavior added.
+
+[Sheboygan Straits](sheboygan-straits/README.md) records eighteen generated links aerials,
+original guides, the generation prompt and the final artwork-to-scoring registration process.

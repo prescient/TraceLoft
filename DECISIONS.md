@@ -51,3 +51,12 @@ end/abandon remains the user's action. Keep the existing SQLite path and immutab
 - Models, demo shots and course artwork are explicitly distinguishable from measured outcomes.
 - Full research and historical decisions remain in the private combined archive; current operation
   follows README, docs/RELAY.md and DESIGN_PRINCIPLES.md.
+
+## D51 — Sheboygan Straits and artwork registration (2026-10-03)
+
+Use the official Straits Blue pars/yardages (7,142 yards/par 72) with original lakeside layouts.
+Generate from original geometry guides, then trace the finished art and visually review scoring
+edges before shipping. Hash each asset with its registered geometry. Keep all design-only image
+analysis dependencies outside the application environment. Existing endpoint lie rules, round
+snapshots and corrections apply; dense sand does not imply simulated bunker depth or terrain.
+See [course guide](docs/SHEBOYGAN_STRAITS.md).

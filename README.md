@@ -27,6 +27,10 @@ Windows launch scripts are the verified distribution path.
 - **Analyze**: session/date/equipment filters, robust summaries, trends and CSV export.
 - **Sessions**: review, end/abandon, recoverable deletion and restoration.
 
+Play also includes **Sheboygan Straits**, an 18-hole lakeside links course with dense bunker
+complexes, Blue tees at **7,142 yards / par 72**, and original aerial artwork. Select it in Play.
+See the [Sheboygan Straits guide](docs/SHEBOYGAN_STRAITS.md) for hole details and scoring rules.
+
 Play includes **Pebble Boulder**, an original 18-hole coastal course using the January 2026 Pebble
 Beach Blue tee yardages: **6,801 yards, par 72**. Choose Play → Pebble Boulder → Set up round.
 Complete each hole, then tap Next hole. The round saves automatically in SQLite; its scorecard and
