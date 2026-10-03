@@ -68,3 +68,13 @@
   club measurements, no documented club-name/selection setter; Code 201 returns Player.Club.
   Logged live verification and explicit mapping/precedence as follow-up, without claiming sync.
 - Documentation-only verification: checked backlog scope, source link and git whitespace.
+
+## 2026-10-03 — Relay improvement backlog
+
+- Added six planned improvements from the rēlā comparison: delivery inspector, simulator club/mode
+  feedback, readiness states, late club measurements, capability-aware controls and auditable estimates.
+  Prioritized the inspector and feedback; connected feedback to the existing Sim page scope.
+- Preserved source separation, immutable measurements, manual selection precedence and the limits of
+  simulator acknowledgements. Core rēlā code is not covered by its MIT connector example license.
+- Documentation-only verification: checked relative link targets, consistency with docs/RELAY.md
+  and the existing Sim backlog, and git whitespace. No runtime, capture or session changes.

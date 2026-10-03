@@ -1,5 +1,48 @@
 # TraceLoft backlog
 
+## Relay improvements inspired by rēlā — requested 2026-10-03 · planned
+
+Backlog only; no implementation or new rēlā dependency. First priorities are the shot delivery
+inspector and simulator club/mode feedback. Refine existing reconnect, saved destinations and
+independent local recording rather than rebuilding them. Preserve the TraceCapture boundary.
+
+- **High — Shot delivery inspector:** compact history of received input, SQLite save, forwarded
+  payload and simulator response, with timestamps and actionable failures. Separate current errors
+  from historical/resolved log entries (such as the stale missing-mss message). Distinguish socket
+  writes from simulator responses; do not infer per-shot receipt from uncorrelated Code 200 replies.
+  Keep raw acquisition diagnostics in TraceCapture; TraceLoft shows protocol/storage/delivery evidence.
+- **High — Simulator club/mode feedback:** extend the planned Sim page below with opt-in following
+  of simulator-reported club/mode where supported. Map simulator codes to physical clubs in the
+  selected bag, resolve ambiguous matches and define manual override precedence. Freeze selection
+  and its source on each shot. Verify real simulator behavior; Open Connect Player.Club feedback
+  does not establish a command to change the simulator's selected club or a hardware mode command.
+- **High — Clear readiness states:** distinguish source connected, ready, ball detected, shot saved
+  and simulator response. Show unknown/unsupported explicitly; a connected socket is not proof that
+  a ball is ready. Clear stale ready/ball state after disconnect and make recovery visible without
+  persistent historical error banners.
+- **Medium — Late-arriving club measurements:** support ball data followed by club data for the
+  same shot. Define stable correlation, duplicate/conflict handling, timeout and reconnect behavior;
+  retain original observations and attach enrichment without another attempt, stroke or ball dispatch.
+  Enable split downstream updates only when the destination contract supports and verifies them.
+- **Medium — Capability-aware controls:** offer putting, chipping, handedness and related controls
+  only when the source exposes support. Device-specific commands belong to the external source
+  adapter; TraceLoft remains source-neutral. An explicit capability/control contract is follow-up work.
+- **Medium — Auditable estimates and optional simulator assistance:** preserve measured input,
+  derived estimates and actual outgoing payload separately, with model/settings versions and units.
+  Any interpolation or short-putt direction clamp must be opt-in, visibly labeled and excluded from
+  measured-performance statistics by default. Never overwrite original measurements or infer putting
+  solely from low speed. Validate against held-out measured data before presenting accuracy claims.
+
+Acceptance should cover isolated protocol peers, missing/unsupported states, reconnect, delayed and
+duplicate packets, manual-vs-followed equipment selection, and iPad landscape/phone layouts. Real
+simulator acceptance remains a distinct check. Follow [design principles](DESIGN_PRINCIPLES.md)
+and the existing [relay contract](docs/RELAY.md); update navigation when new UI paths are implemented.
+
+References: [rēlā user guide](https://docs.rela.golf/rela/user-guide/) (installed copy reviewed),
+[published connector API and MIT example](https://github.com/eKsiSLe/rela-OtherLM).
+Implement independently against published interfaces; the example's MIT license does not cover the
+core rēlā application. Do not copy core code/assets under the example's license.
+
 ## Sim page — requested 2026-10-03 · planned
 
 Add a minimal simulator companion page focused on bag/club selection and shot logging.
