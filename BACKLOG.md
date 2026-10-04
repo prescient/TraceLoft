@@ -1,5 +1,14 @@
 # TraceLoft backlog
 
+## Judges Course — implemented 2026-10-03
+
+- [x] All 18 supplied layouts/yardages; 6,163 yd/par 72 with full/front/back choices.
+- [x] 18 generated aerials inspired by supplied woodland/lakeside photos; finished-art boundaries.
+- [x] Ring-bunker grass islands, split fairways, lakes and existing scoring/club/dispersion controls.
+- [x] Boundary review, round/putting/correction tests and responsive browser review.
+- Approximate illustrated geometry; elevations/sloping greens remain future work.
+  [Course guide](docs/JUDGES_COURSE.md), [design evidence](designs/judges-course/README.md).
+
 - [x] Full 18 / Front 9 / Back 9 for Boulder Beach and Sheboygan Straits, selected yardage/par,
   original numbering, selected-hole scorecards/review, completion and corrections (2026-10-03).
 

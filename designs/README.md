@@ -27,3 +27,6 @@ original guides, the generation prompt and the final artwork-to-scoring registra
 
 [Course registration audit](course-registration/README.md) records the complete 36-hole review,
 corrected v2 layouts, fixed pixel probes and iPad boundary evidence.
+
+[Judges Course](judges-course/README.md) records the map/photo-inspired 18-hole parkland aerials,
+generation prompts, finished-art boundary review and iPad view.

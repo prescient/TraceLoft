@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-COURSE_IDS = ('sheboygan-straits-blue-v2', 'pebble-boulder-blue-v3')
+COURSE_IDS = ('sheboygan-straits-blue-v2', 'pebble-boulder-blue-v3', 'judges-course-v1')
 # Retain versioned assets/load compatibility for historical rounds and archived links.
 RETIRED_IDS = ('meadow-one-v2', 'willow-cove-155-v1', 'pine-bend-365-v1', 'meadow-reach-525-v1',
                'sheboygan-straits-blue-v1', 'pebble-boulder-blue-v1', 'pebble-boulder-blue-v2')

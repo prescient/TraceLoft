@@ -126,3 +126,12 @@ and smooth perimeter sampling where mowing/lighting fragmented the color masks. 
 surfaces, yard registration and artwork unchanged; retain v2 and frozen rounds. Check putting-apron
 continuity and independent inside/outside landmarks in addition to structural/hash validation.
 See [images and reproduction](designs/boulder-fairway-refinement/README.md).
+
+## D58 — Judges Course map/photo adaptation (2026-10-03)
+
+Use the supplied 18 illustrated maps and exact scorecard yardages, with four photographs as
+woodland/lakeside style inspiration. Generate separate overhead aerials and trace finished art.
+Use provisional middle tee pads and label Provided yardages instead of inferring a tee color.
+Keep uniform approximate route scale, native image proportions, grass cutouts and split fairways.
+Shared review tooling supports native dimensions and first-version packages. Preserve older
+courses and frozen rounds; no acquisition or database schema changes.

@@ -437,3 +437,36 @@
   production recording on 8765; full current demo-range snapshot (40 existing shots, selected club,
   session/settings) matched exactly before/after. No production shots were generated or deleted.
   Confirmed catalog Straits v2 / Boulder v3, stopped QA, reset viewport and closed its review tab.
+
+## 2026-10-03 — Judges Course
+
+- Built all 18 holes from the supplied illustrated maps and exact yardages/pars: 6,163 yd / par 72,
+  Front 9 3,066/par 36, Back 9 3,097/par 36. Four later supplied photos guide the wooded parkland,
+  natural lakes, layered stone banks, pale sand and autumn accents. Built-in imagegen produced 18
+  original aerials; saved exact prompts/source hashes and left reference files untouched.
+- Traced finished-art turf with reviewed smooth controls and seeded bunker/water contours. Retained
+  55 sand regions, grass cutouts on 2/5, separate fairways on 12/15 and water on 7/8/9/15/16/17.
+  Rejected paths/shore rocks as sand and lake reflections as land. Corrected hole 1's false forest
+  fairway extension and placed hole 16's selected middle tee on its visible pad. Published first
+  immutable package and design-only deterministic builder. Native image proportions/uniform yard
+  scale are retained, including hole 9's slightly different raster aspect. Widths/tee choice remain
+  approximate; flat greens, decorative banks and simplified nature are documented game limits.
+- Added the course to Play/full/front/back choices and made library tee labels read actual metadata.
+  Generalized registration renderer/fixtures to native image dimensions and first-version packages;
+  current evidence covers all 54 holes/722 fixed probes. Existing Boulder/Straits packages and images
+  remain unchanged. The same saved polygons drive scoring, optional outlines and fallback rendering.
+- Verification: final full Python suite 151 passed; all 49 JavaScript tests passed after the UI change,
+  with both camera tests passing again after final tee registration (108 current/legacy holes).
+  Targeted journeys exercise every new hole, putting/complete round, bunker stopping, Misread recovery,
+  frozen saved geometry, selected nines, supplied totals and independent cutout/water-carry landmarks.
+  Builder reproduced final package identically; all 18 aerial endpoints returned HTTP 200.
+- Reviewed all 18 aerials and three finished boundary sheets. Isolated SQLite/service on 8879:
+  Play library → Back 9 setup → club selection → hole/green view → scoring outlines → ended review
+  → hole review → Play menu. Reviewed final hole 16 tee placement in a fresh QA round and saved iPad
+  screenshot. Checked 1366×1024/1376×1032 iPad, 1366×900, 1440×900 desktop and 390×844 phone;
+  no horizontal overflow or browser warnings/errors. Physical Safari/live-monitor acceptance remains
+  unverified. Artwork/boundary review is an adaptation, not a surveyed course reconstruction.
+- Updated guides, principles, D58, navigation, backlog and shared review documentation. Reloaded
+  idle production through the normal launcher: complete current session snapshot matched before/after,
+  including all 40 existing shots, selected equipment and settings. Confirmed all three course choices.
+  No production shots were generated/deleted. Stopped QA, closed its tab and reset viewport sizing.

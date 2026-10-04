@@ -470,3 +470,8 @@ Green/terrain toggle → End/review. Map boundaries use the same geometry with o
 
 The catalog now selects Boulder Beach v3 (fairways 6/16/18) and Straits v2. Prior v1/v2 rounds
 retain their copies. New-round setup/review routes and guards are unchanged.
+
+Judges Course adds a third 18-hole library choice using the same setup/launch/review paths.
+Full/front/back choices keep original numbering; Provided yardages identifies the supplied
+scorecard without guessing a tee color. Isolated browser verification covered Back 9 setup,
+club selection, live map, Green/overview, boundary toggle, ended review and Play menu.

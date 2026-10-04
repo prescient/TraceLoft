@@ -74,7 +74,7 @@ class FictionalPlayTests(unittest.TestCase):
         self.assertEqual(r.status_code,200,r.text)
     def test_library_and_full_rounds_putting_review_and_exclusion(self):
         rows=self.client.get('/api/courses').json()
-        self.assertEqual([c['id'] for c in rows],['sheboygan-straits-blue-v2','pebble-boulder-blue-v3'])
+        self.assertEqual([c['id'] for c in rows],list(COURSE_IDS))
         for identity in PIXELS:
             with self.subTest(hole=identity):
                 p=self.launch(identity);c=p.data['course'];sid=p.data['id']

@@ -1,5 +1,11 @@
 # Finished artwork and scoring boundary review — 2026-10-03
 
+The current catalog/manifest also includes [Judges Course](../judges-course/README.md): 18 new
+woodland/lakeside holes, bringing current coverage to 54 holes. Its controls use a 1000-pixel
+design reference, while fixtures/exports use native raster coordinates. The renderer reads
+each image's registered width/height and supports first-version packages without a legacy file.
+The original 36-hole audit described below remains historical evidence.
+
 Reviewed all 36 holes in Boulder Beach and Sheboygan Straits, with outlines in the same registered
 image frame used by Play. The original Boulder Beach guide polygons did not follow several final
 bunkers, greens, tees, ponds or shorelines. This was a geometry/art disagreement, not a camera
@@ -23,7 +29,7 @@ historical evidence. The current `review.json` follows the catalog, including th
   Preserved its 354 sand regions, water, tee/pin placements and yard registration.
 - Stored asset and geometry hashes plus 588 original reviewed pixel probes, including regression
   landmarks for Boulder Beach 1, Sheboygan Straits 10 and rejected tree-shadow water candidates.
-  The v3 follow-up adds ten fairway landmarks, bringing the current total to 598.
+  The v3 follow-up adds ten fairway landmarks, bringing the Boulder/Straits total to 598. Judges Course adds its own reviewed fixtures.
 
 The silhouettes are simplified vector traces. Fine grass textures, soft mowing transitions, surf
 foam, bunker lips and shadows do not define additional lies or collisions. Nature covers the
@@ -57,17 +63,17 @@ different existing v2. Thresholds and reviewed seed regions are specific to thes
 artwork requires fresh extraction and visual review, not reuse of this approval.
 
 For individual-hole review, run the renderer with `--individual --output <review-folder>`.
-It exports all 36 holes at the original 1774×887 artwork resolution, plus six overview sheets,
+It exports all 54 current holes at their native artwork resolutions, plus nine overview sheets,
 an offline `index.html` gallery and `course-boundary-review.zip`. Gallery links jump to a course
 or hole; clicking an image opens its full size. Pink marks the artificial map OB perimeter in
-individual exports. The original overview sheets/manifest remain identical. Generated review packs
+individual exports. Existing Boulder/Straits overview sheets retain their images; the manifest follows the current catalog. Generated review packs
 can live outside the repository; they do not change artwork, geometry, live state or the database.
 
 The registration script accelerates tracing by using color masks, contour cleanup and known guide
 regions, then converts image coordinates to uniform yard coordinates and validates tees/pins/shapes.
 The render script accelerates review by drawing every saved polygon over its artwork in one run,
 producing fixed pixel probes and hashes for regression checks. These helpers currently target the
-two bundled courses; extracting an arbitrary new course still needs adjusted masks/seed regions
+three bundled courses; extracting an arbitrary new course still needs adjusted masks/seed regions
 and human visual approval. Automatic probe generation is a proposal, not independent proof of alignment.
 
 [review.json](review.json) records reference pixels, fixed labels and asset/geometry/legacy hashes.

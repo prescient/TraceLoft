@@ -341,6 +341,11 @@ Course tracing must ignore mowing stripes and lighting changes inside a continuo
 Inspect the approach-to-green connection and both fairway edges at full artwork resolution; a passing
 geometry/hash check is not visual approval. Use reviewed control points to refine uncertain color masks.
 
+For illustrated-map adaptations, use maps for routing and photos for atmosphere. Register finished
+artwork rather than assuming AI preserved a guide. Preserve separate fairway patches and grass
+islands within sand; lake reflections must not become land islands. Keep native aspect ratio and
+uniform yard scale, and label approximate map geometry without claiming surveyed tees or elevation.
+
 Landing rules belong to Python scoring, with versioned landing/surface/rollout evidence per shot.
 Separate starting-lie distance reductions from carry-landing rollout reductions in setup. Sand stops
 at carry; rough/OB reduce only remaining rollout. Keep raw carry/total unchanged and disclose

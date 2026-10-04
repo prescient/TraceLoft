@@ -1,0 +1,112 @@
+[
+  {
+    "file": "Hole_10_par_4.jpeg",
+    "role": "layout",
+    "sha256": "5602b3bb9ff39b34317bbd98abc25f25d2396050af18994c8fc1d0447e2568a1"
+  },
+  {
+    "file": "hole_11_par_5.jpeg",
+    "role": "layout",
+    "sha256": "45bf722aa158d47280261016e56cf575b8bc3004cf78b3d36fd8a256e48d7fe7"
+  },
+  {
+    "file": "hole_12_par_4.jpeg",
+    "role": "layout",
+    "sha256": "028424db2a00e1fbf3d7bb8c4f2961f0cbc6c6a7f9c2f61a30a29a185b8ac6fa"
+  },
+  {
+    "file": "hole_13_par_4.jpeg",
+    "role": "layout",
+    "sha256": "059f17469c50d8c5770801976b14d2d3f7048e1188ecda84d90db257d5a42d39"
+  },
+  {
+    "file": "hole_14_par_3.jpeg",
+    "role": "layout",
+    "sha256": "0976f980a494a5f1b229a23c7ff3cc20c1ad0c7258be1bc702f416ecc1410193"
+  },
+  {
+    "file": "hole_15_par_4.jpeg",
+    "role": "layout",
+    "sha256": "69c18d618a253a8f9f99f4677e2665b9500faa54654568b4bb935ed5b2612893"
+  },
+  {
+    "file": "hole_16_par_3.jpeg",
+    "role": "layout",
+    "sha256": "7e067ee2238b2dfb25240a45cf9b5c7634e167fc5797d81aa8987d7fc41f793c"
+  },
+  {
+    "file": "hole_17_par_5.jpeg",
+    "role": "layout",
+    "sha256": "4bac0ce4a302dae030dd70ff405d0ceef15d1b2edde32d3511a7a03508b0cd38"
+  },
+  {
+    "file": "hole_18_par_4.jpeg",
+    "role": "layout",
+    "sha256": "ab49678de6b7c5a9c2a1efb54c000ea91de873bec62a4c5f46608e34991f002d"
+  },
+  {
+    "file": "Hole_1_par_4.jpeg",
+    "role": "layout",
+    "sha256": "264caec3c59eeedfd5bd574654251edc25e6b2f2e2f257f32dd7ab1483c3c52a"
+  },
+  {
+    "file": "Hole_2_par_5.jpeg",
+    "role": "layout",
+    "sha256": "e6c64f637114ebff2fead23a2d9ab68024d788efa64477b28854b4ed9c71dbe3"
+  },
+  {
+    "file": "Hole_3_par_3.jpeg",
+    "role": "layout",
+    "sha256": "60fc915dadc0537ca4d27bdd64170a70d9c2c2fde9a79ac5ad288d274aaa2f5e"
+  },
+  {
+    "file": "Hole_4_par_4.jpeg",
+    "role": "layout",
+    "sha256": "a409d6b5cff6367c6e1adeb5663dcf038371e58f11ecf2b56e5db74b2b7b057e"
+  },
+  {
+    "file": "Hole_5_par_4.jpeg",
+    "role": "layout",
+    "sha256": "40fd2656070ba35fb9c83197c7c259e1dbd027c313bcd52d0095d73f9ac92031"
+  },
+  {
+    "file": "Hole_6_par_5.jpeg",
+    "role": "layout",
+    "sha256": "99bac3c27834b494ca63f54b128712a321f05504438244945a0d4ee0aad3013d"
+  },
+  {
+    "file": "Hole_7_par_4.jpeg",
+    "role": "layout",
+    "sha256": "2ffd1bff5fc2dfc3aecd49df145ec1c59dce32708fa068f21de2642d112e9f70"
+  },
+  {
+    "file": "Hole_8_par_3.jpeg",
+    "role": "layout",
+    "sha256": "4b6652d211afeb2ce4b581658d85dfb3cbad2ec7d85643192313d6b2aafa3385"
+  },
+  {
+    "file": "Hole_9_par_4.jpeg",
+    "role": "layout",
+    "sha256": "42ea53bde9973dbfa87d1c8b52f5309268e87173b1e62ff481e7c584d1c825ed"
+  },
+  {
+    "file": "codex-clipboard-b164d061-35ac-43f8-b01d-384a1d1b0150.png",
+    "role": "style",
+    "sha256": "e6984edd009096ccf2d8194dbf698f538ce6e3f196b365ba54f2eea7383e096b"
+  },
+  {
+    "file": "codex-clipboard-fe370bcd-f155-4d35-ac98-5fbc06ce42c4.png",
+    "role": "style",
+    "sha256": "1988596114b6d46402966176166466ee793752e1b54f4f27828b0eedf17a2603"
+  },
+  {
+    "file": "codex-clipboard-46ddc82e-e681-4341-88ce-79504e4f92d4.png",
+    "role": "style",
+    "sha256": "c8031408c12634f304dc0f9f0ce3c689fda4b7650a1000854ccdfc59e7834032"
+  },
+  {
+    "file": "codex-clipboard-eb3ee9e1-0857-4338-8b71-5982f1de87b8.png",
+    "role": "style",
+    "sha256": "a778f5c0f5cdc4a850440c5d75b580d29ae4dbb2100d8e55f05f7a03e10a5113"
+  }
+]

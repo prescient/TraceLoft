@@ -45,7 +45,10 @@ Play also includes **Sheboygan Straits**, an 18-hole lakeside links course with 
 complexes, Blue tees at **7,142 yards / par 72**, and original aerial artwork. Select it in Play.
 See the [Sheboygan Straits guide](docs/SHEBOYGAN_STRAITS.md) for hole details and scoring rules.
 
-The built-in library contains Sheboygan Straits and Boulder Beach. The four earlier standalone
+The built-in library contains Sheboygan Straits, Boulder Beach and **Judges Course**.
+Judges Course uses the supplied 18-hole yardages (6,163 yd/par 72), with generated wooded-parkland
+aerials inspired by the supplied maps and lakeside photographs. Map scale is approximate.
+See the [Judges Course guide](docs/JUDGES_COURSE.md). The four earlier standalone
 holes are retired from new-round choices; saved rounds and imported courses remain available.
 
 Boulder Beach now uses **v3** and Sheboygan Straits **v2** for new rounds. All 36 holes were checked
@@ -54,7 +57,7 @@ Existing rounds retain their original boundaries. See the [full visual review](d
 
 Play includes **Boulder Beach**, an original 18-hole coastal course using the January 2026 Pebble
 Beach Blue tee yardages: **6,801 yards, par 72**. Choose Play → Boulder Beach → Set up round.
-Both courses offer **Full 18**, **Front 9 (1–9)** and **Back 9 (10–18)**. Setup shows each option's
+All three courses offer **Full 18**, **Front 9 (1–9)** and **Back 9 (10–18)**. Setup shows each option's
 par and yardage; the round ends at the final selected hole. Existing rounds keep their selection.
 Complete each hole, then tap Next hole. The round saves automatically in SQLite; its scorecard and
 individual holes are available in Sessions. End round saves a partial round. **Mulligan** and

@@ -30,8 +30,10 @@ class RegistrationTests(unittest.TestCase):
         self.assertEqual({c['id'] for c in review['courses']},set(COURSE_IDS))
         for reviewed in review['courses']:
             package=load_bundled(reviewed['id'])
-            legacy=ROOT/'courses'/f"{reviewed['legacy_id']}.json"
-            self.assertEqual(hashlib.sha256(legacy.read_bytes()).hexdigest(),reviewed['legacy_sha256'])
+            if reviewed['legacy_id']:
+                legacy=ROOT/'courses'/f"{reviewed['legacy_id']}.json"
+                self.assertEqual(hashlib.sha256(legacy.read_bytes()).hexdigest(),reviewed['legacy_sha256'])
+            else:self.assertEqual(package['version'],1)
             self.assertEqual(package['version'],reviewed['version'])
             self.assertEqual(len(reviewed['holes']),18)
             for c,fixture in zip(package['holes'],reviewed['holes']):

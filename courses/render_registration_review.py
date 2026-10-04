@@ -44,7 +44,7 @@ def overlay(c, native=False):
     im = Image.open(ROOT/'web/art'/Path(c['image']['href']).name).convert('RGB')
     if not native:
         im = im.resize((1536,768))
-    sx, sy = im.width/1536, im.height/768
+    sx, sy = im.width/c['image']['width'], im.height/c['image']['height']
     d = ImageDraw.Draw(im)
     def points(ring):
         return [(p[0]*sx,p[1]*sy) for p in (pixel(c,v) for v in ring)]
@@ -63,7 +63,7 @@ def probes(c):
     # Centers of the visible surfaces are saved as fixed asset-pixel fixtures after review.
     result = []
     for kind in ('water','sand','green','tee','fairway','nature'):
-        mask = np.zeros((768,1536),'uint8')
+        mask = np.zeros((c['image']['height'],c['image']['width']),'uint8')
         for p in c['surfaces'][kind]:
             single = np.zeros_like(mask)
             cv2.fillPoly(single,[np.array([pixel(c,v) for v in p['outer']], 'int32')],255)
@@ -95,8 +95,15 @@ def probes(c):
                       18:[(1050,528),(1410,529),(1580,420)]}
             for x,y in native[c['hole_number']]:
                 result.append(dict(pixel=[round(x*1536/1774),round(y*768/887)],lie='fairway'))
-    elif c['hole_number']==10:
+    elif c['id'].startswith('sheboygan') and c['hole_number']==10:
         result.extend([dict(pixel=[1367,388],lie='green'),dict(pixel=[1400,410],lie='green')])
+    if c['id'].startswith('judges'):
+        # Independent, visually checked landmarks supplement automatically proposed centers.
+        points={3:([600,248],'rough'),11:([580,280],'fairway')}
+        if c['hole_number'] in points:
+            p,lie=points[c['hole_number']];p=[round(v*c['image']['width']/1000) for v in p]
+            assert classify(world(c,p),c)==lie
+            result.append(dict(pixel=p,lie=lie))
     return result
 
 
@@ -128,6 +135,7 @@ These are the scoring polygons used by new rounds; saved older rounds retain the
                          ('Fairway','#ffffff'),('Nature','#ad88ff'),('Map OB limit','#ff74b4')]:
         html += f'<span><i class="swatch" style="--color:{color};outline:1px solid #777"></i>{label}</span>'
     html += '</div><p>Soft turf and shoreline transitions are simplified. The pink map perimeter is a game limit.</p><nav>' + ''.join(nav) + '</nav>' + ''.join(sections) + '</html>'
+    html=html.replace('All 36 current holes.',f'All {sum(len(holes) for _,holes in entries)} current holes.')
     index = output/'index.html'
     index.write_text(html,encoding='utf-8')
     files.append(index)
@@ -154,7 +162,8 @@ def main():
         legacy_id=identity.rsplit('-v',1)[0]+f'-v{version-1}'
         legacy=ROOT/'courses'/legacy_id
         legacy=legacy.with_suffix('.json')
-        record = dict(id=identity,version=version,legacy_id=legacy_id,legacy_sha256=hashlib.sha256(legacy.read_bytes()).hexdigest(),holes=[])
+        record = dict(id=identity,version=version,legacy_id=legacy_id if legacy.exists() else None,
+                      legacy_sha256=hashlib.sha256(legacy.read_bytes()).hexdigest() if legacy.exists() else None,holes=[])
         for offset in range(0,18,6):
             sheet = Image.new('RGB',(1800,660),'#111827')
             d = ImageDraw.Draw(sheet)
@@ -169,7 +178,7 @@ def main():
                 d.text((x+8,y+307),f"{package['name']} {c['hole_number']} / v{version}",fill='white')
                 raw=(ROOT/'web/art'/Path(c['image']['href']).name).read_bytes()
                 record['holes'].append(dict(id=c['id'],number=c['hole_number'],art_sha256=hashlib.sha256(raw).hexdigest(),
-                    geometry_sha256=geometry_hash(c),probes=probes(c)))
+                    geometry_sha256=geometry_hash(c),reference_pixels=[c['image']['width'],c['image']['height']],probes=probes(c)))
                 if (identity.startswith('pebble') and c['hole_number']==1) or (identity.startswith('sheboygan') and c['hole_number']==10):
                     px,py=pixel(c,c['pin'])
                     path = output/f'{identity}-green.png'

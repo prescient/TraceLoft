@@ -16,6 +16,10 @@
           "number": 1,
           "art_sha256": "562f73a3d578e992adb33e1f936841a318e1b4abc00c447b10c40cde4fecec83",
           "geometry_sha256": "8a0dac50e2a7742ec375b66682fef52a0ba348b7678451258cdbfd88619b17f7",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -206,6 +210,10 @@
           "number": 2,
           "art_sha256": "2e17364de7dd7983cb835864e62deefeb8e9586655137cf6a589fe504ac8b289",
           "geometry_sha256": "9d4e426284b93e8dcc11b8063f80296550c1b3357d84e3016745100d4018b312",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -417,6 +425,10 @@
           "number": 3,
           "art_sha256": "88edbda745791d019fb1dfc236ce0cb3a74026328df051df986c10e83e426da8",
           "geometry_sha256": "6fcf0952e7929ccf5970dcc28d9643cef3aa4de1b19137357da73bf2c94de2bc",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -537,6 +549,10 @@
           "number": 4,
           "art_sha256": "6f41d64dae53e3e6efa7ecfb716f92fb5863548323b9265de7eef235fe21fa5a",
           "geometry_sha256": "73cebd60233249fa9d8954f03ca9c469c0609204c67f019a890f0fc844176d18",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -741,6 +757,10 @@
           "number": 5,
           "art_sha256": "31a144473ac47fdd28f7657f6a232d89e4be4f7e17490744c036b6089d54d262",
           "geometry_sha256": "0cb233a6bada946b721d9f86c1e9a7aff605abd8bb23ac58125101ffb4116be4",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -938,6 +958,10 @@
           "number": 6,
           "art_sha256": "6ecdfe99769f0a3cbc64f7a9846d497bd22b440613d7a9743d2a3e2bd1b70074",
           "geometry_sha256": "84dbfc3c8e61a7de483ed7ac200c4cd15b0f8417a8d1897b22759a895cdbe5cd",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -1114,6 +1138,10 @@
           "number": 7,
           "art_sha256": "05f75029c7fcbea02da8fdbda4248b3f2a9c742b2ab17f74073d7dfb123caa8b",
           "geometry_sha256": "1e6a9f45fb4954c93225490cb7776696fbc060871acf5fbd552be969eb8d40c2",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -1248,6 +1276,10 @@
           "number": 8,
           "art_sha256": "ad4ec0f1a59cbf7a7b2878b1a091c09dd09c12796867461624b37387630b4e82",
           "geometry_sha256": "68e8a5e266546c075a4f723f8417eda1a3c3a279566a1b61f9dc84f115237379",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -1452,6 +1484,10 @@
           "number": 9,
           "art_sha256": "d3076661bc2ff9a449f3c764d334a19db40fe897661ec152310f3bf3bfbbf553",
           "geometry_sha256": "14f1c51afc15e0c0f602b6e4128eb417d325f8e845ad9b6915b2b1808a3e63dd",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -1649,6 +1685,10 @@
           "number": 10,
           "art_sha256": "a7741e67e26425df656c1f0beaabf612af8fc9149746338801c89d61f9815ded",
           "geometry_sha256": "f0487afada2b124f6bd102456a19bf6504fe0a46de8cb75dc82fd593f4ee63b6",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -1825,6 +1865,10 @@
           "number": 11,
           "art_sha256": "686b0260a6fdf4a5e8c29bfb5e33c355a0da2bbd5329b73f5d3d46bd138263b4",
           "geometry_sha256": "799cbb26d582bca781f576ce3777a223a4f0eddb4f0417dee37b5d6d03db2963",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -2036,6 +2080,10 @@
           "number": 12,
           "art_sha256": "f3cb9b14fb786a3e17b073d8bc496cd81077d98c7e20d45aaa56d85f579bd5b1",
           "geometry_sha256": "3cb0fd23060674839fb4bc203d23f0f40e00529b68ffb846694010497736097d",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -2156,6 +2204,10 @@
           "number": 13,
           "art_sha256": "3f955ae6ef02234372267e7a503fe676463c4a828e37c51ed587986215765bb2",
           "geometry_sha256": "03946535e2aa04b313a8236e97e747876aac0d6bd0623abc74a37686b30e49e9",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -2332,6 +2384,10 @@
           "number": 14,
           "art_sha256": "01ee94e72d6f78a0f3339e3eab7fca053bedf51cc996384df87dc9d47b13143e",
           "geometry_sha256": "48dca69ab56086fcf832d1cddbe850c3ba0dde8e981cef4132bfe6c25110d401",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -2480,6 +2536,10 @@
           "number": 15,
           "art_sha256": "145d294296aaa730c8e4871a5ab6ce0ba6beadb51996f1834e977d67ba672ff5",
           "geometry_sha256": "d3456c638ce94044c0519def6d0a7da6e8873af93adf1108cd2d8e93a13f22eb",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -2677,6 +2737,10 @@
           "number": 16,
           "art_sha256": "df8cafca5cd1bdec28dd338d6efc92f8052f90a5acba7c69495323e68e6f89a7",
           "geometry_sha256": "44114a6e4260b46fb73273c7756964f8cf4ca4caff66dc17859e6ef00ffdc6d8",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -2909,6 +2973,10 @@
           "number": 17,
           "art_sha256": "a0916f4a830f9d804abfcee804d2510a250ff09945735945ac40d3ec3f9c3d8d",
           "geometry_sha256": "c6941d1ef922a02cede35f617ba5e6176d39deac7b98a4c756c83d336a77966c",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3043,6 +3111,10 @@
           "number": 18,
           "art_sha256": "560a8e52819ab2b244bb94cc260dd6b380c7dbe09a0f2be6e5c56e096008761c",
           "geometry_sha256": "15b064c2b7af10dde2aedeb8be710a184c16fecd5516c65d9ee6669142b25a23",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3248,6 +3320,10 @@
           "number": 1,
           "art_sha256": "717d1d66893f9560d836e2096f54ef1fc65e9baa9cd78596091362172ad57f97",
           "geometry_sha256": "6b59d4382bf8bcbf1465cda60749ca429e045cb70d94ebc35092a7cb9a2d35d7",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3340,6 +3416,10 @@
           "number": 2,
           "art_sha256": "a401b0c280c5952ad9a9cfe5234fcec641f784f87429bdf68eb446b654b2aa29",
           "geometry_sha256": "7d9b5db2a2cb8cf1695a9f9519dd9387929456b2ba60954500d1f841a98a7d8f",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3404,6 +3484,10 @@
           "number": 3,
           "art_sha256": "03c9d756dea915fe31c2dd1bf8ceb8ea4ecc5cd924b3034067c85d1389337bd9",
           "geometry_sha256": "4e619533fd09edfc3f0d6330c940fcdb9d7949a5d1ac2bfbd365fdd2b670518e",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3482,6 +3566,10 @@
           "number": 4,
           "art_sha256": "1f22f4161cf32f73fae118cabf00c22e5aea90f64820bd7a29d839550e8c5b20",
           "geometry_sha256": "d61616c6e87a210a605c8690fe113b26cbaf12b6532ba9ba7ecc6279fe977165",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3553,6 +3641,10 @@
           "number": 5,
           "art_sha256": "5e01c53d6164bfdb2ae4e50146e2e2399db7a6de6e573012663ed6c4e1f3f239",
           "geometry_sha256": "584e48b538d76d0b9a03283b2f70e1d1c9aa6eaf2726f9e8460bcc530fef6878",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3603,6 +3695,10 @@
           "number": 6,
           "art_sha256": "658d6a0c24ad4212a9be04857bcc8cf77c98bbc482e805a66a1a6cdcb9131162",
           "geometry_sha256": "394567d9ae407494cb4c392241cfcc6668b49d59e2829c7e45ad4b62a7057854",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3688,6 +3784,10 @@
           "number": 7,
           "art_sha256": "d4dabb255f4feee10724679533c952bdd27095933e74c08c6e0dde6fe68f7c60",
           "geometry_sha256": "0174e0154bcf51fb6c83e3d086c5670b894fd380e9d34f04547cb74b73c27d30",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3745,6 +3845,10 @@
           "number": 8,
           "art_sha256": "314bc94e1b237e22faa3dd4c72e3bd153bc1c6056443a3b0dd58ee275a99585f",
           "geometry_sha256": "facedadb6a86e66656abb4e1efc9bca1fab2ed58f65e361a2c4e78bac55e93d5",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3809,6 +3913,10 @@
           "number": 9,
           "art_sha256": "94a0dfba104b59bda2098ab3f82601882dcaa7e625c306ba9b440fcc30a9f19d",
           "geometry_sha256": "86956f74855d7155edf7a5a9e74fc18476e44bd7d593219613692586c70334b4",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3880,6 +3988,10 @@
           "number": 10,
           "art_sha256": "1cae896f8d8a3cb529a25ecd49cc98490ab3027ff17cb05ac22b37230a83bd34",
           "geometry_sha256": "8803676279defb125bc2ff56ff8d63367fcdd9a909b14352a406727466a35a25",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -3944,6 +4056,10 @@
           "number": 11,
           "art_sha256": "052ba2a95609ccd3fe4f0536a0b083956243a82acb0581c8231532ec6fef56b8",
           "geometry_sha256": "f614335fda239fc1f15292533ef3c79b605c3f3e9a44f00d266fd532df374a71",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -4015,6 +4131,10 @@
           "number": 12,
           "art_sha256": "191effcaca85004d3e7c497b304e2c8def982aea706ee9ad264698db8b5521ae",
           "geometry_sha256": "984141694f960877e10ea0564936f08afd5dc20de0437437ed0aef329bad4c07",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -4072,6 +4192,10 @@
           "number": 13,
           "art_sha256": "7a023c6663908db50efb41ab9a9be9f013f0f136894c99d70f02d5ab1ff11a50",
           "geometry_sha256": "3a80a6a44fbe7bb940a427f5a00dc6cea3b75e74742ecc04fce5f56cdb4e3967",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -4136,6 +4260,10 @@
           "number": 14,
           "art_sha256": "332b329ba3b9fdd7618a925eb07b1d63cc7c312640f74c834501188727990513",
           "geometry_sha256": "0a3fb3e0451fb773885699950f7ad68260077757c0b5598cfe49f68e5930e2d9",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -4207,6 +4335,10 @@
           "number": 15,
           "art_sha256": "212053584c15fa814c7ae02fc5a12bd3b8e143c543ab955030237474b3588091",
           "geometry_sha256": "5121dae918732f936c8aa24ec4cee6be2971257dd8836006c218ec79b90270f7",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -4264,6 +4396,10 @@
           "number": 16,
           "art_sha256": "bcd39496995586a8dd01edbd707080fc59707b442157862a6edb6ae8b8953a92",
           "geometry_sha256": "2936f5eb683b1ab662537bfd831e65f6e491c4fd09eedf3b91efc806a0a84166",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -4349,6 +4485,10 @@
           "number": 17,
           "art_sha256": "bb70e55d0d4852fa3b364ef6eee98da20c94418698fd540506e69c07ea8b3d68",
           "geometry_sha256": "5da8e653b0bab6eb2c6fe217dc03cf61bdfaf4cf89c33fece2d4a559baa7f4ab",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -4413,6 +4553,10 @@
           "number": 18,
           "art_sha256": "de6e47de003b78c29959b455812c65c11e85edbb7d33f466326f40dad61a2b79",
           "geometry_sha256": "f8da4d2c850a057464349e0e0565ea5561c8c56f0ddff10e7c11957242c4464d",
+          "reference_pixels": [
+            1536,
+            768
+          ],
           "probes": [
             {
               "pixel": [
@@ -4488,6 +4632,1098 @@
               "pixel": [
                 1368,
                 364
+              ],
+              "lie": "fairway"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "judges-course-v1",
+      "version": 1,
+      "legacy_id": null,
+      "legacy_sha256": null,
+      "holes": [
+        {
+          "id": "judges-course-v1-hole-01",
+          "number": 1,
+          "art_sha256": "593d3d167cc7dad1d40b59f32e70afe1dd6302e92e2abd34648f87cdddd453de",
+          "geometry_sha256": "1755864d04e89c0888884426f989f14c239b5a728d53221bab73ae475fb58cbd",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1043,
+                401
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1687,
+                248
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1644,
+                160
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1593,
+                212
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                331,
+                625
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1289,
+                419
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-02",
+          "number": 2,
+          "art_sha256": "3255eb38545842c62fdd8a6abdc643f90c3e769392748bc2bebb7cd269061b5e",
+          "geometry_sha256": "50149da8cc8ad2c28ec1852955dd2967c77353f0a55a23349998af9979fe8cf4",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                977,
+                514
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1054,
+                507
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1197,
+                406
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1421,
+                357
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1520,
+                255
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1540,
+                153
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1602,
+                201
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                382,
+                585
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1083,
+                352
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-03",
+          "number": 3,
+          "art_sha256": "1b734127f9221eb5b74c68866115bf3299e7f5568c7cd1552d07db5075f466ee",
+          "geometry_sha256": "8f7798637b66ffd092380c97fee6a781c8ec80e982b5827e1a041a5d7bcfb55a",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1425,
+                605
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1364,
+                268
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1454,
+                411
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                422,
+                461
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1064,
+                440
+              ],
+              "lie": "rough"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-04",
+          "number": 4,
+          "art_sha256": "f9c7d6ecfa368f79a94cd2a7d98b6a652bdf2e6098c9b6b86d917b8ec4901f93",
+          "geometry_sha256": "8beaa436081addfd497e92b2739fd7b045722e1c35a4ef3ea600db6273a543a9",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1105,
+                495
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1625,
+                310
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                216,
+                486
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1201,
+                426
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1773,
+                886
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-05",
+          "number": 5,
+          "art_sha256": "8ddfc619a296d711ba0983170a2e359ee77d755d8a9a14093cec23d7c6e96460",
+          "geometry_sha256": "3317bc02fa560b3f711f0e5ffbb78abbd814d0622865e759cff8bdd9bb9672a1",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                832,
+                550
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1570,
+                378
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1616,
+                374
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1231,
+                238
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1619,
+                301
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                122,
+                508
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1076,
+                431
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1773,
+                886
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-06",
+          "number": 6,
+          "art_sha256": "d37a1e1dc8f4e51c33cfabee03c5865f5b6ebc9539e4f837d090c0faffa394dc",
+          "geometry_sha256": "da6e7a68f6694fbef153847fdcc6a5fa6697195f71598b37165c1780f6b7a5a7",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1437,
+                335
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1325,
+                310
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1636,
+                201
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                115,
+                691
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1001,
+                272
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                0,
+                0
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-07",
+          "number": 7,
+          "art_sha256": "65b2e38fa61285c687d8ef78e9f015061deba7cf84e93ef2ff5c47a3660acbb7",
+          "geometry_sha256": "3c5ede5de5111aee5fb124ff94a98025528eff8d5a38b1c75aed1960d74dc1bd",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                426,
+                415
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1621,
+                433
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                200,
+                294
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1161,
+                496
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                0,
+                886
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-08",
+          "number": 8,
+          "art_sha256": "f4de2d26455100d9740007a8322c29f1589d713c2fbd293a6b94fb0afc3830ad",
+          "geometry_sha256": "48057af02066df6a22f357e0c6e95b26c20315a2e5e7fad4fe06c4e02d082242",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1286,
+                632
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1385,
+                357
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1510,
+                273
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                286,
+                382
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1027,
+                321
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1773,
+                886
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-09",
+          "number": 9,
+          "art_sha256": "805873b89dbd0170caef4300f550fe028038d9358c667e21211a14a9fe9bd868",
+          "geometry_sha256": "e4c3165ea5c7d5afe422a6153e9fc0e1e325aec69918e27436efb9245e56f8a6",
+          "reference_pixels": [
+            1779,
+            884
+          ],
+          "probes": [
+            {
+              "pixel": [
+                203,
+                667
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1402,
+                646
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                694,
+                295
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1521,
+                233
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1612,
+                213
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1596,
+                311
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                195,
+                508
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1057,
+                404
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1507,
+                883
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-10",
+          "number": 10,
+          "art_sha256": "4d13921c4f1c33dc23c33fe73aab54700d287d4aa1883276479feef33f7a9964",
+          "geometry_sha256": "3243aac91d215afb176199d05de64a8140718e2e70e3d40b5bb75eb7d252d58d",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1435,
+                491
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1609,
+                433
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                695,
+                452
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1662,
+                433
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1281,
+                367
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1421,
+                321
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1565,
+                271
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1591,
+                337
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                268,
+                587
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1135,
+                486
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-11",
+          "number": 11,
+          "art_sha256": "afe950fd4a46c1b9468f75d144805354f3e8daba014f6185f4908d3a4e8f4fc0",
+          "geometry_sha256": "97d968e5c0491c76c5e3cac637af3117d976453f9aa1762c08dbba1fb5aead66",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1582,
+                259
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1669,
+                184
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                99,
+                748
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1034,
+                463
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1029,
+                497
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-12",
+          "number": 12,
+          "art_sha256": "355ad7cdb60ecc4c011d4cbe179c8ac6c21706116be3450caf46d88317aa139a",
+          "geometry_sha256": "0153b7caedf2888d1bf994745126f9ed59f32d4c07e236467d24a3de8eeea787",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1277,
+                523
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1414,
+                511
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1559,
+                438
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1398,
+                383
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1263,
+                360
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1435,
+                339
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1476,
+                289
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1559,
+                341
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                242,
+                374
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                902,
+                479
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-13",
+          "number": 13,
+          "art_sha256": "9c6e0eae929036fa0258d09f8fc072a4dd3196841974acaba35d58cf85b7e5a7",
+          "geometry_sha256": "8bc1966b15f74b0c2342866909dfebd8c3b3d80ec4ff89c5123afd35d46d0733",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1655,
+                360
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1632,
+                312
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1583,
+                231
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                236,
+                586
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1411,
+                297
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-14",
+          "number": 14,
+          "art_sha256": "c400dcf816f472466fced278f7cf9cd4e7806ed80ba45fc9f9807a63d49bcfef",
+          "geometry_sha256": "7286a53c90fc352c1a8d13405728752e940252d716e6cb9aa9d66807c14a166b",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1575,
+                403
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1325,
+                481
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1300,
+                245
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1503,
+                144
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1468,
+                291
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                235,
+                537
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                566,
+                886
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-15",
+          "number": 15,
+          "art_sha256": "e2022d70ccce961649484bbbba178a4fd957f669554b1ee55feb742d09935630",
+          "geometry_sha256": "b7334378b548830f7661a0a9a8565c2f3bfdd794b82c30914e7df162c87a84f8",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1465,
+                594
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1726,
+                397
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1701,
+                202
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1660,
+                283
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                332,
+                434
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1157,
+                360
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1560,
+                886
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-16",
+          "number": 16,
+          "art_sha256": "ce1a35dc316050dc1046b980f63561cc988fbd5a77843bcbc08263dbcdaecdc0",
+          "geometry_sha256": "00845bf533ead82b5dbab88f79bb39e8fe902c351bd935cc670ee2c71cecfdab",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                752,
+                357
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1389,
+                277
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1465,
+                202
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1560,
+                307
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                429,
+                677
+              ],
+              "lie": "tee"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-17",
+          "number": 17,
+          "art_sha256": "2b63ecab350ba208a7fac53a870f4cadce5c633b5fb806ff228c5f36123a198d",
+          "geometry_sha256": "ecc16d62e34be34f61ea69b313d8fd9e18e686e98751b407999cd3b67fa063e7",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                184,
+                502
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1345,
+                415
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1020,
+                380
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                497,
+                357
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1272,
+                287
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1620,
+                257
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1488,
+                218
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1591,
+                207
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                161,
+                661
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1400,
+                355
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1773,
+                886
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "judges-course-v1-hole-18",
+          "number": 18,
+          "art_sha256": "e63b396bc5a7ef953c3312606440ca40b9b8b2360d096d24ee563d505cd04a19",
+          "geometry_sha256": "8e7a8afa3cb0008594c998205fe471f743325ee9f62c68b5079c028d1e890903",
+          "reference_pixels": [
+            1774,
+            887
+          ],
+          "probes": [
+            {
+              "pixel": [
+                1680,
+                440
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1636,
+                287
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1560,
+                341
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                203,
+                361
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1318,
+                401
               ],
               "lie": "fairway"
             }

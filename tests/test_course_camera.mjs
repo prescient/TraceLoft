@@ -4,13 +4,14 @@ import {readFileSync} from 'node:fs';
 import {courseCamera} from '../web/course-camera.js';
 
 test('all current and legacy holes fill landscape cameras without changing scale or cropping the playing line',()=>{
-  for(const id of ['pebble-boulder-blue-v1','sheboygan-straits-blue-v1','pebble-boulder-blue-v2','sheboygan-straits-blue-v2','pebble-boulder-blue-v3']){
+  for(const id of ['pebble-boulder-blue-v1','sheboygan-straits-blue-v1','pebble-boulder-blue-v2','sheboygan-straits-blue-v2','pebble-boulder-blue-v3','judges-course-v1']){
     const packageData=JSON.parse(readFileSync(new URL(`../courses/${id}.json`,import.meta.url)));
     for(const c of packageData.holes){
       const before=JSON.stringify(c),[bx,by,bw,bh]=c.viewbox;
       for(const aspect of [2,2.35,2.6]){
         const [x,y,w,h]=courseCamera(c,{position:c.tee},false,aspect);
-        assert.ok(Math.abs(w/h-aspect)<1e-8);
+        // A native canvas slightly wider than the requested panel remains complete.
+        assert.ok(Math.abs(w/h-(bw/aspect>bh?bw/bh:aspect))<1e-8);
         assert.ok(x>=bx-1e-8&&y>=by-1e-8&&x+w<=bx+bw+1e-8&&y+h<=by+bh+1e-8);
         for(const p of [c.tee,c.pin,...c.playing_line])assert.ok(p[1]>=x&&p[1]<=x+w&&p[0]>=y&&p[0]<=y+h,`${id} hole ${c.hole_number}: overview point clipped`);
         const [gx,gy,gw,gh]=courseCamera(c,{position:c.pin},true,aspect);
