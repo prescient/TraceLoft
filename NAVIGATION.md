@@ -467,3 +467,6 @@ reviewed v2 packages; active/saved rounds keep their frozen versions. Start a ne
 revised boundaries. Fresh isolated browser verification covered Boulder setup → live map/Green →
 boundary toggle → bunker shot → End/review → Play menu, then Straits setup → Back 9 → hole 10
 Green/terrain toggle → End/review. Map boundaries use the same geometry with or without artwork.
+
+The catalog now selects Boulder Beach v3 (fairways 6/16/18) and Straits v2. Prior v1/v2 rounds
+retain their copies. New-round setup/review routes and guards are unchanged.

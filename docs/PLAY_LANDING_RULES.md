@@ -39,7 +39,7 @@ Course heatmaps remain historical dispersion previews, not predictions adjusted 
 Saved course polygons determine surfaces. Artwork alignment must be checked separately; the QA
 found an existing Boulder Beach hole 1 offset and recorded a backlog item for registration review.
 
-That audit is now complete across both 18-hole courses. New rounds use reviewed v2 boundaries;
+That audit is now complete across both 18-hole courses. New rounds use Boulder v3 and Straits v2 boundaries;
 existing rounds keep their original frozen geometry. Refresh and start a new round to use the
 corrections. See [finished-art review](../designs/course-registration/README.md).
 

@@ -337,6 +337,10 @@ old playback on a new shot, correction or navigation. Review requires explicit r
 world coordinates and final scored position authoritative; hazard replays return to the saved
 penalty position, and gimme strokes do not become invented ball movements.
 
+Course tracing must ignore mowing stripes and lighting changes inside a continuous playing surface.
+Inspect the approach-to-green connection and both fairway edges at full artwork resolution; a passing
+geometry/hash check is not visual approval. Use reviewed control points to refine uncertain color masks.
+
 Landing rules belong to Python scoring, with versioned landing/surface/rollout evidence per shot.
 Separate starting-lie distance reductions from carry-landing rollout reductions in setup. Sand stops
 at carry; rough/OB reduce only remaining rollout. Keep raw carry/total unchanged and disclose

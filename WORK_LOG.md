@@ -414,3 +414,26 @@
   offline gallery was not verified; its static HTML links were checked directly. Documented command
   usage, tracing/review speedups and asset-specific extraction limits. No app test rerun needed for
   this design-only export change.
+
+## 2026-10-03 — Boulder fairways 6, 16 and 18
+
+- User review found a missed fairway/green connection on 6 and false mowing-stripe notches on
+  16/18. Replaced those three fairway perimeters with reviewed native-art control points and smooth
+  closed curves. Published Boulder v3; all other surfaces, transforms, artwork, playing lines and
+  yardages are unchanged. Retained immutable v1/v2, original v2 review manifest/images and frozen
+  sessions. Straits remains v2. Updated new-round defaults/catalog and version-aware export tooling.
+- Added design-only standard-library builder with validation/overwrite protection. Regenerated
+  overview sheets and a native-resolution gallery/ZIP in Downloads/TraceLoft-course-boundary-review-v3.
+  Current fixture manifest contains 598 probes, including ten additional reviewed fairway landmarks.
+  Tested exact unchanged-field comparison, green-footprint containment, fixed inside/outside points
+  and historical v2 hashes. Full-art revised images and app screenshot are in the refinement guide.
+- Verification: 23 targeted Python registration/game/nine-hole tests passed, including complete
+  rounds on both current courses, bunker stopping, corrections and frozen legacy reload. After
+  adding the new landmark fixtures, eight registration/fictional-course checks passed. Both JS
+  camera tests passed across all 90 current/legacy holes. v3 builder reproduced the released candidate
+  identically. Isolated API completed a synthetic 18-hole round; browser reviewed 6/16/18 overlays
+  at 1366×1024 with no page overflow or console warnings/errors. Physical Safari remains unverified.
+- Updated principles, guides, D57, navigation/catalog note and backlog. Gracefully restarted idle
+  production recording on 8765; full current demo-range snapshot (40 existing shots, selected club,
+  session/settings) matched exactly before/after. No production shots were generated or deleted.
+  Confirmed catalog Straits v2 / Boulder v3, stopped QA, reset viewport and closed its review tab.

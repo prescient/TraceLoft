@@ -18,6 +18,7 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from course_geometry import classify
+from bundled_courses import COURSE_IDS
 
 OUTPUT = ROOT / 'designs/course-registration'
 COLORS = dict(water='#00ffff', sand='#ff00ff', green='#ffff00', tee='#ffff00',
@@ -88,6 +89,12 @@ def probes(c):
         if c['hole_number']==1:
             result.extend([dict(pixel=[1410,375],lie='green'),dict(pixel=[1375,306],lie='sand'),
                            dict(pixel=[1437,445],lie='sand'),dict(pixel=[1340,375],lie='fairway')])
+        if c['provenance'].get('geometry_review') == 'fairway_edge_v3':
+            native = {6:[(1510,345),(1550,310),(1580,285),(1600,365)],
+                      16:[(1390,350),(830,244),(400,442)],
+                      18:[(1050,528),(1410,529),(1580,420)]}
+            for x,y in native[c['hole_number']]:
+                result.append(dict(pixel=[round(x*1536/1774),round(y*768/887)],lie='fairway'))
     elif c['hole_number']==10:
         result.extend([dict(pixel=[1367,388],lie='green'),dict(pixel=[1400,410],lie='green')])
     return result
@@ -114,7 +121,7 @@ nav a{padding:8px 14px;border:1px solid #cbd2dc}img{width:100%;height:auto;displ
 article{margin:40px 0}h3{font-size:20px}section{margin-top:48px}.legend{display:flex;gap:16px;flex-wrap:wrap}
 .swatch{display:inline-block;width:16px;height:4px;vertical-align:middle;margin-right:6px;background:var(--color)}
 </style><h1>TraceLoft · Course boundary review</h1>
-<p>All 36 current v2 holes. Click a hole image to inspect it at its original artwork resolution.
+<p>All 36 current holes. Click a hole image to inspect it at its original artwork resolution.
 These are the scoring polygons used by new rounds; saved older rounds retain their layouts.</p>
 <div class="legend">'''
     for label, color in [('Sand','#ff00ff'),('Water','#00ffff'),('Green / tee','#ffff00'),
@@ -140,12 +147,14 @@ def main():
     output.mkdir(parents=True,exist_ok=True)
     files, entries = [], []
     report = dict(reference_pixels=[1536,768],review_date='2026-10-03',courses=[])
-    for identity in ('pebble-boulder-blue-v2','sheboygan-straits-blue-v2'):
+    for identity in COURSE_IDS:
         package = json.loads((ROOT/'courses'/f'{identity}.json').read_text(encoding='utf-8'))
         entries.append((package,package['holes']))
-        legacy=ROOT/'courses'/identity.replace('-v2','-v1')
+        version=package['version']
+        legacy_id=identity.rsplit('-v',1)[0]+f'-v{version-1}'
+        legacy=ROOT/'courses'/legacy_id
         legacy=legacy.with_suffix('.json')
-        record = dict(id=identity,legacy_sha256=hashlib.sha256(legacy.read_bytes()).hexdigest(),holes=[])
+        record = dict(id=identity,version=version,legacy_id=legacy_id,legacy_sha256=hashlib.sha256(legacy.read_bytes()).hexdigest(),holes=[])
         for offset in range(0,18,6):
             sheet = Image.new('RGB',(1800,660),'#111827')
             d = ImageDraw.Draw(sheet)
@@ -157,7 +166,7 @@ def main():
                     files.append(path)
                 x=(k%3)*600; y=(k//3)*330
                 sheet.paste(im.resize((600,300)),(x,y))
-                d.text((x+8,y+307),f"{package['name']} {c['hole_number']} / v2",fill='white')
+                d.text((x+8,y+307),f"{package['name']} {c['hole_number']} / v{version}",fill='white')
                 raw=(ROOT/'web/art'/Path(c['image']['href']).name).read_bytes()
                 record['holes'].append(dict(id=c['id'],number=c['hole_number'],art_sha256=hashlib.sha256(raw).hexdigest(),
                     geometry_sha256=geometry_hash(c),probes=probes(c)))

@@ -218,7 +218,7 @@ class GolfService:
             from course_import import load
             selected=selection(self.equipment,params.get('range_bag_id',''),params.get('range_club_id',''))
             self.practice=GolfSimSession(self.root/'practice_sessions',store=self.store,equipment_selection=selected,
-                course=load(self.store,params.get('game_course_id','pebble-boulder-blue-v2')),
+                course=load(self.store,params.get('game_course_id','pebble-boulder-blue-v3')),
                 **{k:v for k,v in params.items() if k in GAME_FIELDS or k in ('demo','stimp')})
         elif params['drill'] in ('Bag mapping','Wedge matrix'):
             self.practice = CollectionSession(self.root / 'practice_sessions', self.equipment,

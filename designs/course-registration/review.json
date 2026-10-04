@@ -6,1193 +6,9 @@
   "review_date": "2026-10-03",
   "courses": [
     {
-      "id": "pebble-boulder-blue-v2",
-      "legacy_sha256": "af9092e3dced141354d056a6f559ee3b59afb2da097c91e34166adde362c6dd6",
-      "holes": [
-        {
-          "id": "pebble-boulder-01-v2",
-          "number": 1,
-          "art_sha256": "717d1d66893f9560d836e2096f54ef1fc65e9baa9cd78596091362172ad57f97",
-          "geometry_sha256": "6b59d4382bf8bcbf1465cda60749ca429e045cb70d94ebc35092a7cb9a2d35d7",
-          "probes": [
-            {
-              "pixel": [
-                474,
-                657
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1369,
-                308
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1432,
-                443
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                827,
-                232
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1409,
-                372
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                121,
-                374
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                350,
-                343
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                791,
-                767
-              ],
-              "lie": "nature"
-            },
-            {
-              "pixel": [
-                1410,
-                375
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                1375,
-                306
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1437,
-                445
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1340,
-                375
-              ],
-              "lie": "fairway"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-02-v2",
-          "number": 2,
-          "art_sha256": "a401b0c280c5952ad9a9cfe5234fcec641f784f87429bdf68eb446b654b2aa29",
-          "geometry_sha256": "7d9b5db2a2cb8cf1695a9f9519dd9387929456b2ba60954500d1f841a98a7d8f",
-          "probes": [
-            {
-              "pixel": [
-                1352,
-                73
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1372,
-                241
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1437,
-                359
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                837,
-                385
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1412,
-                300
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                114,
-                463
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                1253,
-                287
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                1017,
-                767
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-03-v2",
-          "number": 3,
-          "art_sha256": "03c9d756dea915fe31c2dd1bf8ceb8ea4ecc5cd924b3034067c85d1389337bd9",
-          "geometry_sha256": "4e619533fd09edfc3f0d6330c940fcdb9d7949a5d1ac2bfbd365fdd2b670518e",
-          "probes": [
-            {
-              "pixel": [
-                276,
-                654
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                496,
-                416
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1369,
-                287
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1433,
-                426
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                828,
-                400
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1403,
-                356
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                113,
-                251
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                1072,
-                430
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                0,
-                767
-              ],
-              "lie": "nature"
-            },
-            {
-              "pixel": [
-                1100,
-                75
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-04-v2",
-          "number": 4,
-          "art_sha256": "1f22f4161cf32f73fae118cabf00c22e5aea90f64820bd7a29d839550e8c5b20",
-          "geometry_sha256": "d61616c6e87a210a605c8690fe113b26cbaf12b6532ba9ba7ecc6279fe977165",
-          "probes": [
-            {
-              "pixel": [
-                750,
-                639
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1370,
-                180
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1431,
-                330
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                827,
-                355
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1398,
-                254
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                127,
-                448
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                1045,
-                293
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                1535,
-                767
-              ],
-              "lie": "nature"
-            },
-            {
-              "pixel": [
-                345,
-                200
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-05-v2",
-          "number": 5,
-          "art_sha256": "5e01c53d6164bfdb2ae4e50146e2e2399db7a6de6e573012663ed6c4e1f3f239",
-          "geometry_sha256": "584e48b538d76d0b9a03283b2f70e1d1c9aa6eaf2726f9e8460bcc530fef6878",
-          "probes": [
-            {
-              "pixel": [
-                584,
-                82
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1367,
-                233
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1434,
-                459
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1414,
-                347
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                109,
-                433
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                882,
-                369
-              ],
-              "lie": "fairway"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-06-v2",
-          "number": 6,
-          "art_sha256": "658d6a0c24ad4212a9be04857bcc8cf77c98bbc482e805a66a1a6cdcb9131162",
-          "geometry_sha256": "17aa2c000e0f560bb4bf03dd6fb5c97e995defe3c72bfa4954916f6c060b01c9",
-          "probes": [
-            {
-              "pixel": [
-                407,
-                645
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1366,
-                210
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1429,
-                329
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                821,
-                513
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1398,
-                270
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                109,
-                244
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                874,
-                428
-              ],
-              "lie": "fairway"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-07-v2",
-          "number": 7,
-          "art_sha256": "d4dabb255f4feee10724679533c952bdd27095933e74c08c6e0dde6fe68f7c60",
-          "geometry_sha256": "0174e0154bcf51fb6c83e3d086c5670b894fd380e9d34f04547cb74b73c27d30",
-          "probes": [
-            {
-              "pixel": [
-                225,
-                648
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1365,
-                241
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1433,
-                502
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1398,
-                375
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                113,
-                370
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                762,
-                371
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                650,
-                90
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-08-v2",
-          "number": 8,
-          "art_sha256": "314bc94e1b237e22faa3dd4c72e3bd153bc1c6056443a3b0dd58ee275a99585f",
-          "geometry_sha256": "facedadb6a86e66656abb4e1efc9bca1fab2ed58f65e361a2c4e78bac55e93d5",
-          "probes": [
-            {
-              "pixel": [
-                1017,
-                99
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                494,
-                190
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1363,
-                295
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1434,
-                424
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                834,
-                518
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1406,
-                359
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                118,
-                283
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                462,
-                319
-              ],
-              "lie": "fairway"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-09-v2",
-          "number": 9,
-          "art_sha256": "94a0dfba104b59bda2098ab3f82601882dcaa7e625c306ba9b440fcc30a9f19d",
-          "geometry_sha256": "86956f74855d7155edf7a5a9e74fc18476e44bd7d593219613692586c70334b4",
-          "probes": [
-            {
-              "pixel": [
-                412,
-                644
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1373,
-                343
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1440,
-                466
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                826,
-                152
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1411,
-                404
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                119,
-                343
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                485,
-                239
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                694,
-                767
-              ],
-              "lie": "nature"
-            },
-            {
-              "pixel": [
-                1300,
-                160
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-10-v2",
-          "number": 10,
-          "art_sha256": "1cae896f8d8a3cb529a25ecd49cc98490ab3027ff17cb05ac22b37230a83bd34",
-          "geometry_sha256": "8803676279defb125bc2ff56ff8d63367fcdd9a909b14352a406727466a35a25",
-          "probes": [
-            {
-              "pixel": [
-                1055,
-                659
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1372,
-                173
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1436,
-                297
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                829,
-                369
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1412,
-                233
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                114,
-                412
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                346,
-                403
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                1535,
-                767
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-11-v2",
-          "number": 11,
-          "art_sha256": "052ba2a95609ccd3fe4f0536a0b083956243a82acb0581c8231532ec6fef56b8",
-          "geometry_sha256": "f614335fda239fc1f15292533ef3c79b605c3f3e9a44f00d266fd532df374a71",
-          "probes": [
-            {
-              "pixel": [
-                371,
-                85
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                492,
-                225
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1371,
-                261
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1430,
-                402
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                828,
-                168
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1410,
-                330
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                116,
-                433
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                1131,
-                256
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                844,
-                767
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-12-v2",
-          "number": 12,
-          "art_sha256": "191effcaca85004d3e7c497b304e2c8def982aea706ee9ad264698db8b5521ae",
-          "geometry_sha256": "984141694f960877e10ea0564936f08afd5dc20de0437437ed0aef329bad4c07",
-          "probes": [
-            {
-              "pixel": [
-                432,
-                640
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1366,
-                334
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1435,
-                552
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1407,
-                442
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                109,
-                271
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                1115,
-                442
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                500,
-                100
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-13-v2",
-          "number": 13,
-          "art_sha256": "7a023c6663908db50efb41ab9a9be9f013f0f136894c99d70f02d5ab1ff11a50",
-          "geometry_sha256": "3a80a6a44fbe7bb940a427f5a00dc6cea3b75e74742ecc04fce5f56cdb4e3967",
-          "probes": [
-            {
-              "pixel": [
-                394,
-                651
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1367,
-                335
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1431,
-                471
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                822,
-                311
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1412,
-                402
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                116,
-                233
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                1044,
-                457
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                0,
-                767
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-14-v2",
-          "number": 14,
-          "art_sha256": "332b329ba3b9fdd7618a925eb07b1d63cc7c312640f74c834501188727990513",
-          "geometry_sha256": "0a3fb3e0451fb773885699950f7ad68260077757c0b5598cfe49f68e5930e2d9",
-          "probes": [
-            {
-              "pixel": [
-                512,
-                102
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1367,
-                216
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1435,
-                327
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                831,
-                446
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1409,
-                269
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                115,
-                405
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                823,
-                364
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                1535,
-                767
-              ],
-              "lie": "nature"
-            },
-            {
-              "pixel": [
-                1110,
-                645
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-15-v2",
-          "number": 15,
-          "art_sha256": "212053584c15fa814c7ae02fc5a12bd3b8e143c543ab955030237474b3588091",
-          "geometry_sha256": "5121dae918732f936c8aa24ec4cee6be2971257dd8836006c218ec79b90270f7",
-          "probes": [
-            {
-              "pixel": [
-                210,
-                660
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1372,
-                244
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1428,
-                382
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                827,
-                374
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1409,
-                311
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                117,
-                313
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                735,
-                442
-              ],
-              "lie": "fairway"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-16-v2",
-          "number": 16,
-          "art_sha256": "bcd39496995586a8dd01edbd707080fc59707b442157862a6edb6ae8b8953a92",
-          "geometry_sha256": "15f4e329b9466da3d5a8066e4ad3b0fdc28764f7d4cf670aa9b164a960734175",
-          "probes": [
-            {
-              "pixel": [
-                656,
-                660
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                522,
-                566
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1372,
-                280
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1439,
-                416
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                845,
-                372
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1406,
-                342
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                118,
-                461
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                756,
-                283
-              ],
-              "lie": "fairway"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-17-v2",
-          "number": 17,
-          "art_sha256": "bb70e55d0d4852fa3b364ef6eee98da20c94418698fd540506e69c07ea8b3d68",
-          "geometry_sha256": "5da8e653b0bab6eb2c6fe217dc03cf61bdfaf4cf89c33fece2d4a559baa7f4ab",
-          "probes": [
-            {
-              "pixel": [
-                257,
-                74
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1369,
-                213
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1432,
-                446
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1402,
-                326
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                124,
-                394
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                515,
-                352
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                1120,
-                767
-              ],
-              "lie": "nature"
-            },
-            {
-              "pixel": [
-                560,
-                700
-              ],
-              "lie": "nature"
-            }
-          ]
-        },
-        {
-          "id": "pebble-boulder-18-v2",
-          "number": 18,
-          "art_sha256": "de6e47de003b78c29959b455812c65c11e85edbb7d33f466326f40dad61a2b79",
-          "geometry_sha256": "081cfd26f59358f8957b7034032003fa4ece709383286d11efb57a927ca63a4f",
-          "probes": [
-            {
-              "pixel": [
-                592,
-                661
-              ],
-              "lie": "water"
-            },
-            {
-              "pixel": [
-                1367,
-                265
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1434,
-                382
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                822,
-                490
-              ],
-              "lie": "sand"
-            },
-            {
-              "pixel": [
-                1409,
-                322
-              ],
-              "lie": "green"
-            },
-            {
-              "pixel": [
-                111,
-                276
-              ],
-              "lie": "tee"
-            },
-            {
-              "pixel": [
-                467,
-                291
-              ],
-              "lie": "fairway"
-            },
-            {
-              "pixel": [
-                1100,
-                150
-              ],
-              "lie": "nature"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "sheboygan-straits-blue-v2",
+      "version": 2,
+      "legacy_id": "sheboygan-straits-blue-v1",
       "legacy_sha256": "19573ebbd5b5e42650d290f7e33910f5a97d3b2d588d611cca232bbd231f9fec",
       "holes": [
         {
@@ -4416,6 +3232,1264 @@
                 767
               ],
               "lie": "nature"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pebble-boulder-blue-v3",
+      "version": 3,
+      "legacy_id": "pebble-boulder-blue-v2",
+      "legacy_sha256": "35c436fed70e8e5b622405d16713e637c92b5fe5837977c34f53a4bed4ea1698",
+      "holes": [
+        {
+          "id": "pebble-boulder-01-v3",
+          "number": 1,
+          "art_sha256": "717d1d66893f9560d836e2096f54ef1fc65e9baa9cd78596091362172ad57f97",
+          "geometry_sha256": "6b59d4382bf8bcbf1465cda60749ca429e045cb70d94ebc35092a7cb9a2d35d7",
+          "probes": [
+            {
+              "pixel": [
+                474,
+                657
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1369,
+                308
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1432,
+                443
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                827,
+                232
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1409,
+                372
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                121,
+                374
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                350,
+                343
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                791,
+                767
+              ],
+              "lie": "nature"
+            },
+            {
+              "pixel": [
+                1410,
+                375
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                1375,
+                306
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1437,
+                445
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1340,
+                375
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-02-v3",
+          "number": 2,
+          "art_sha256": "a401b0c280c5952ad9a9cfe5234fcec641f784f87429bdf68eb446b654b2aa29",
+          "geometry_sha256": "7d9b5db2a2cb8cf1695a9f9519dd9387929456b2ba60954500d1f841a98a7d8f",
+          "probes": [
+            {
+              "pixel": [
+                1352,
+                73
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1372,
+                241
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1437,
+                359
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                837,
+                385
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1412,
+                300
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                114,
+                463
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1253,
+                287
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1017,
+                767
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-03-v3",
+          "number": 3,
+          "art_sha256": "03c9d756dea915fe31c2dd1bf8ceb8ea4ecc5cd924b3034067c85d1389337bd9",
+          "geometry_sha256": "4e619533fd09edfc3f0d6330c940fcdb9d7949a5d1ac2bfbd365fdd2b670518e",
+          "probes": [
+            {
+              "pixel": [
+                276,
+                654
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                496,
+                416
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1369,
+                287
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1433,
+                426
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                828,
+                400
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1403,
+                356
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                113,
+                251
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1072,
+                430
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                0,
+                767
+              ],
+              "lie": "nature"
+            },
+            {
+              "pixel": [
+                1100,
+                75
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-04-v3",
+          "number": 4,
+          "art_sha256": "1f22f4161cf32f73fae118cabf00c22e5aea90f64820bd7a29d839550e8c5b20",
+          "geometry_sha256": "d61616c6e87a210a605c8690fe113b26cbaf12b6532ba9ba7ecc6279fe977165",
+          "probes": [
+            {
+              "pixel": [
+                750,
+                639
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1370,
+                180
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1431,
+                330
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                827,
+                355
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1398,
+                254
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                127,
+                448
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1045,
+                293
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1535,
+                767
+              ],
+              "lie": "nature"
+            },
+            {
+              "pixel": [
+                345,
+                200
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-05-v3",
+          "number": 5,
+          "art_sha256": "5e01c53d6164bfdb2ae4e50146e2e2399db7a6de6e573012663ed6c4e1f3f239",
+          "geometry_sha256": "584e48b538d76d0b9a03283b2f70e1d1c9aa6eaf2726f9e8460bcc530fef6878",
+          "probes": [
+            {
+              "pixel": [
+                584,
+                82
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1367,
+                233
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1434,
+                459
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1414,
+                347
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                109,
+                433
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                882,
+                369
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-06-v3",
+          "number": 6,
+          "art_sha256": "658d6a0c24ad4212a9be04857bcc8cf77c98bbc482e805a66a1a6cdcb9131162",
+          "geometry_sha256": "394567d9ae407494cb4c392241cfcc6668b49d59e2829c7e45ad4b62a7057854",
+          "probes": [
+            {
+              "pixel": [
+                407,
+                645
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1366,
+                210
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1429,
+                329
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                821,
+                513
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1398,
+                270
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                109,
+                244
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                770,
+                430
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1307,
+                299
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1342,
+                268
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1368,
+                247
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1385,
+                316
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-07-v3",
+          "number": 7,
+          "art_sha256": "d4dabb255f4feee10724679533c952bdd27095933e74c08c6e0dde6fe68f7c60",
+          "geometry_sha256": "0174e0154bcf51fb6c83e3d086c5670b894fd380e9d34f04547cb74b73c27d30",
+          "probes": [
+            {
+              "pixel": [
+                225,
+                648
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1365,
+                241
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1433,
+                502
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1398,
+                375
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                113,
+                370
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                762,
+                371
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                650,
+                90
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-08-v3",
+          "number": 8,
+          "art_sha256": "314bc94e1b237e22faa3dd4c72e3bd153bc1c6056443a3b0dd58ee275a99585f",
+          "geometry_sha256": "facedadb6a86e66656abb4e1efc9bca1fab2ed58f65e361a2c4e78bac55e93d5",
+          "probes": [
+            {
+              "pixel": [
+                1017,
+                99
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                494,
+                190
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1363,
+                295
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1434,
+                424
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                834,
+                518
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1406,
+                359
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                118,
+                283
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                462,
+                319
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-09-v3",
+          "number": 9,
+          "art_sha256": "94a0dfba104b59bda2098ab3f82601882dcaa7e625c306ba9b440fcc30a9f19d",
+          "geometry_sha256": "86956f74855d7155edf7a5a9e74fc18476e44bd7d593219613692586c70334b4",
+          "probes": [
+            {
+              "pixel": [
+                412,
+                644
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1373,
+                343
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1440,
+                466
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                826,
+                152
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1411,
+                404
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                119,
+                343
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                485,
+                239
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                694,
+                767
+              ],
+              "lie": "nature"
+            },
+            {
+              "pixel": [
+                1300,
+                160
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-10-v3",
+          "number": 10,
+          "art_sha256": "1cae896f8d8a3cb529a25ecd49cc98490ab3027ff17cb05ac22b37230a83bd34",
+          "geometry_sha256": "8803676279defb125bc2ff56ff8d63367fcdd9a909b14352a406727466a35a25",
+          "probes": [
+            {
+              "pixel": [
+                1055,
+                659
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1372,
+                173
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1436,
+                297
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                829,
+                369
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1412,
+                233
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                114,
+                412
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                346,
+                403
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1535,
+                767
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-11-v3",
+          "number": 11,
+          "art_sha256": "052ba2a95609ccd3fe4f0536a0b083956243a82acb0581c8231532ec6fef56b8",
+          "geometry_sha256": "f614335fda239fc1f15292533ef3c79b605c3f3e9a44f00d266fd532df374a71",
+          "probes": [
+            {
+              "pixel": [
+                371,
+                85
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                492,
+                225
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1371,
+                261
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1430,
+                402
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                828,
+                168
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1410,
+                330
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                116,
+                433
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1131,
+                256
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                844,
+                767
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-12-v3",
+          "number": 12,
+          "art_sha256": "191effcaca85004d3e7c497b304e2c8def982aea706ee9ad264698db8b5521ae",
+          "geometry_sha256": "984141694f960877e10ea0564936f08afd5dc20de0437437ed0aef329bad4c07",
+          "probes": [
+            {
+              "pixel": [
+                432,
+                640
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1366,
+                334
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1435,
+                552
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1407,
+                442
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                109,
+                271
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1115,
+                442
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                500,
+                100
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-13-v3",
+          "number": 13,
+          "art_sha256": "7a023c6663908db50efb41ab9a9be9f013f0f136894c99d70f02d5ab1ff11a50",
+          "geometry_sha256": "3a80a6a44fbe7bb940a427f5a00dc6cea3b75e74742ecc04fce5f56cdb4e3967",
+          "probes": [
+            {
+              "pixel": [
+                394,
+                651
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1367,
+                335
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1431,
+                471
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                822,
+                311
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1412,
+                402
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                116,
+                233
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                1044,
+                457
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                0,
+                767
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-14-v3",
+          "number": 14,
+          "art_sha256": "332b329ba3b9fdd7618a925eb07b1d63cc7c312640f74c834501188727990513",
+          "geometry_sha256": "0a3fb3e0451fb773885699950f7ad68260077757c0b5598cfe49f68e5930e2d9",
+          "probes": [
+            {
+              "pixel": [
+                512,
+                102
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1367,
+                216
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1435,
+                327
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                831,
+                446
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1409,
+                269
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                115,
+                405
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                823,
+                364
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1535,
+                767
+              ],
+              "lie": "nature"
+            },
+            {
+              "pixel": [
+                1110,
+                645
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-15-v3",
+          "number": 15,
+          "art_sha256": "212053584c15fa814c7ae02fc5a12bd3b8e143c543ab955030237474b3588091",
+          "geometry_sha256": "5121dae918732f936c8aa24ec4cee6be2971257dd8836006c218ec79b90270f7",
+          "probes": [
+            {
+              "pixel": [
+                210,
+                660
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1372,
+                244
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1428,
+                382
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                827,
+                374
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1409,
+                311
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                117,
+                313
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                735,
+                442
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-16-v3",
+          "number": 16,
+          "art_sha256": "bcd39496995586a8dd01edbd707080fc59707b442157862a6edb6ae8b8953a92",
+          "geometry_sha256": "2936f5eb683b1ab662537bfd831e65f6e491c4fd09eedf3b91efc806a0a84166",
+          "probes": [
+            {
+              "pixel": [
+                656,
+                660
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                522,
+                566
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1372,
+                280
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1439,
+                416
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                845,
+                372
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1406,
+                342
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                118,
+                461
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                731,
+                293
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1204,
+                303
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                719,
+                211
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                346,
+                383
+              ],
+              "lie": "fairway"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-17-v3",
+          "number": 17,
+          "art_sha256": "bb70e55d0d4852fa3b364ef6eee98da20c94418698fd540506e69c07ea8b3d68",
+          "geometry_sha256": "5da8e653b0bab6eb2c6fe217dc03cf61bdfaf4cf89c33fece2d4a559baa7f4ab",
+          "probes": [
+            {
+              "pixel": [
+                257,
+                74
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1369,
+                213
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1432,
+                446
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1402,
+                326
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                124,
+                394
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                515,
+                352
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1120,
+                767
+              ],
+              "lie": "nature"
+            },
+            {
+              "pixel": [
+                560,
+                700
+              ],
+              "lie": "nature"
+            }
+          ]
+        },
+        {
+          "id": "pebble-boulder-18-v3",
+          "number": 18,
+          "art_sha256": "de6e47de003b78c29959b455812c65c11e85edbb7d33f466326f40dad61a2b79",
+          "geometry_sha256": "f8da4d2c850a057464349e0e0565ea5561c8c56f0ddff10e7c11957242c4464d",
+          "probes": [
+            {
+              "pixel": [
+                592,
+                661
+              ],
+              "lie": "water"
+            },
+            {
+              "pixel": [
+                1367,
+                265
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1434,
+                382
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                822,
+                490
+              ],
+              "lie": "sand"
+            },
+            {
+              "pixel": [
+                1409,
+                322
+              ],
+              "lie": "green"
+            },
+            {
+              "pixel": [
+                111,
+                276
+              ],
+              "lie": "tee"
+            },
+            {
+              "pixel": [
+                459,
+                291
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1100,
+                150
+              ],
+              "lie": "nature"
+            },
+            {
+              "pixel": [
+                909,
+                457
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1221,
+                458
+              ],
+              "lie": "fairway"
+            },
+            {
+              "pixel": [
+                1368,
+                364
+              ],
+              "lie": "fairway"
             }
           ]
         }

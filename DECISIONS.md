@@ -118,3 +118,11 @@ score of a previously saved shot through a catalog update. Soft vegetation and s
 simplified vector edges, and the playable image perimeter remains an explicit game OB boundary.
 Keep extraction dependencies in design tooling, outside the running app. Hash artwork/geometry and
 retain fixed classification probes to detect drift. See [review](designs/course-registration/README.md).
+
+## D57 — Fairway control-point refinements (2026-10-03)
+
+Follow user review with Boulder v3 for fairways 6, 16 and 18. Use explicit native-art control points
+and smooth perimeter sampling where mowing/lighting fragmented the color masks. Keep all other
+surfaces, yard registration and artwork unchanged; retain v2 and frozen rounds. Check putting-apron
+continuity and independent inside/outside landmarks in addition to structural/hash validation.
+See [images and reproduction](designs/boulder-fairway-refinement/README.md).

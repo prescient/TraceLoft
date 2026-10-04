@@ -1,7 +1,8 @@
 # Boulder Beach
 
-Renamed from Pebble Boulder on 2026-10-03. New rounds use `pebble-boulder-blue-v2` with terrain
-traced from the finished artwork. The older v1 package and original artwork paths remain intact.
+Renamed from Pebble Boulder on 2026-10-03. New rounds use `pebble-boulder-blue-v3` with terrain
+traced from the finished artwork and refined fairways on 6, 16 and 18. Older v1/v2 packages and
+original artwork paths remain intact. See [fairway corrections](../designs/boulder-fairway-refinement/README.md).
 Existing round snapshots retain their original data; the interface shows the current name.
 All 18 holes' greens, tees, sand, water and grass regions were reviewed and registered again;
 see the [complete course audit](../designs/course-registration/README.md). Start a new round to

@@ -6,18 +6,24 @@ bunkers, greens, tees, ponds or shorelines. This was a geometry/art disagreement
 stretching problem. Sheboygan Straits' earlier tracing was substantially closer; its fairway edges
 and hole 10's incomplete putting surface needed refinement.
 
-New rounds select `pebble-boulder-blue-v2` or `sheboygan-straits-blue-v2`. The names, Blue pars and
+New rounds select `pebble-boulder-blue-v3` or `sheboygan-straits-blue-v2`. The names, Blue pars and
 yardages remain unchanged. Original PNGs and v1 JSON packages remain untouched. Existing rounds
 freeze their own geometry, including unfinished rounds; refresh does not replace that snapshot.
 Start a new round to use these reviewed boundaries.
+
+User review found a missed approach/green connection on Boulder 6 and mowing-stripe notches on
+16 and 18. The [v3 follow-up](../boulder-fairway-refinement/README.md) replaces those fairway
+perimeters with smooth reviewed control points. The v2 package/images and `review-v2.json` remain
+historical evidence. The current `review.json` follows the catalog, including the v3 corrections.
 
 - Boulder Beach: retraced all 18 holes from finished pixels, moved tee/pin to visible surfaces and
   recalculated a uniform yard scale along the same published route distances. Retained 50 bunkers,
   registered the ocean and four small ponds, and rejected tree shadows misidentified as water.
 - Sheboygan Straits: refined fairway contours on all 18 holes and recovered the full hole 10 green.
   Preserved its 354 sand regions, water, tee/pin placements and yard registration.
-- Stored asset and geometry hashes plus 588 reviewed fixed pixel probes, including explicit regression
+- Stored asset and geometry hashes plus 588 original reviewed pixel probes, including regression
   landmarks for Boulder Beach 1, Sheboygan Straits 10 and rejected tree-shadow water candidates.
+  The v3 follow-up adds ten fairway landmarks, bringing the current total to 598.
 
 The silhouettes are simplified vector traces. Fine grass textures, soft mowing transitions, surf
 foam, bunker lips and shadows do not define additional lies or collisions. Nature covers the
@@ -30,9 +36,9 @@ Review sheets use magenta sand, cyan water, yellow green/tee, white fairway and 
 Play's optional overlay uses gold for sand. The game, overlay and simple-fill fallback all read the
 same frozen polygons; changing the camera does not change classification.
 
-![Boulder Beach holes 1–6](pebble-boulder-blue-v2-01.jpg)
-![Boulder Beach holes 7–12](pebble-boulder-blue-v2-07.jpg)
-![Boulder Beach holes 13–18](pebble-boulder-blue-v2-13.jpg)
+![Boulder Beach holes 1–6](pebble-boulder-blue-v3-01.jpg)
+![Boulder Beach holes 7–12](pebble-boulder-blue-v3-07.jpg)
+![Boulder Beach holes 13–18](pebble-boulder-blue-v3-13.jpg)
 ![Sheboygan Straits holes 1–6](sheboygan-straits-blue-v2-01.jpg)
 ![Sheboygan Straits holes 7–12](sheboygan-straits-blue-v2-07.jpg)
 ![Sheboygan Straits holes 13–18](sheboygan-straits-blue-v2-13.jpg)
@@ -44,6 +50,8 @@ same frozen polygons; changing the camera does not change classification.
 
 Design-only dependencies are OpenCV, NumPy and Pillow in a separate environment. Run
 `python courses/register_finished_art.py`, then `python courses/render_registration_review.py`.
+To reproduce Boulder v3, run `python courses/refine_boulder_fairways.py` after the original v2
+registration and before rendering. Its native-art control points are explicit and versioned.
 Registration reads the original art/v1 packages and reproduces v2; it refuses to overwrite a
 different existing v2. Thresholds and reviewed seed regions are specific to these assets. New
 artwork requires fresh extraction and visual review, not reuse of this approval.

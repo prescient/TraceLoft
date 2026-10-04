@@ -5,6 +5,9 @@
 [Boulder Beach artwork](pebble-boulder/README.md) records the original eighteen-hole coastal
 references, generation prompt and registration approach used in Play.
 
+[Fairway refinements](boulder-fairway-refinement/README.md) shows the v3 corrections for Boulder
+Beach 6, 16 and 18 following user review.
+
 The implemented interface uses pure-white Vector surfaces, navy text, square cards and cobalt
 selection. Circular club buttons remain. Follow [design principles](../DESIGN_PRINCIPLES.md).
 The TL browser icon uses a black background, white T and cobalt blue L, matching the interface accent.

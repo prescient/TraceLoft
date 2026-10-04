@@ -363,6 +363,10 @@ remain distinct from validated physical terrain; later artwork changes need anot
 Individual review tooling also exports all 36 native-resolution boundary images, a linked offline
 gallery and a ZIP in one run (`render_registration_review.py --individual --output <folder>`).
 
+- [x] User-review follow-up: Boulder Beach 6 fairway-to-green connection and stripe-induced
+  fairway notches on 16/18. Published v3 for new rounds, preserving v1/v2 and all other scoring
+  surfaces/registration. [Revised images](designs/boulder-fairway-refinement/README.md).
+
 **Immersive browser simulation — requested 2026-10-03 · planned:** extend the playable 2D
 course mode with realistic modeled physics and animated ball movement, while keeping it lightweight
 enough to run smoothly in a browser. Aim for modestly greater immersion within the top-down format.

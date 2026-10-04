@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 from bundled_courses import COURSE_IDS, load_bundled
-from course_geometry import classify
+from course_geometry import classify, on_surface
 from course_workbench import validate_edits
 from web_app import create_app
 from web_service import GolfService
@@ -30,9 +30,9 @@ class RegistrationTests(unittest.TestCase):
         self.assertEqual({c['id'] for c in review['courses']},set(COURSE_IDS))
         for reviewed in review['courses']:
             package=load_bundled(reviewed['id'])
-            legacy=ROOT/'courses'/f"{reviewed['id'].replace('-v2','-v1')}.json"
+            legacy=ROOT/'courses'/f"{reviewed['legacy_id']}.json"
             self.assertEqual(hashlib.sha256(legacy.read_bytes()).hexdigest(),reviewed['legacy_sha256'])
-            self.assertEqual(package['version'],2)
+            self.assertEqual(package['version'],reviewed['version'])
             self.assertEqual(len(reviewed['holes']),18)
             for c,fixture in zip(package['holes'],reviewed['holes']):
                 with self.subTest(course=package['id'],hole=c['hole_number']):
@@ -61,6 +61,35 @@ class RegistrationTests(unittest.TestCase):
             self.assertEqual([h['par'] for h in old['holes']],[h['par'] for h in new['holes']])
             self.assertEqual([h['image']['href'] for h in old['holes']],[h['image']['href'] for h in new['holes']])
             self.assertNotEqual(old['holes'][0]['surfaces'],new['holes'][0]['surfaces'])
+
+    def test_v3_only_refines_three_fairways_and_keeps_visible_aprons_playable(self):
+        old=load_bundled('pebble-boulder-blue-v2');new=load_bundled('pebble-boulder-blue-v3')
+        points={6:[(1510,345),(1550,310),(1580,285),(1600,365)],
+                16:[(1390,350),(830,244),(400,442)],
+                18:[(1050,528),(1410,529),(1580,420)]}
+        outside={6:((1480,280),'rough'),16:((1220,425),'nature'),18:((1250,605),'nature')}
+        for previous,current in zip(old['holes'],new['holes']):
+            number=current['hole_number']
+            comparison=copy.deepcopy(current);comparison['id']=previous['id']
+            if number in points:
+                self.assertNotEqual(current['surfaces']['fairway'],previous['surfaces']['fairway'])
+                comparison['surfaces']['fairway']=previous['surfaces']['fairway']
+                comparison['provenance']=previous['provenance']
+                for native in points[number]:
+                    self.assertEqual(classify(world(current,[native[0]*1536/1774,native[1]*768/887]),current),'fairway')
+                native,label=outside[number]
+                self.assertEqual(classify(world(current,[native[0]*1536/1774,native[1]*768/887]),current),label)
+                for v in current['surfaces']['green'][0]['outer']:
+                    self.assertTrue(on_surface(v,current,'fairway'),'Putting apron disconnected from fairway')
+            self.assertEqual(comparison,previous)
+
+    def test_v2_snapshots_and_art_hashes_remain_intact(self):
+        review=json.loads((ROOT/'designs/course-registration/review-v2.json').read_text())
+        for reviewed in review['courses']:
+            package=load_bundled(reviewed['id'])
+            for c,fixture in zip(package['holes'],reviewed['holes']):
+                fields={k:c[k] for k in ('surfaces','boundary','bounds','tee','pin','playing_line','image')}
+                self.assertEqual(hashlib.sha256(json.dumps(fields,sort_keys=True).encode()).hexdigest(),fixture['geometry_sha256'])
 
 
 class RevisedRoundTests(unittest.TestCase):

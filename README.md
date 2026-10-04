@@ -48,8 +48,8 @@ See the [Sheboygan Straits guide](docs/SHEBOYGAN_STRAITS.md) for hole details an
 The built-in library contains Sheboygan Straits and Boulder Beach. The four earlier standalone
 holes are retired from new-round choices; saved rounds and imported courses remain available.
 
-Both courses now use reviewed **v2 artwork registration** for new rounds. All 36 holes were checked
-against their visible terrain; bunker/green/water outlines and fairway edges were reconciled.
+Boulder Beach now uses **v3** and Sheboygan Straits **v2** for new rounds. All 36 holes were checked
+against their visible terrain; subsequent review refined Boulder fairways 6, 16 and 18.
 Existing rounds retain their original boundaries. See the [full visual review](designs/course-registration/README.md).
 
 Play includes **Boulder Beach**, an original 18-hole coastal course using the January 2026 Pebble

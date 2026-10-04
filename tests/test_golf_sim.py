@@ -77,7 +77,7 @@ class GameTests(unittest.TestCase):
     def test_default_aerial_course_uses_its_own_aim_bounds(self):
         r=self.client.post('/api/practice',json={'drill':'2D golf','demo':True})
         self.assertEqual(r.status_code,200)
-        p=self.service.practice;self.assertEqual(p.data['round']['course_id'],'pebble-boulder-blue-v2')
+        p=self.service.practice;self.assertEqual(p.data['round']['course_id'],'pebble-boulder-blue-v3')
         url=f"/api/game/{p.data['id']}/aim"
         self.assertEqual(self.client.post(url,json={'x':100,'y':100,'turn':0}).status_code,200)
         self.assertEqual(self.simulate(p,30).status_code,200)
