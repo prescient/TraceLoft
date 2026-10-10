@@ -1,5 +1,16 @@
 # TraceLoft work log
 
+## 2026-10-10 — Confirmed GC3 column dictionary
+
+- The user supplied four club and thirteen ball/flight labels (17 total). Updated the design table
+  with all 17 named/unit-specific nullable columns, retaining existing total distance as an additional
+  optional compatibility field. No fields dropped to match the earlier count of 16.
+- Distinguished source Smash Factor from a separately versioned ball-speed/club-speed calculation;
+  unavailable/invalid/nonpositive club speed cannot yield that ratio. Source Smash Factor has no current
+  normalized mapping, and inspected club readings are unavailable; columns do not imply ingestion.
+- Updated proposal, D59 and backlog. Checked dictionary against the supplied labels, local Markdown
+  links and Git whitespace. Documentation only; no schema migration, live writes or recomputation.
+
 ## 2026-10-10 — Readable database redesign proposal
 
 - Reviewed implemented schema, mappings, model payloads and prior database design/operations.

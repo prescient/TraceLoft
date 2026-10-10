@@ -515,8 +515,10 @@ Real-course sources/import enhancements remain optional deferred work.
 
 - [x] Review current tables/mappings and document a wide source-metrics / versioned derived-metrics
   design, linked by existing shot ID, with readable views and preserved evidence.
-- [ ] Confirm the exact 16 GC3 field labels/units; current ball/flight import has 14 fields and the
-  normalized mapping has optional club capacity. Finalize column dictionary and DDL.
+- [x] Confirm the source metric labels and document their named columns: the supplied list has 17
+  metrics, plus optional existing total distance. Distinguish supplied versus calculated Smash Factor.
+- [ ] Verify actual input units/semantics, add missing source Smash Factor mapping when supplied,
+  finalize source selection and DDL. Existing club capacity has no available readings in inspected data.
 - [ ] Implement additive backed-up migration/backfill with explicit primary-report selection;
   preserve multiple observations, availability, original units, sessions and frozen game scores.
 - [ ] Implement idempotent model runs, immutable results/input context, explicit analytical version

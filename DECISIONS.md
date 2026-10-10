@@ -9,7 +9,9 @@ evidence and original missingness. Provider flight calculations are source-repor
 sensor measurements. Calculations pin exact inputs, code/model/settings and relevant context;
 recalculation appends a version and explicit publication selects it for analysis. Played outcomes
 and scores never change through analytical recomputation. Everyday views expose units, club/bag
-labels and selected methodology without long-form pivots. The exact 16 GC3 labels need confirmation.
+labels and selected methodology without long-form pivots. The user's confirmed list has 17 fields;
+retain all 17 plus optional existing total distance. Preserve source Smash Factor separately from
+a versioned ball-speed/club-speed calculation. Supported columns do not imply available input values.
 See [design/migration plan](docs/DATABASE_REDESIGN.md). No schema upgrade or production change yet.
 
 ## D50 — Audited game corrections (2026-10-03)

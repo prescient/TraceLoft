@@ -62,33 +62,44 @@ launch conditions from calculated flight results. A Foresight carry value remain
 a TraceLoft/OpenGolfCoach carry estimate belongs in the derived table. Preserve both.
 [Foresight launch and flight definitions](https://help.foresightsports.com/hc/en-us/articles/47144162581523-Ball-Launch-Data-Measurements-Ball-Flight-Results).
 
-The exact requested **16 labels are awaiting confirmation**. The current ball/flight import uses
+The user confirmed **17 labels** (four club and thirteen ball/flight fields). Use all 17; do not
+drop a field to force the earlier count of 16. Retain total distance as an eighteenth optional
+compatibility column because TraceLoft already captures/uses it. The current ball/flight import uses
 14 fields. The normalized Open Connect mapping additionally reserves six club fields, but inspection
-found no available club values. GC3 documentation lists club speed, path, attack angle and smash
-factor; a supported display/export is not proof our input currently supplies them.
+found no available club values. Source smash factor is not currently mapped; adding its column
+does not establish that it arrives in the packet. GC3 documentation lists the four requested club
+metrics; a supported display/export is not proof our input currently supplies them.
 [GC3 ball/club list](https://www.foresightsports.com/products/gc3).
 
-Provisional existing-field columns, using familiar golf units in explicit names:
+Confirmed metric dictionary, using familiar golf units in explicit names. Values remain optional;
+the source's units/definitions still need verification for each actual input profile.
 
 | Current field | Proposed column | Notes |
 | --- | --- | --- |
+| `club_speed` | `club_speed_mph` | Club Head Speed; reserved normalized input, no available readings in inspected data |
+| Not mapped yet | `smash_factor` | Source-reported Smash Factor; dimensionless |
+| `club_path` | `club_path_deg` | Club Path; reserved normalized input |
+| `attack_angle` | `attack_angle_deg` | Angle of Attack; reserved normalized input |
+| `carry` | `carry_distance_yd` | Carry Distance; provider flight calculation |
 | `ball_speed` | `ball_speed_mph` | Initial speed |
+| `total_spin` | `total_spin_rpm` | Preserve provider value |
 | `launch_ang` | `launch_angle_deg` | Vertical launch |
 | `launch_dir` | `launch_direction_deg` | Target-relative, right positive |
-| `total_spin` | `total_spin_rpm` | Preserve provider value |
 | `spin_axis` | `spin_axis_deg` | Preserve provider sign/frame lineage |
 | `back_spin` | `backspin_rpm` | Provider component |
 | `side_spin` | `sidespin_rpm` | Provider component/sign lineage |
-| `carry` | `carry_distance_yd` | Provider flight calculation |
-| `total` | `total_distance_yd` | Provider flight calculation |
-| `offline` | `offline_distance_yd` | Endpoint semantics currently unverified; do not silently rename carry-side |
-| `descent_ang` | `descent_angle_deg` | Provider landing-angle definition |
 | `peak_height` | `apex_height_ft` | Explicit feet |
+| `descent_ang` | `descent_angle_deg` | Provider landing-angle definition |
+| `offline` | `offline_distance_yd` | Endpoint semantics currently unverified; do not silently rename carry-side |
 | `curve` | `curve_distance_yd` | Definition/frame retained |
 | `hang_time` | `flight_time_s` | Provider flight duration |
+| `total` | `total_distance_yd` | Additional optional compatibility field; not in the user's 17-label list |
 
-Potential GC3 club columns: `club_speed_mph`, `club_path_deg`, `attack_angle_deg`,
-`smash_factor`. Their inclusion and the requested 16-column set need the actual labels.
+Store a supplied Smash Factor in the source table. If TraceLoft calculates ball speed / club speed,
+store it separately as `calculated_smash_factor` in the derived table, under that methodology's
+version. Require compatible speeds and positive club speed; missing/zero/invalid club speed makes
+the ratio unavailable. Never fill a missing source smash-factor column with our calculation.
+
 Face angle/dynamic loft/lie must not be presented as GC3 capabilities simply because the generic
 protocol accommodates them. Other monitors can use nullable additional columns or an extension
 table with typed definitions; core metrics should stay wide and easy to query.
@@ -173,8 +184,8 @@ columns while retaining competing source values and old models for research.
 
 ## Staged migration and acceptance
 
-1. Confirm the exact 16 labels, semantics/units and any wider optional vendor columns. Specify the
-   source-selection policy and versioned output families; finalize DDL/column dictionary.
+1. Use the confirmed 17-label dictionary plus optional total distance. Verify actual incoming
+   semantics/units, finish source-selection policy/versioned output families and finalize DDL.
 2. Take a verified SQLite backup and restore into isolation; inventory IDs, raw bytes, observations,
    duplicates/conflicts, sessions/attempts, tags/exclusions, corrections and frozen game outcomes.
 3. Add wide tables and views alongside v1 evidence. Backfill every original observation with its

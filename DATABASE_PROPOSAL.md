@@ -3,7 +3,8 @@
 **Design update — 2026-10-10:** the user prefers named columns for source-reported shot metrics
 and a separate, versioned derived-metrics table linked by shot ID. The
 [readable database redesign](docs/DATABASE_REDESIGN.md) supersedes the long-form-first recommendation
-below for the next analytical schema. Exact 16 GC3 labels remain to be confirmed. This is a design
+below for the next analytical schema. The user confirmed 17 source metrics; total distance remains
+an additional optional compatibility column. This is a design
 proposal; the implemented database remains schema v1 and no production migration has occurred.
 Retain the original raw/typed evidence and provenance during an additive, verified transition.
 
