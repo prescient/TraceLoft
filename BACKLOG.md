@@ -521,6 +521,8 @@ Real-course sources/import enhancements remain optional deferred work.
   separate versioned bag-map/wedge-matrix group results with exact analysis membership.
 - [x] Specify users/golfer profiles, explicit equipment/shot/session/analysis ownership and the
   boundary between core relational data and immutable JSON evidence/settings artifacts.
+- [x] Map the redesign to existing app workflows and document backend/UI impact, compatibility
+  boundaries and implementation order; include session-state parity and version-aware Play profiles.
 - [ ] Verify actual input units/semantics, add missing source Smash Factor mapping when supplied,
   finalize source selection and DDL. Existing club capacity has no available readings in inspected data.
 - [ ] Implement additive backed-up migration/backfill with explicit primary-report selection;

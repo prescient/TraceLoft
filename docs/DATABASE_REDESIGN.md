@@ -365,6 +365,98 @@ Offer source-only, selected-source-plus-derived, session-attempt and all-calcula
 with units/version/context fields and missingness dictionaries. This preserves spreadsheet-friendly
 columns while retaining competing source values and old models for research.
 
+## Impact on current functionality
+
+The proposed entities cover current Relay, Practice, Play, Analyze and Sessions workflows. This is
+a substantial storage/service change with limited mandatory visual change. Retain the existing
+browser JSON response shapes through a Python repository/serialization layer while changing where
+their data comes from. JSON over HTTP/WebSocket remains appropriate; editable core data inside
+SQLite becomes relational. A response assembled from tables is not a second storage authority.
+
+### Feature-by-feature implementation map
+
+| Area | Current implementation | Required backend change | User-facing change |
+| --- | --- | --- | --- |
+| Relay and incoming shots | `shot_input.py` and `storage.py` store raw events, normalized observations and typed metric rows; receipts deduplicate input | Write named source columns with report/revision identity, quality and explicit source selection. Freeze golfer/context at receipt acceptance; keep raw evidence and commit-before-ack behavior | Existing Relay controls can stay. Show new source metrics when supplied; absent metrics stay unavailable |
+| Bag and club selection | `equipment.py` uses a metadata catalog; `web_service.py` freezes selected labels/IDs on accepted shots | Replace editable catalog JSON with users, bags, clubs, revisions and membership rows. Keep upcoming selection separate from original shot context | Keep bag tabs and club buttons. Add local golfer selection and distinct Rename, Edit specifications and Replace club actions |
+| Practice and session lifecycle | Drill classes load/save session dictionaries through `Store`; plans, settings, outcomes and overlays live largely in payloads | Reconstruct the existing session DTO from normalized session/attempt/plan/context/result rows. Persist receipt links, attempt advancement and dependent live outcomes transactionally | Drill setup, targets, latest-shot feedback, recording state and exits can keep their existing flow |
+| Driving range and cleanup | `driving_range.py` saves source values, nested flight estimates and audited exclusions/retagging; browser builds plots | Read source/selected derived views; store model results/paths separately; resolve effective context and inclusion by scope. Invalidate only affected group analyses | Retain plots, bag/club colors, median/IQR and faint excluded dots. Add optional tags and bulk tag actions to the shot workspace |
+| Bag mapping / gapping | `web/collection.js` computes summaries from included session shots and a frozen collection plan | Make the service authoritative for group calculations; persist analysis membership, bag maps/gaps and selected calibration profiles with statistical/input versions | Keep existing cards/table and sample goals. Add configuration/profile identity and a compact stale/update indication |
+| Wedge matrix | `web/wedge-matrix.js` groups included shots by planned club and saved swing label | Normalize intent/plan cells; persist per-cell results and coverage under an analysis run. Preserve Half/Three-quarter/Full as recorded intent labels | Retain the matrix and swing selection. Select the appropriate equipment/configuration profile; new/replacement clubs start without inherited samples |
+| Putting estimates and ladders | Saved outcomes contain model/Stimp/target assumptions and estimates | Store context-dependent putting results with exact source, Stimp, target and model revisions; freeze drill outcomes | Existing putting flow can stay. Show methodology in details; recalculation does not change a previously recorded drill result |
+| Play, suggestions and heatmaps | `golf_sim.py` freezes geometry and outcomes; `club_preview.py` and recommendations scan collection sessions | Use selected user/equipment analysis profiles and source/derived revisions for future previews. Preserve frozen played outcomes, penalties, gimmes and correction history | Keep map, club row, Aim pin, heatmaps, scorecard and Mulligan/Misread controls. Show which calibration profile supplies the preview |
+| Cross-session Analyze | `analysis.py` scans session payloads, filters source values and computes median/type-7 IQR | Query indexed readable views; add golfer/specification/tag/model filters and reproducible cohorts. Preserve per-metric coverage and explicit counting rules | Retain current charts and filters. Add source-versus-calculated metric/version selection and a secondary recalculation preview workflow |
+| Sessions, exports and recovery | `Store` reloads payloads, supports recoverable deletion, SQLite backup and CSV/ZIP exports | Preserve IDs, active-session resume, deletion/restore semantics and audit links. Version export manifests and support source, selected-derived and calculation-history views | Existing review/restore paths stay. CSVs gain shot IDs, units, ownership and calculation provenance; expanded export choices can live in details |
+
+These changes belong primarily in `storage.py`, `web_service.py`, ingestion/mapping code, the drill
+save/load boundary, calculation writers, `analysis.py` and `club_preview.py`. The frontend must stop
+being the sole authority for stored bag-map/matrix results. It can still format values and draw plots.
+Live collection summaries may be computed by the service as shots arrive; persist a reproducible
+analysis revision at an explicit save/refresh/publication boundary rather than on every screen repaint.
+
+### Compatibility details that need deliberate work
+
+- **The 17 requested source fields plus optional total distance:** current ball/flight inputs already
+  supply much of this dictionary, but club readings in inspected history are unavailable and source
+  Smash Factor has no mapping. Add validation/mapping for supplied values; do not invent missing data.
+  TraceCapture needs a change only if it must send additional fields. It continues to send the open
+  protocol, owns no TraceLoft database, and requires no access to the new tables. No port change is
+  required by this migration.
+- **One shot versus multiple reports/attempts:** receipt, physical shot, observation and practice
+  attempt IDs are different identities. Backfill their links before constructing wide views. The
+  current Analyze denominator is session attempts; retain that behavior for parity and expose any
+  distinct-physical-shot mode explicitly. New calibration cohorts normally deduplicate physical shots.
+- **Versions and Play previews:** current `club_preview.py` accepts modeled endpoints only when the
+  saved model string equals the current `flight_model.MODEL` constant. Replace this with explicit
+  compatible result/profile selection, so changing code versions does not silently discard older
+  calibration data. Do not pool incompatible configurations or models to produce a single heatmap.
+- **Retagging and cleanup:** the current effective-equipment/excluded/removed overlays and Undo
+  history must migrate to scoped relational history. A tag is not an exclusion. A club correction
+  can refresh a bag map without modifying source values or changing a completed round's score.
+- **Users and shared recording:** assign established single-player history to its migration profile,
+  leaving genuinely ambiguous attribution reviewable. Freeze user and club context before queued
+  receipts are processed; a late arrival must not inherit whichever profile is currently viewed.
+  Local users do not create simultaneous recording sessions or require a login system.
+- **Drill/game state:** finalize typed columns/tables for current session state, scalar attempt
+  outcomes and game correction/score history as part of DDL. The metric ERD alone does not define
+  the entire application. Keep complete frozen course/trajectory artifacts as justified versioned
+  documents, with queryable identity/scalar fields outside them. Recomputed analytics must not
+  advance drills, trigger a new-shot animation or replay scoring.
+- **Publication and dependencies:** selected calculation results and group analyses change together
+  under explicit publication rules. Source recording must remain reliable when optional analytical
+  recomputation fails; record unavailable/error results and preserve prior selected results. Preserve
+  atomicity for the live attempt, score and correction operations that already depend on saved inputs.
+
+### UI scope and implementation order
+
+The required new UI is a compact golfer selector, clear equipment edit actions, tag controls in the
+existing shot workspace, and methodology/profile identity with recalculation review in Analyze.
+Single-player use defaults to the migrated golfer and requires no extra selection on every shot.
+Keep live play/practice surfaces compact for the 13-inch iPad landscape target. Advanced version,
+lineage and recomputation controls belong in Analyze/details, not among club buttons or on the map.
+The existing multi-club comparison backlog item remains separate from this storage migration.
+
+Implement in reviewable steps:
+
+1. **Schema and isolated backfill:** finalize keys, ownership, source selection, typed session state
+   and output families. Migrate a restored backup with preserved IDs/evidence and readable views.
+   Include default-user and revision structures from the outset, even before their new UI exists.
+2. **Application parity:** switch ingestion and session/equipment load/save through the repository
+   layer. Preserve browser contracts and existing source/model distinctions; reconcile exported data
+   and exercise every existing drill, cleanup, resume, review, correction and relay failure journey.
+3. **Profiles, equipment and tags:** add local golfer selection/ownership guards, rename/specification/
+   replacement actions and audited shot/attempt tags, with bulk cleanup and Undo parity.
+4. **Versioned calculations and calibration:** write flight/putting results with lineage; move group
+   calculations to the service and add selected bag-map/matrix profiles. Add Analyze recomputation
+   comparison/publication and route future Play previews through the selected compatible profiles.
+5. **Cutover and recovery:** validate CSV/backup/restore, missing metrics, foreign keys, scoped
+   corrections, multiple source reports, partial runs and model switching in isolation. Review the
+   affected iPad/desktop/phone journeys, then migrate production under a verified rollback plan.
+
+Do not ship a transitional UI backed by two independently editable catalogs or session authorities.
+Steps can be developed/committed separately using fixtures; production cutover requires the complete
+compatibility path and reconciliation below. This implementation map is an audit, not a migration.
+
 ## Staged migration and acceptance
 
 1. Use the confirmed 17-label dictionary plus optional total distance. Verify actual incoming

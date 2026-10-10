@@ -1,5 +1,19 @@
 # TraceLoft work log
 
+## 2026-10-10 — Database redesign application impact audit
+
+- Mapped Relay, equipment, session/drill lifecycle, range cleanup, bag mapping/gapping, wedge matrix,
+  putting, Play profiles/scoring, Analyze and exports/recovery to the proposed relational schema.
+  Inspected storage/service, analysis, collection UI, model and preview implementation boundaries.
+- Documented compatible browser DTOs over a relational authority, typed session/outcome DDL still
+  to finalize, service-owned group calculations, scoped ownership/cleanup, explicit counting modes,
+  source availability and selected model/profile lineage. Flagged current Play preview filtering by
+  the model constant as a compatibility change needed for analytical version switching.
+- Specified compact new UI and staged implementation/cutover; marked impact planning complete in
+  backlog while migration remains pending. No production data/schema writes, app changes or restart.
+- Verification: checked touched Markdown local links, implementation references and Git whitespace.
+  Documentation-only audit; application tests/UI checks are acceptance work for implementation.
+
 ## 2026-10-10 — Club edits during active sessions
 
 - Read current equipment edit/selection, receipt freezing, collection grouping and existing tests.
