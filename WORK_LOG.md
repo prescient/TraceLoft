@@ -1,5 +1,16 @@
 # TraceLoft work log
 
+## 2026-10-10 — Club edits during active sessions
+
+- Read current equipment edit/selection, receipt freezing, collection grouping and existing tests.
+  Confirmed rename preserves club ID and old shot names, add creates ID, remove clears a removed
+  selected club, and active next-shot labels refresh transactionally after pending receipts save.
+- Documented current grouping limitation: renaming to represent a replacement can pool history by
+  bag/club ID. Specified distinct next-shot switch, cosmetic rename, specification change, physical
+  replacement and membership removal rules for the proposed revision schema. Frozen collection
+  plans do not automatically adopt new clubs; historical retagging remains explicit/audited.
+- Checked document links/whitespace; documentation only, no user bag edits or service/database changes.
+
 ## 2026-10-10 — Golfer ownership and relational core
 
 - Extended database design with local users/golfer profiles and explicit ownership of bags, clubs,

@@ -163,6 +163,34 @@ Club identities currently generated independently in different bags must remain 
 migration unless the user explicitly identifies them as the same physical club. Unknown equipment
 specifications remain null, not inferred from a label such as SW.
 
+### Changing a club during a session
+
+Current app: the next-shot selector can switch among existing clubs during an active full-swing
+session. Manage bags can rename, add or remove clubs. A rename keeps the same club ID and increments
+the catalog revision; the active selection refreshes its label for upcoming shots. Already captured
+shots keep their recorded IDs/names. Removing the selected club clears the upcoming club choice;
+old shot references remain intact. Add creates a new club ID. Saves drain pending receipts first,
+and unresolved save errors or stale catalog revisions reject the edit.
+
+Current limitation: aggregate code groups by bag/club ID, so renaming a club to represent different
+physical equipment may combine old and new shots despite retained historical labels. Collection
+plans are frozen, so a newly added club is not automatically a planned bag-map/matrix cell. The
+new revision schema must distinguish these actions explicitly:
+
+| Action | Proposed identity/version behavior | History and analysis |
+| --- | --- | --- |
+| Select another existing club | Change upcoming selection only | Earlier shot assignments/results stay intact |
+| Rename the same physical club | Same club ID; new label revision | Preserve old names; allow comparable same-club history with explicit revision policy |
+| Adjust loft/shaft/settings | Same physical club ID; new specification revision and bag membership revision | New shots pin new specs; default calibration groups distinguish configurations |
+| Replace with another physical club | New club ID and new bag revision/membership | Old and new club maps/matrices remain separate; no inherited calibration by default |
+| Remove from bag | End membership in a new bag revision; clear selection if necessary | No deletion of club/shot history or old results |
+
+Switching the active bag revision affects future shots, while the session's original collection plan
+remains frozen. A replacement club can be recorded as unplanned; extending a plan requires an explicit
+plan revision, not silently moving old samples to a new cell. Dependent calibration/profile selections
+become stale or unavailable for a new configuration; recomputation never changes source measurements
+or played scores. Retroactive retagging remains a separate audited action with its own scope.
+
 The effective analytical assignment is a view of original context plus scoped correction history.
 An explicit attempt override must not leak into other sessions using the same shot. General tags
 may be shot-scoped (e.g. swing experiment), while session exclusion remains session-scoped. Preserve
