@@ -511,6 +511,21 @@ Real-course sources/import enhancements remain optional deferred work.
 
 ### 10. SQLite storage, extensible metrics and analytical export (proposed 2026-10-01)
 
+#### Readable database redesign (requested 2026-10-10)
+
+- [x] Review current tables/mappings and document a wide source-metrics / versioned derived-metrics
+  design, linked by existing shot ID, with readable views and preserved evidence.
+- [ ] Confirm the exact 16 GC3 field labels/units; current ball/flight import has 14 fields and the
+  normalized mapping has optional club capacity. Finalize column dictionary and DDL.
+- [ ] Implement additive backed-up migration/backfill with explicit primary-report selection;
+  preserve multiple observations, availability, original units, sessions and frozen game scores.
+- [ ] Implement idempotent model runs, immutable results/input context, explicit analytical version
+  selection, recalculation preview/publication and version-aware wide/history CSV exports.
+- [ ] Verify source reconciliation, rollback/restore, interrupted runs, missing inputs, exclusions,
+  retagging dependencies and historical review in isolation before production cutover.
+
+See [redesign](docs/DATABASE_REDESIGN.md). Design only; no live migration or recomputation yet.
+
 Status: core SQLite import/capture/practice persistence, typed registry, CSV export and verified local
 backup/restore implemented; cutover and verification are tracked in WORK_LOG.md.
 See [database operations](docs/DATABASE_OPERATIONS.md). Advanced analytics/equipment/cleanup/source

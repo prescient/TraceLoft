@@ -1,5 +1,12 @@
 # TraceLoft storage and analytics proposal
 
+**Design update — 2026-10-10:** the user prefers named columns for source-reported shot metrics
+and a separate, versioned derived-metrics table linked by shot ID. The
+[readable database redesign](docs/DATABASE_REDESIGN.md) supersedes the long-form-first recommendation
+below for the next analytical schema. Exact 16 GC3 labels remain to be confirmed. This is a design
+proposal; the implemented database remains schema v1 and no production migration has occurred.
+Retain the original raw/typed evidence and provenance during an additive, verified transition.
+
 Status: core SQLite schema/import, capture/practice persistence, CSV export and local backup/restore
 implemented 2026-10-01; production cutover verification is recorded in WORK_LOG.md. A versioned manual
 multiple-bag catalog and per-attempt equipment snapshots are now implemented for Distance ladder in
@@ -87,8 +94,8 @@ KIT's list confirms that carry-side and total-side deserve separate fields.
 
 ## Expansive metric catalog
 
-The companion [proposed catalog](docs/data/metric_catalog.proposed.json) defines stable identifiers,
-units and scalar/series types. It is a proposed union of documented metric families plus explicitly
+The companion [current registry catalog](data/metric_catalog.v1.json) defines stable identifiers,
+units and scalar/series types. It contains a researched union of documented metric families plus explicitly
 reserved extensions. It is not a promise that the current capture collects them or a complete vendor
 API specification. New scalar definitions generally require catalog entries and mappings, not a
 database-table migration.
@@ -411,8 +418,9 @@ by assuming every scraped shot is a full swing.
 ## Mapping file proposal
 
 Use a declarative JSON file per actual input format/version, not one universal brand file. The
-[example](docs/data/metric_mapping.example.json) includes the existing GolfData/Foresight parsed
-fields and a disabled Trackman label illustration. Neither is a production adapter.
+[current normalized mapping](data/metric_mapping.normalized.v1.json) documents supported input
+fields. Earlier research examples and disabled vendor-label illustrations remain in the private
+combined archive; they are not accessible production adapters in this repository.
 
 Each entry should define source field/label, metric definition revision, source/canonical units,
 conversion, sign/frame, semantic variant, missing handling, mode/package conditions, validation and

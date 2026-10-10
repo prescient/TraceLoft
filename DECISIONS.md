@@ -1,5 +1,17 @@
 # TraceLoft architecture decisions
 
+## D59 — Readable source metrics and recalculable derived results (2026-10-10, design)
+
+Prefer explicit optional columns for common source-reported shot metrics and a separate wide,
+versioned table for TraceLoft calculations. Both reference the existing physical shot ID. Keep
+multiple source reports/normalization revisions, explicit primary-source selection, immutable raw
+evidence and original missingness. Provider flight calculations are source-reported, not automatically
+sensor measurements. Calculations pin exact inputs, code/model/settings and relevant context;
+recalculation appends a version and explicit publication selects it for analysis. Played outcomes
+and scores never change through analytical recomputation. Everyday views expose units, club/bag
+labels and selected methodology without long-form pivots. The exact 16 GC3 labels need confirmation.
+See [design/migration plan](docs/DATABASE_REDESIGN.md). No schema upgrade or production change yet.
+
 ## D50 — Audited game corrections (2026-10-03)
 
 Mulligan and Misread rewind the latest effective scored attempt, restoring its frozen pre-shot

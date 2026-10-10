@@ -1,5 +1,9 @@
 # Source separation update — 2026-10-03
 
+New [database redesign proposal](DATABASE_REDESIGN.md), 2026-10-10: named source-metric columns,
+separate versioned derived results and readable analytical views. This is not implemented yet;
+schema v1, current backup/export formats and the live database remain unchanged.
+
 SQLite remains authoritative at the same path. TraceLoft stores raw Open Connect packets and mapped
 observations, plus session state atomically. The source app keeps its own private outbox and cannot
 read/write this database. TraceLoft acknowledges only after commit. See [Relay](RELAY.md) for retry,

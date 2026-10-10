@@ -77,6 +77,10 @@ The existing database remains `%USERPROFILE%\GolfData\data\golfdata.sqlite3`, ou
 The compatibility path preserves existing user data. SQLite snapshots and CSV export are available
 on Relay. Google Drive backup remains planned.
 
+The [readable database redesign proposal](docs/DATABASE_REDESIGN.md) separates named source
+metric columns from versioned, recalculable TraceLoft results. It is a design proposal; the current
+SQLite schema and stored data are unchanged.
+
 See [Open Connect contract](docs/RELAY.md), [database operations](docs/DATABASE_OPERATIONS.md),
 [design principles](DESIGN_PRINCIPLES.md), [navigation](NAVIGATION.md), [backlog](BACKLOG.md),
 [decisions](DECISIONS.md) and [work log](WORK_LOG.md).

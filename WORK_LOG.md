@@ -1,5 +1,25 @@
 # TraceLoft work log
 
+## 2026-10-10 — Readable database redesign proposal
+
+- Reviewed implemented schema, mappings, model payloads and prior database design/operations.
+  Opened the production SQLite file read-only (without constructing Store): schema v1, 1,305 shots,
+  2,429 observations, 32,406 values, 47 sessions and 1,089 attempts at inspection. 1,089 shots have
+  multiple observations; none currently occur in multiple sessions. These are inventory observations,
+  not a uniqueness guarantee or post-migration reconciliation. No live writes/restart/model recalculation.
+- Proposed wide optional source-metric columns and separate versioned derived results, connected by
+  stable shot ID, with explicit source/model selection, input/context lineage and readable wide views.
+  Existing raw/typed evidence remains preserved. Recalculation appends results and publishes analytical
+  selections; it never rewrites captured values or played game outcomes. Documented additive migration,
+  missingness/conflicts, retagging/exclusion dependencies, versioned CSV and backup/rollback acceptance.
+- Checked official GC3 metric list and Foresight launch/flight definitions; linked primary references.
+  Current ball/flight mapping has 14 fields; generic mapping adds six optional club fields with no
+  available club readings in the inspected database. Requested the user's exact 16 labels; not guessed.
+  Named source-reported rather than measured because provider carry/total are already calculated.
+- Updated database proposal/operations, README, D59 and backlog with clear design/implementation
+  status. Checked touched Markdown local links and Git whitespace consistency. Documentation only;
+  app behavior/schema are unchanged, so no application suite or UI review rerun was necessary.
+
 ## 2026-10-03 — Full 18 / Front 9 / Back 9
 
 - Added touch-sized round choices with par/yardage in setup. Freeze selected holes/totals in the
