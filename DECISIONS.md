@@ -16,6 +16,9 @@ Equipment, tags and original/corrected shot intent use separate relational conte
 Bag mapping and wedge matrix results are versioned multi-shot analyses with frozen member/input
 revisions, not rows of per-shot derived metrics. Existing per-bag club IDs are not automatically
 merged into a shared physical club; migration retains the original catalog and shot-time labels.
+Add local golfer profiles and explicit ownership for equipment, shots, sessions and analysis.
+Profiles do not imply authentication. Core editable/queryable data is relational; JSON remains for
+original packets, model-specific snapshots and versioned artifacts. Avoid two editable authorities.
 See [design/migration plan](docs/DATABASE_REDESIGN.md). No schema upgrade or production change yet.
 
 ## D50 — Audited game corrections (2026-10-03)

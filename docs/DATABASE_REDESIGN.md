@@ -20,6 +20,7 @@ JSON, rather than a queryable derived-metrics table. Export is readable; direct 
 
 | Table | One row represents | Purpose |
 | --- | --- | --- |
+| `users` | One local golfer profile | Stable user ID, display name, handedness, creation/archive dates; independent of authentication |
 | `shots` | One physical shot, retaining its existing ID | Identity, time, source-event link, synthetic flag; readable identity/date fields |
 | `shot_source_metrics` | One normalized source report/revision about a shot | One nullable numeric column per supported metric; immutable source values |
 | `shot_primary_source` | The explicitly chosen source report for a shot | Gives everyday queries one source row without discarding other reports |
@@ -37,6 +38,8 @@ not to the physical-shot metric row.
 
 ```mermaid
 erDiagram
+    users o|--o{ shots : hit_by
+    users ||--o{ sessions : practices_in
     shots ||--o{ shot_source_metrics : has_reports
     shots ||--o| shot_primary_source : chooses_report
     shot_source_metrics ||--o{ calculation_inputs : supplies_input
@@ -54,6 +57,64 @@ Source rows additionally identify their observation and normalization revision. 
 identify `run_id`, their own stable result ID and an input/context fingerprint. Multiple result
 versions for one shot are intentional. Composite foreign keys must prevent selecting a report or
 derived result belonging to another shot or model family.
+
+## Users and ownership
+
+Users are first-class golfer profiles, not device records or bags. Add `users(user_id, display_name,
+handedness, created_at, archived_at)` and foreign-key ownership on `bags`, `clubs`, `sessions`,
+`shots`, reusable user tags and `analysis_runs`. Bag/club revisions inherit the stable entity's owner;
+source/derived measurements inherit their shot's owner. Sources can serve several golfers and should
+not become golfer identities. Shared equipment/coaching access can be modeled explicitly later.
+
+A session freezes its selected golfer at start; upcoming-shot bag/club choices must belong to that
+golfer. A player change starts a separate session or an explicit future multiplayer turn, not a
+silent change to earlier shots. Show user name in readable shot/map/matrix views and filter equipment,
+statistics, calibration and selected profiles by user. A bag map or wedge matrix must not pool two
+players just because their clubs share a label. Composite foreign keys and service validation must
+reject mismatched session/shot/equipment ownership; tests cover cross-user references and selections.
+
+Local profiles do not require logins. A user selector identifies the golfer; it is not an access-control
+boundary. If the app later offers authenticated remote multi-user access, map accounts/permissions
+separately to golfer profiles and enforce authorization at the service, rather than trusting a supplied
+user ID. Current localhost ownership/access behavior remains unchanged by this design.
+
+Migration creates a local profile for the existing single-player setup, retaining all shot/equipment
+IDs and recording assignment evidence. Ambiguous imported history or unassigned inbound shots may
+have null owner until reviewed; do not infer a player from device ID or attach every incoming packet
+to the most recently viewed profile. An active session or explicit input-golfer selection provides
+shot-time ownership. Preserve original attribution and audit subsequent corrections. Future shared
+equipment transfers require explicit ownership history, not renaming another player's club.
+
+```mermaid
+erDiagram
+    users ||--o{ bags : owns
+    users ||--o{ clubs : owns
+    users ||--o{ sessions : plays
+    users o|--o{ shots : owns
+    users ||--o{ analysis_runs : analyzes
+    bags ||--o{ bag_revisions : versions
+    clubs ||--o{ club_revisions : versions
+    sessions ||--o{ session_attempts : contains
+    shots ||--o{ session_attempts : records
+```
+
+## Relational data versus JSON
+
+Core queryable entities and relationships should be rows/columns: users, bags, clubs/membership,
+shot ownership/context/labels, session plans/attempts, exclusions/corrections and scalar results.
+Use keys, foreign keys, uniqueness, typed columns and indexes. Do not replace these with a catalog
+or session JSON document that requires application code to enforce relationships or decode analytics.
+
+JSON remains appropriate for immutable original protocol packets/import evidence, model-specific
+parameter snapshots, archived legacy payloads and geometry/trajectory documents consumed as complete
+versioned artifacts. Any fields routinely filtered/joined/validated need explicit relational columns
+or sample tables. Never hide `user_id`, `bag_id`, `club_id`, analytical inclusion or metric values only
+inside those documents. Extract queryable model identity/context keys alongside parameter snapshots.
+
+During migration, preserve legacy JSON as evidence/read compatibility. The new relational representation
+becomes authoritative for editable core state; retained snapshots are immutable evidence or reproducible
+exports, not a second independently editable copy. Transactional reconciliation must check the transitional
+representations. Moving core tables does not require deleting raw source JSON or rewriting frozen courses.
 
 ## Equipment, shot context, tags and collection results
 
@@ -283,7 +344,8 @@ columns while retaining competing source values and old models for research.
 2. Take a verified SQLite backup and restore into isolation; inventory IDs, raw bytes, observations,
    duplicates/conflicts, sessions/attempts, tags/exclusions, corrections and frozen game outcomes.
    Include equipment catalog IDs, historical name snapshots, bag-map/matrix plans and swing labels;
-   explicitly backfill relational contexts and preserve existing aggregate behavior.
+   explicitly backfill relational contexts/user ownership and preserve existing aggregate behavior.
+   Verify the original single-player profile assignment and flag ambiguous imported ownership.
 3. Add wide tables and views alongside v1 evidence. Backfill every original observation with its
    own report ID; do not collapse conflicting reports or manufacture missing values. Preserve old
    derived payloads as legacy results with their actual lineage or explicitly incomplete provenance.
@@ -293,7 +355,8 @@ columns while retaining competing source values and old models for research.
 5. Switch ingestion, querying, CSV, backup and model writes together under the Python authority.
    Receipt/source/session writes remain atomic; read compatibility is retained during transition.
 6. Exercise interrupted/retried recalculation, failed/partial publication, version switching,
-   club-dependent invalidation, exclusions, restored backups and frozen round review in isolation.
+   club-dependent invalidation, exclusions, cross-user ownership guards, restored backups and frozen
+   round review in isolation.
 7. Cut over only after reconciliation. Retain rollback support and legacy evidence; no database wipe
    or dropping old tables is needed to make the new interface readable. Schema-v1 `Store` currently
    rejects newer versions, so rollback means a verified pre-upgrade snapshot plus matching service,

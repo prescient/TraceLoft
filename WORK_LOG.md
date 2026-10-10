@@ -1,5 +1,18 @@
 # TraceLoft work log
 
+## 2026-10-10 — Golfer ownership and relational core
+
+- Extended database design with local users/golfer profiles and explicit ownership of bags, clubs,
+  shots, sessions, tags and group analyses. Sources remain device identities, not users. Defined
+  frozen player selection, single-player backfill/ambiguous attribution, cross-user guards and
+  future shared-equipment/authentication distinctions. No login feature is implied or implemented.
+- Core queryable/editable entities now explicitly require relational rows/keys/columns, including
+  plans, labels and scalar results. JSON remains justified for raw packet evidence, immutable model
+  parameter/legacy snapshots and full versioned geometry/path artifacts. Queryable keys are exposed
+  relationally; retained snapshots are not a second editable authority.
+- Updated D59/backlog and migration acceptance. Checked touched document links and Git whitespace.
+  Design-only changes; no production database writes, service restart, UI or application behavior change.
+
 ## 2026-10-10 — Equipment/context and group-result schema clarification
 
 - Verified implemented storage against equipment.py, collection.py, storage.py, driving_range.py,

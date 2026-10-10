@@ -519,6 +519,8 @@ Real-course sources/import enhancements remain optional deferred work.
   metrics, plus optional existing total distance. Distinguish supplied versus calculated Smash Factor.
 - [x] Specify relational bag/club revisions, frozen shot context, scoped correction/tag history and
   separate versioned bag-map/wedge-matrix group results with exact analysis membership.
+- [x] Specify users/golfer profiles, explicit equipment/shot/session/analysis ownership and the
+  boundary between core relational data and immutable JSON evidence/settings artifacts.
 - [ ] Verify actual input units/semantics, add missing source Smash Factor mapping when supplied,
   finalize source selection and DDL. Existing club capacity has no available readings in inspected data.
 - [ ] Implement additive backed-up migration/backfill with explicit primary-report selection;
@@ -526,6 +528,9 @@ Real-course sources/import enhancements remain optional deferred work.
 - [ ] Move equipment catalog/context/collection plans from JSON into readable relational tables;
   retain historical IDs/labels and explicit physical-club identity. Add general shot tags and
   reproducible group analyses/profile selection without changing existing cleanup scopes.
+- [ ] Implement local golfer profiles/selection and user ownership backfill/guards; preserve existing
+  single-player history, flag ambiguous attribution and prevent cross-user bag/statistical mixing.
+  Remote authentication/authorization remains a separate future feature.
 - [ ] Implement idempotent model runs, immutable results/input context, explicit analytical version
   selection, recalculation preview/publication and version-aware wide/history CSV exports.
 - [ ] Verify source reconciliation, rollback/restore, interrupted runs, missing inputs, exclusions,
