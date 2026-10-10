@@ -12,6 +12,10 @@ and scores never change through analytical recomputation. Everyday views expose 
 labels and selected methodology without long-form pivots. The user's confirmed list has 17 fields;
 retain all 17 plus optional existing total distance. Preserve source Smash Factor separately from
 a versioned ball-speed/club-speed calculation. Supported columns do not imply available input values.
+Equipment, tags and original/corrected shot intent use separate relational context/history tables.
+Bag mapping and wedge matrix results are versioned multi-shot analyses with frozen member/input
+revisions, not rows of per-shot derived metrics. Existing per-bag club IDs are not automatically
+merged into a shared physical club; migration retains the original catalog and shot-time labels.
 See [design/migration plan](docs/DATABASE_REDESIGN.md). No schema upgrade or production change yet.
 
 ## D50 — Audited game corrections (2026-10-03)

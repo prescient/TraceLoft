@@ -55,6 +55,100 @@ identify `run_id`, their own stable result ID and an input/context fingerprint. 
 versions for one shot are intentional. Composite foreign keys must prevent selecting a report or
 derived result belonging to another shot or model family.
 
+## Equipment, shot context, tags and collection results
+
+The metric tables are only one part of the database. Equipment/context describes what was hit;
+bag maps and wedge matrices summarize groups of shots. Neither belongs inside a sensor-metric row.
+
+### Where these live today
+
+| Feature | Implemented schema-v1 location |
+| --- | --- |
+| Bags and club lists | Versioned `equipment_catalog.v1` JSON in `metadata`; current club IDs are scoped to each bag |
+| Club/bag selected for upcoming shots | Session `equipment_selection` in `sessions.payload_json` and active service state |
+| Club/bag recorded on a shot | Frozen `bag_id`, `bag_name`, `club_id`, `club_label`, `catalog_revision`, `selection_mode` in attempt payload JSON |
+| Club corrections and exclusions | Attempt `corrected_equipment`/excluded/removed overlays, session cleanup history, inclusion rows and audits |
+| Source's club code | `shots.reported_club`; independent of manual selection/corrections |
+| Bag mapping plan | Session `collection_plan`, `collection_samples`, `range_metric` JSON |
+| Wedge matrix plan and shot swing labels | Session wedge plan/`swing_labels` plus each attempt's frozen `swing_label` |
+| Bag-map and matrix summaries | Calculated from included session shots by browser collection code; not dedicated persisted result tables |
+| General custom shot tags | Proposed capability; no general relational tag system currently implemented |
+
+Existing summaries use medians/type-7 quartiles and exclusion/removal rules documented in
+[bag mapping](BAG_MAPPING.md) and [wedge matrix](WEDGE_MATRIX.md).
+
+### Proposed explicit tables
+
+| Table(s) | Row meaning / main relationships |
+| --- | --- |
+| `bags`, `bag_revisions` | Stable bag identity and named/configuration revision |
+| `clubs`, `club_revisions` | Stable physical club identity and optional make/model/loft/shaft/settings revision |
+| `bag_memberships` | A club revision in a bag revision, with its position/display label; a physical club may belong to multiple bags |
+| `shot_contexts` | Immutable shot-time bag/membership/club revision, swing intent, ball/lie/target/environment and selection method, linked by `shot_id` |
+| `shot_annotations` | Append-only corrected context/notes with shot or attempt scope, reason/time and superseded revision; preserves original context |
+| `tags`, `shot_tag_events` | Reusable named tags and audited add/remove associations to shots or explicitly scoped attempts |
+| `session_plans`, `session_plan_items` | Drill configuration and planned clubs or wedge × swing cells, sample goals and distance basis |
+| `analysis_runs`, `analysis_members` | A reproducible group analysis and exact included shot/input/context/inclusion revisions |
+| `bag_map_results` | One club summary in an analysis run: bag/club revisions, distance basis, count, median, Q1/Q3/IQR and metric coverage |
+| `bag_gap_results` | One explicit neighboring-club pair in that run: median gap and interval overlap; avoids an unexplained single gap field |
+| `wedge_matrix_results` | One wedge × swing-intent cell in an analysis run: counts, distance quartiles, median launch/spin and per-metric coverage |
+| `equipment_profile_selection` | The explicitly selected bag-map/matrix analysis revision used for club suggestions and dispersion previews |
+
+Use a session's next-shot selection as a **default only**. Acceptance freezes the original shot
+context; a later selection change cannot retag earlier shots. Intent such as Half/Three-quarter/Full
+uses stable identity plus the recorded label; a label does not imply a fixed swing fraction or distance.
+Equipment changes create revisions; renaming a club should not relabel historical exports silently.
+Club identities currently generated independently in different bags must remain separate during
+migration unless the user explicitly identifies them as the same physical club. Unknown equipment
+specifications remain null, not inferred from a label such as SW.
+
+The effective analytical assignment is a view of original context plus scoped correction history.
+An explicit attempt override must not leak into other sessions using the same shot. General tags
+may be shot-scoped (e.g. swing experiment), while session exclusion remains session-scoped. Preserve
+the source's club code separately. The migration resolves old payloads using session ID/ordinal and
+stable shot ID; it must not assume every duplicate observation carries identical annotations.
+
+```mermaid
+erDiagram
+    bags ||--o{ bag_revisions : versions
+    clubs ||--o{ club_revisions : versions
+    bag_revisions ||--o{ bag_memberships : contains
+    club_revisions ||--o{ bag_memberships : belongs_to
+    shots ||--o{ shot_contexts : records
+    bag_memberships o|--o{ shot_contexts : selected_at_capture
+    shots ||--o{ shot_annotations : corrected_or_noted
+    shots ||--o{ shot_tag_events : labeled
+    tags ||--o{ shot_tag_events : applied
+    analysis_runs ||--o{ analysis_members : freezes_inputs
+    shots ||--o{ analysis_members : contributes
+    analysis_runs ||--o{ bag_map_results : summarizes_clubs
+    analysis_runs ||--o{ wedge_matrix_results : summarizes_cells
+```
+
+### Group results are separate from per-shot derivations
+
+A bag map is an analysis of many shots, not a measurement of one shot. For example, one run
+groups included My bag / 7 iron shots and produces median carry/IQR plus a dispersion estimate.
+A wedge matrix groups included My bag / 56° / Half shots. Both reference exact member shot IDs and
+selected source or derived result IDs; filters alone cannot reproduce the result after cleanup.
+
+Group runs freeze statistical method (including quartile definition), source-versus-model distance
+basis, date/session filters, equipment/intent revisions, inclusion policy and model versions.
+Distinct metrics retain distinct sample counts. Missing distances do not count toward the cell
+sample goal; insufficient cells remain marked rather than interpolated. Synthetic shots stay an
+explicit cohort choice. Cross-session runs should normally deduplicate physical shots, while a
+deliberately attempt-based analysis documents that denominator.
+
+Changing exclusions, tags used in a filter, club/swing assignment or derived metric selection marks
+affected summaries stale and creates a new analysis run on refresh. Old results and memberships
+remain readable. Historical Play freezes the equipment-profile/result revision used by a suggestion
+or dispersion preview; selecting a newer profile affects future decisions, not played scores.
+
+Readable `v_session_shots` exposes effective bag/club/swing/tags/exclusion alongside original labels
+and source/derived columns. `v_bag_map` and `v_wedge_matrix` expose named bag/club/swing rows and the
+selected analysis revision with sample counts. Tag lists must be aggregated per shot/attempt before
+joining numerical views so several tags cannot multiply shots or inflate statistics.
+
 ## Source metric columns
 
 Call this **source-reported**, rather than measured. Foresight distinguishes camera-captured
@@ -188,6 +282,8 @@ columns while retaining competing source values and old models for research.
    semantics/units, finish source-selection policy/versioned output families and finalize DDL.
 2. Take a verified SQLite backup and restore into isolation; inventory IDs, raw bytes, observations,
    duplicates/conflicts, sessions/attempts, tags/exclusions, corrections and frozen game outcomes.
+   Include equipment catalog IDs, historical name snapshots, bag-map/matrix plans and swing labels;
+   explicitly backfill relational contexts and preserve existing aggregate behavior.
 3. Add wide tables and views alongside v1 evidence. Backfill every original observation with its
    own report ID; do not collapse conflicting reports or manufacture missing values. Preserve old
    derived payloads as legacy results with their actual lineage or explicitly incomplete provenance.

@@ -1,5 +1,21 @@
 # TraceLoft work log
 
+## 2026-10-10 — Equipment/context and group-result schema clarification
+
+- Verified implemented storage against equipment.py, collection.py, storage.py, driving_range.py,
+  analysis.py and collection UI/docs: bag catalog in metadata JSON, frozen equipment/swing labels and
+  corrections in attempt/session payloads, bag-map/matrix statistics computed from session shots.
+  Source club code remains separate; general custom shot tags are proposed, not implemented.
+- Extended redesign with explicit bag/club revision/membership, shot context/annotation/tag events,
+  collection plans, group analysis/membership, bag-map/gap/matrix results and selected equipment
+  profiles. Distinguished mutable next-shot defaults from frozen shot-time assignments and scoped
+  corrections. Multiple bag-local IDs must not be silently merged into a physical club.
+- Group summaries freeze exact selected inputs, inclusion/context/statistical revisions and
+  per-metric coverage. Tag joins cannot duplicate shots; cleanup/version changes invalidate affected
+  summaries without rewriting old results or scores. Added migration requirements and readable views.
+- Updated D59/backlog; checked local links and whitespace consistency. Documentation only, no
+  production writes/schema changes or test/UI rerun needed.
+
 ## 2026-10-10 — Confirmed GC3 column dictionary
 
 - The user supplied four club and thirteen ball/flight labels (17 total). Updated the design table

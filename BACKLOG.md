@@ -517,10 +517,15 @@ Real-course sources/import enhancements remain optional deferred work.
   design, linked by existing shot ID, with readable views and preserved evidence.
 - [x] Confirm the source metric labels and document their named columns: the supplied list has 17
   metrics, plus optional existing total distance. Distinguish supplied versus calculated Smash Factor.
+- [x] Specify relational bag/club revisions, frozen shot context, scoped correction/tag history and
+  separate versioned bag-map/wedge-matrix group results with exact analysis membership.
 - [ ] Verify actual input units/semantics, add missing source Smash Factor mapping when supplied,
   finalize source selection and DDL. Existing club capacity has no available readings in inspected data.
 - [ ] Implement additive backed-up migration/backfill with explicit primary-report selection;
   preserve multiple observations, availability, original units, sessions and frozen game scores.
+- [ ] Move equipment catalog/context/collection plans from JSON into readable relational tables;
+  retain historical IDs/labels and explicit physical-club identity. Add general shot tags and
+  reproducible group analyses/profile selection without changing existing cleanup scopes.
 - [ ] Implement idempotent model runs, immutable results/input context, explicit analytical version
   selection, recalculation preview/publication and version-aware wide/history CSV exports.
 - [ ] Verify source reconciliation, rollback/restore, interrupted runs, missing inputs, exclusions,
