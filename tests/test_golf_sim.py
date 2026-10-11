@@ -12,7 +12,7 @@ from web_app import create_app
 class GameTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.service = GolfService(self.temp.name, capture_detector=lambda: False)
+        self.service = GolfService(self.temp.name)
         self.client = TestClient(create_app(self.service), base_url='http://localhost')
 
     def tearDown(self):

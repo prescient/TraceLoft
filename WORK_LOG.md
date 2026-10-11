@@ -1,5 +1,23 @@
 # TraceLoft work log
 
+## 2026-10-11 — Atomic service mutations and legacy-path removal
+
+- Fixed: `change_practice` restored in-memory state only for `OSError`. A `ValueError` (or any
+  other error) during finish/abandon/exclude could leave the live session saying "ended" while
+  SQLite did not. Every mutation now uses `GolfService._changing(session)`: one transaction, with
+  the previous state restored on any exception. This replaces nine copies of the pattern.
+  `_require_saved()` replaces the repeated flush-then-refuse guard; `target_range` now retries
+  queued saves instead of refusing until the 5 s retry loop.
+- Removed dead compatibility code: the always-false desktop capture detector and its four
+  endpoint checks, the no-op `drain_worker()`, the unused no-database JSON-file service mode
+  (`database=False`, `.trash` paths, legacy branches in web_app), `worker`/`displays`/
+  `context_path`, and the frame/read event kinds. Scorer-level JSON saving (used by scorer unit
+  tests) is unchanged. `Store._audit` is now the public `Store.audit`. The `/api/state` DTO no
+  longer carries the always-empty `profiles` and `displays` keys; no browser code read them.
+- Added `tests/test_service_mutations.py` (ValueError and unexpected-error rollback,
+  database-write rollback within a change, target change after a queued save).
+- Verified: `python verify.py` passed **192 Python** and **63 JavaScript** tests and lint.
+
 ## 2026-10-11 — One-time formatting commit
 
 - At the user's request, formatted all Python with ruff (`6371296`) and web JS/CSS/test modules with

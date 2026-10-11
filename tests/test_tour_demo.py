@@ -11,7 +11,7 @@ from analysis import build_report
 class TourDemoTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.service = GolfService(self.temp.name, capture_detector=lambda: False)
+        self.service = GolfService(self.temp.name)
 
     def tearDown(self):
         asyncio.run(self.service.shutdown())

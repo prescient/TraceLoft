@@ -509,7 +509,7 @@ class Store:
 
         with self.transaction():
             aid = select_profile(self.connection, session_id)
-            self._audit(session_id, 'publish_equipment_profile', dict(analysis_id=aid))
+            self.audit(session_id, 'publish_equipment_profile', dict(analysis_id=aid))
             return aid
 
     def active_user(self):
@@ -540,7 +540,7 @@ class Store:
                 'INSERT INTO users VALUES(?,?,?,?,?)', (uid, name, handedness, now(), None)
             )
             save_catalog(self.connection, default_catalog(), uid)
-            self._audit(uid, 'create_golfer', dict(name=name, handedness=handedness))
+            self.audit(uid, 'create_golfer', dict(name=name, handedness=handedness))
         return uid
 
     def select_user(self, user_id):
@@ -552,7 +552,7 @@ class Store:
             self.connection.execute(
                 'UPDATE golfer_selection SET user_id=? WHERE singleton=1', (user_id,)
             )
-            self._audit(user_id, 'select_golfer', {})
+            self.audit(user_id, 'select_golfer', {})
 
     def session_owner(self, session_id):
         with self.lock:
@@ -699,7 +699,7 @@ class Store:
 
         with self.transaction():
             save_catalog(self.connection, catalog, self.active_user())
-            self._audit(self.active_user(), 'edit_bags', {'revision': catalog['revision']})
+            self.audit(self.active_user(), 'edit_bags', {'revision': catalog['revision']})
 
     def _catalog(self):
         catalog = json.loads((ROOT / 'data/metric_catalog.v1.json').read_text('utf-8'))
@@ -781,7 +781,7 @@ class Store:
                 ).fetchone()
             )
 
-    def _audit(self, entity, action, payload):
+    def audit(self, entity, action, payload):
         self.connection.execute(
             'INSERT INTO audit_events VALUES(?,?,?,?,?)',
             (uuid.uuid4().hex, entity, action, now(), encoded(payload)),
@@ -1173,7 +1173,7 @@ class Store:
             from analysis_schema import save_collection
 
             save_collection(self.connection, data)
-            self._audit(
+            self.audit(
                 sid,
                 'import_session' if imported else 'save_session',
                 {'shots': len(data['shots']), 'changed_attempts': sorted(changed)},
@@ -1187,7 +1187,7 @@ class Store:
                 'UPDATE sessions SET deleted_at=?, revision=revision+1 WHERE id=?',
                 (now() if deleted else None, session_id),
             )
-            self._audit(session_id, 'delete' if deleted else 'restore', {})
+            self.audit(session_id, 'delete' if deleted else 'restore', {})
 
     def backup(self, directory=None):
         directory = Path(directory or self.path.parent / 'backups')
@@ -1580,5 +1580,5 @@ def import_legacy(store, root):
         store.connection.execute(
             "INSERT OR REPLACE INTO metadata VALUES('legacy_import_complete',?)", (encoded(report),)
         )
-        store._audit('database', 'legacy_import', report)
+        store.audit('database', 'legacy_import', report)
     return report

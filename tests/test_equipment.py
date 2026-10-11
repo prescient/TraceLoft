@@ -20,7 +20,7 @@ from tests.test_distance_ladder import event
 class EquipmentTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.service = GolfService(self.temp.name, capture_detector=lambda: False)
+        self.service = GolfService(self.temp.name)
         self.client = TestClient(create_app(self.service), base_url='http://localhost')
         self.bag = self.service.equipment['bags'][0]
         self.pw = next(c for c in self.bag['clubs'] if c['label'] == 'PW')

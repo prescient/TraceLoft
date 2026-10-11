@@ -308,7 +308,7 @@ class StorageTests(unittest.TestCase):
 class DatabaseJourneys(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.service = GolfService(self.temp.name, capture_detector=lambda: False)
+        self.service = GolfService(self.temp.name)
         self.client = TestClient(create_app(self.service), base_url='http://localhost')
 
     def tearDown(self):
@@ -414,7 +414,7 @@ class DatabaseJourneys(unittest.TestCase):
         with self.assertRaises(OSError):
             ServiceLease(self.service.store.path)
         with self.assertRaises(OSError):
-            GolfService(self.temp.name, capture_detector=lambda: False)
+            GolfService(self.temp.name)
         self.assertEqual(self.client.post('/api/practice/' + 'f' * 32 + '/finish').status_code, 409)
 
 

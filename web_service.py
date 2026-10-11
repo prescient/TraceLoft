@@ -4,7 +4,6 @@ import asyncio
 import copy
 import json
 import os
-import re
 import contextlib
 import sqlite3
 import uuid
@@ -16,7 +15,7 @@ from putting import PuttingSession
 from distance_ladder import DistanceLadderSession, RANGE_FIELDS, restore_model
 from storage import Store, database_path, import_legacy
 from database_tools import ServiceLease, preserve_legacy
-from equipment import default_catalog, edit_catalog, selection
+from equipment import edit_catalog, selection
 from driving_range import DrivingRangeSession, DRIVING_FIELDS, demo_event
 
 from collection import CollectionSession, COLLECTION_FIELDS
@@ -102,47 +101,28 @@ DRILLS = [
 ]
 
 
-def desktop_capture_running():
-    """Compatibility hook: this application never owns screen capture."""
-    return False
-
-
 class GolfService:
-    def __init__(
-        self,
-        root=ROOT,
-        worker_factory=None,
-        capture_detector=desktop_capture_running,
-        database=None,
-    ):
-        self.root, self.worker_factory, self.capture_detector = (
-            Path(root),
-            worker_factory,
-            capture_detector,
-        )
+    def __init__(self, root=ROOT, database=None):
+        self.root = Path(root)
         db_path = database or (
             database_path() if self.root == ROOT else self.root / 'data/golfdata.sqlite3'
         )
-        self.lease = None if database is False else ServiceLease(db_path)
+        self.lease = ServiceLease(db_path)
         self.store = None
         try:
-            self.store = None if database is False else Store(db_path, migration_lease_held=True)
-            if self.store and not self.store.migrated():
-                if self.capture_detector():
-                    raise OSError('Stop desktop capture before migrating legacy data.')
+            self.store = Store(db_path, migration_lease_held=True)
+            if not self.store.migrated():
                 preserve_legacy(self.root, self.store.path.parent / 'backups')
                 import_legacy(self.store, self.root)
                 self.store.backup()
         except BaseException:
             if self.store:
                 self.store.close()
-            if self.lease:
-                self.lease.close()
+            self.lease.close()
             raise
-        self.receipt_dir = self.store.path.parent / 'receipts' if self.store else None
-        self.context_path = self.store.path.parent / 'capture-context.json' if self.store else None
-        self.worker = self.practice = None
-        self.capture_lock = asyncio.Lock()
+        self.receipt_dir = self.store.path.parent / 'receipts'
+        self.practice = None
+        # Legacy capture fields (fps/drops/image) remain in the DTO for older browser builds.
         self.capture = dict(
             running=False,
             stopping=False,
@@ -155,7 +135,6 @@ class GolfService:
             error="",
         )
         self.settings = dict(host='127.0.0.1', port=921, enabled=False)
-        self.displays = []
         self.input_context = {}
         self.input = ShotInput(
             self,
@@ -171,7 +150,7 @@ class GolfService:
         self._live_epoch = uuid.uuid4().hex
         self._live_revision = 0
         self._live_fingerprint = None
-        self.equipment = self.store.equipment_catalog() if self.store else default_catalog()
+        self.equipment = self.store.equipment_catalog()
         self.publish_context()
 
     def publish_context(self):
@@ -180,9 +159,7 @@ class GolfService:
         )
         self.input_context = dict(
             practice_session_id=self.practice.data['id'] if active else None,
-            user_id=self.store.session_owner(self.practice.data['id'])
-            if active and self.store
-            else None,
+            user_id=self.store.session_owner(self.practice.data['id']) if active else None,
             required_distance=self.practice.data.get('range_metric') if active else None,
             equipment_selection=copy.deepcopy(self.practice.data.get('equipment_selection'))
             if active
@@ -202,14 +179,37 @@ class GolfService:
         return True
 
     def load_session(self, session_id, deleted=False):
-        if self.store:
-            if self.store.session_owner(session_id) not in (None, self.store.active_user()):
-                raise FileNotFoundError('Switch golfer to open this session.')
-            return restore_model(PuttingSession.from_store(self.store, session_id, deleted))
-        path = self.session_path(session_id)
-        return restore_model(
-            PuttingSession.load(path.parent / '.trash' / path.name if deleted else path)
-        )
+        if self.store.session_owner(session_id) not in (None, self.store.active_user()):
+            raise FileNotFoundError('Switch golfer to open this session.')
+        return restore_model(PuttingSession.from_store(self.store, session_id, deleted))
+
+    def _session(self, session_id):
+        """The active session object when it matches, otherwise the saved copy."""
+        if self.practice and self.practice.data['id'] == session_id:
+            return self.practice
+        return self.load_session(session_id)
+
+    def _require_saved(self, message):
+        """Retry queued saves; refuse a state change while any shot remains unsaved."""
+        self.flush_practice()
+        if self.pending:
+            raise ValueError(message)
+
+    @contextlib.contextmanager
+    def _changing(self, session):
+        """Mutate a session inside one transaction; any failure restores its prior state.
+
+        Without this, an exception after an in-memory change would leave the live
+        session disagreeing with SQLite (for example, shown as ended but saved as active).
+        """
+        previous = copy.deepcopy(session.data) if session else None
+        try:
+            with self.store.transaction():
+                yield session
+        except BaseException:
+            if session:
+                session.data = previous
+            raise
 
     def live_revision(self):
         """Cheap change detection: never walk session attempts or trajectories.
@@ -217,11 +217,11 @@ class GolfService:
         Database changes include background calculation publication. The store lock
         prevents announcing an uncommitted transaction from another thread.
         """
-        with self.store.lock if self.store else contextlib.nullcontext():
+        with self.store.lock:
             data = self.practice.data if self.practice else None
             fingerprint = json.dumps(
                 dict(
-                    database=self.store.connection.total_changes if self.store else None,
+                    database=self.store.connection.total_changes,
                     sessions=self.sessions_revision,
                     practice=(data['id'], data.get('ended'), len(data['shots'])) if data else None,
                     equipment=self.equipment.get('revision'),
@@ -244,7 +244,7 @@ class GolfService:
             return dict(epoch=self._live_epoch, revision=self._live_revision)
 
     def snapshot(self):
-        with self.store.lock if self.store else contextlib.nullcontext():
+        with self.store.lock:
             return self._snapshot()
 
     def _snapshot(self):
@@ -253,8 +253,6 @@ class GolfService:
                 live=self.live_revision(),
                 capture=self.capture,
                 settings=self.settings,
-                profiles={},
-                displays=[],
                 input_port=self.input.port,
                 relay=self.input.relay.state,
                 input=self.input.state,
@@ -267,29 +265,16 @@ class GolfService:
                 access=self.access,
                 sessions_revision=self.sessions_revision,
                 equipment=self.equipment,
-                golfers=self.store.users() if self.store else [],
-                golfer_id=self.store.active_user() if self.store else None,
-                storage=dict(
-                    engine='sqlite' if self.store else 'legacy_test',
-                    path=str(self.store.path) if self.store else None,
-                    backup='local_only',
-                ),
+                golfers=self.store.users(),
+                golfer_id=self.store.active_user(),
+                storage=dict(engine='sqlite', path=str(self.store.path), backup='local_only'),
             )
         )
 
     def ingest(self, event):
+        """Queue a recovered/in-process record event; Open Connect input uses ShotInput."""
         kind = event.get("kind")
-        if kind == "frame":
-            self.capture.update(
-                {
-                    key: event[key]
-                    for key in ("status", "connected", "fps", "drops", "image", "error")
-                    if key in event
-                }
-            )
-        elif kind == "read":
-            self.latest_read = event
-        elif kind == "record":
+        if kind == "record":
             if (
                 'equipment_selection' not in event
                 and self.practice
@@ -304,23 +289,18 @@ class GolfService:
                     ),
                 )
             self.history.appendleft(event)
-            if self.store or (
-                self.practice
-                and not self.practice.data["ended"]
-                and event.get("result") in ("sent", "validated")
-            ):
-                self.pending.append(event)
-                self.flush_practice()
+            self.pending.append(event)
+            self.flush_practice()
         elif kind in ("error", "log"):
             self.logs.append(event.get("message", ""))
             if kind == "error":
                 self.capture["error"] = event.get("message", "")
 
     def flush_practice(self):
-        while self.pending and (self.practice or self.store):
+        while self.pending:
             event = self.pending[0]
             target = self.practice
-            if self.store and 'practice_session_id' in event:
+            if 'practice_session_id' in event:
                 sid = event['practice_session_id']
                 target = (
                     self.practice if self.practice and self.practice.data['id'] == sid else None
@@ -332,9 +312,9 @@ class GolfService:
                         target = None
             previous = copy.deepcopy(target.data) if target else None
             try:
-                with self.store.transaction() if self.store else contextlib.nullcontext():
-                    receipt_id, fresh = self.store.ingest(event) if self.store else (None, True)
-                    practice_event = dict(event, receipt_id=receipt_id) if self.store else event
+                with self.store.transaction():
+                    receipt_id, fresh = self.store.ingest(event)
+                    practice_event = dict(event, receipt_id=receipt_id)
                     added = target.add(practice_event) if fresh and target else False
             except (OSError, ValueError) as exc:
                 if target:
@@ -342,7 +322,7 @@ class GolfService:
                 self.save_error = f"Practice save failed; waiting to retry: {exc}"
                 return
             self.pending.popleft()
-            if self.receipt_dir and event.get('receipt_id'):
+            if event.get('receipt_id'):
                 # Receipt removal is an acknowledgment only; a leftover file is safe to replay into SQLite.
                 try:
                     (self.receipt_dir / (event['receipt_id'] + '.json')).unlink(missing_ok=True)
@@ -356,7 +336,7 @@ class GolfService:
         self.save_error = ""
 
     def recover_receipts(self):
-        if not self.receipt_dir or self.pending:
+        if self.pending:
             return
         try:
             events = [json.loads(p.read_text('utf-8')) for p in self.receipt_dir.glob('*.json')]
@@ -367,21 +347,15 @@ class GolfService:
             self.save_error = f'Receipt recovery failed: {exc}'
 
     def backup_after_session(self):
-        if self.store:
-            try:
-                self.store.backup()
-            except (OSError, sqlite3.Error) as exc:
-                self.capture['error'] = f'Session saved; local backup failed: {exc}'
-
-    def drain_worker(self):
-        # Retained call sites drain legacy recovery records; external receipt acceptance is atomic.
-        return
+        try:
+            self.store.backup()
+        except (OSError, sqlite3.Error) as exc:
+            self.capture['error'] = f'Session saved; local backup failed: {exc}'
 
     async def run(self):
         self.publish_context()
         while True:
             self.input.tick()
-            self.drain_worker()
             now = asyncio.get_running_loop().time()
             if self.pending and now - self.last_retry > 5:
                 self.flush_practice()
@@ -393,29 +367,27 @@ class GolfService:
     async def shutdown(self):
         await self.input.close()
         self.flush_practice()
-        if self.store:
-            try:
-                self.publish_context()
-                with self.store.transaction():
-                    self.store.connection.execute(
-                        "INSERT OR REPLACE INTO metadata VALUES('active_session.v1',?)",
-                        (
-                            json.dumps(
-                                self.practice.data['id']
-                                if self.practice and not self.practice.data['ended']
-                                else None
-                            ),
+        try:
+            self.publish_context()
+            with self.store.transaction():
+                self.store.connection.execute(
+                    "INSERT OR REPLACE INTO metadata VALUES('active_session.v1',?)",
+                    (
+                        json.dumps(
+                            self.practice.data['id']
+                            if self.practice and not self.practice.data['ended']
+                            else None
                         ),
-                    )
-                self.store.backup()
-            finally:
-                self.store.close()
-                self.lease.close()
+                    ),
+                )
+            self.store.backup()
+        finally:
+            self.store.close()
+            self.lease.close()
 
     def create_practice(self, params):
         if self.practice and not self.practice.data["ended"]:
             raise ValueError("Finish or abandon the active session before launching another drill.")
-        self.drain_worker()  # Shots queued before launch belong to the preceding session.
         if params['drill'] == '2D golf':
             from course_import import load
 
@@ -486,13 +458,9 @@ class GolfService:
         return self.practice.data
 
     def change_golfer(self, user_id=None, name=None, handedness='right_handed'):
-        if not self.store:
-            raise ValueError('Golfer profiles require SQLite.')
         if self.practice and not self.practice.data['ended']:
             raise ValueError('Finish or abandon the active session before changing golfer.')
-        self.flush_practice()
-        if self.pending:
-            raise ValueError('Resolve pending saves before changing golfer.')
+        self._require_saved('Resolve pending saves before changing golfer.')
         with self.store.transaction():
             if name is not None:
                 user_id = self.store.create_user(name, handedness)
@@ -504,37 +472,25 @@ class GolfService:
 
     def edit_bag(self, revision, name, bag_id=None, clubs=None):
         updated, edited_id = edit_catalog(self.equipment, revision, name, bag_id, clubs)
-        self.drain_worker()
-        self.flush_practice()
-        if self.pending:
-            raise ValueError(
-                'Results are waiting to save. Resolve the save error before editing bags.'
+        self._require_saved(
+            'Results are waiting to save. Resolve the save error before editing bags.'
+        )
+        with self._changing(self.practice):
+            self.store.save_equipment_catalog(updated)
+            current = (
+                self.practice.data.get('equipment_selection')
+                if self.practice and not self.practice.data['ended']
+                else None
             )
-        previous = copy.deepcopy(self.practice.data) if self.practice else None
-        try:
-            with self.store.transaction() if self.store else contextlib.nullcontext():
-                if self.store:
-                    self.store.save_equipment_catalog(updated)
-                current = (
-                    self.practice.data.get('equipment_selection')
-                    if self.practice and not self.practice.data['ended']
-                    else None
+            if current and current['bag_id'] == edited_id:
+                bag = next(b for b in updated['bags'] if b['id'] == edited_id)
+                club_id = (
+                    current['club_id']
+                    if any(c['id'] == current['club_id'] for c in bag['clubs'])
+                    else ''
                 )
-                if current and current['bag_id'] == edited_id:
-                    bag = next(b for b in updated['bags'] if b['id'] == edited_id)
-                    club_id = (
-                        current['club_id']
-                        if any(c['id'] == current['club_id'] for c in bag['clubs'])
-                        else ''
-                    )
-                    self.practice.data['equipment_selection'] = selection(
-                        updated, edited_id, club_id
-                    )
-                    self.practice.save()
-        except (OSError, sqlite3.Error, ValueError):
-            if self.practice:
-                self.practice.data = previous
-            raise
+                self.practice.data['equipment_selection'] = selection(updated, edited_id, club_id)
+                self.practice.save()
         self.equipment = updated
         self.publish_context()
         self.sessions_revision += 1
@@ -551,21 +507,14 @@ class GolfService:
                 'Only the active full-swing ladder can change its next-shot equipment.'
             )
         selected = selection(self.equipment, bag_id, club_id)
-        self.drain_worker()
-        self.flush_practice()
-        if self.pending:
-            raise ValueError(
-                'Results are waiting to save. Resolve the save error before changing clubs.'
-            )
+        self._require_saved(
+            'Results are waiting to save. Resolve the save error before changing clubs.'
+        )
         if self.practice.data['ended']:
             raise ValueError('This ladder has completed; new club selection was not applied.')
-        previous = copy.deepcopy(self.practice.data)
-        try:
+        with self._changing(self.practice):
             self.practice.data['equipment_selection'] = selected
             self.practice.save()
-        except (OSError, sqlite3.Error, ValueError):
-            self.practice.data = previous
-            raise
         self.publish_context()
         self.sessions_revision += 1
 
@@ -583,23 +532,16 @@ class GolfService:
         if not planned:
             raise ValueError('Choose a planned wedge.')
         selected = selection(self.equipment, planned['bag_id'], club_id)
-        self.drain_worker()
-        self.flush_practice()
-        if self.pending:
-            raise ValueError('Resolve pending saves before changing your swing label.')
-        previous = copy.deepcopy(saved.data)
-        try:
+        self._require_saved('Resolve pending saves before changing your swing label.')
+        with self._changing(saved):
             saved.data.update(equipment_selection=selected, swing_label=swing_label)
             saved.save()
-        except (OSError, sqlite3.Error, ValueError):
-            saved.data = previous
-            raise
         self.publish_context()
         self.sessions_revision += 1
 
     def resume_practice(self, session_id):
         """Maintenance handoff: restore an unchanged active drill after a service reload."""
-        if self.practice or self.worker:
+        if self.practice:
             raise ValueError("Only an idle service can accept a session handoff.")
         saved = self.load_session(session_id)
         if saved.data["ended"] or saved.data.get("abandoned"):
@@ -609,21 +551,14 @@ class GolfService:
         self.sessions_revision += 1
 
     def range_session(self, session_id):
-        saved = (
-            self.practice
-            if self.practice and self.practice.data['id'] == session_id
-            else self.load_session(session_id)
-        )
+        saved = self._session(session_id)
         if saved.data.get('session_kind') != 'driving_range':
             raise ValueError('This action requires a driving range session.')
         return saved
 
     def game_action(self, session_id, action, params):
-        self.drain_worker()
-        self.flush_practice()
+        self._require_saved('Resolve pending saves before changing the round.')
         saved = self.practice
-        if self.pending:
-            raise ValueError('Resolve pending saves before changing the round.')
         if (
             not isinstance(saved, GolfSimSession)
             or saved.data['id'] != session_id
@@ -634,107 +569,71 @@ class GolfService:
             raise ValueError(
                 'The round advanced. Wait for the updated position before hitting again.'
             )
-        previous = copy.deepcopy(saved.data)
-        try:
-            with self.store.transaction() if self.store else contextlib.nullcontext():
-                if action == 'aim':
-                    saved.set_aim(params['x'], params['y'], params['turn'])
-                elif action == 'next':
-                    saved.next_hole(params['turn'])
-                elif action == 'simulate':
-                    event = simulated_event(
-                        saved, params['distance_yd'], params['offline_yd'], params.get('carry_yd')
-                    )
-                    if self.store:
-                        self.store.ingest(event, provenance='synthetic_demo')
-                    saved.add(event)
-                else:
-                    raise ValueError('Unknown game action.')
-        except (OSError, sqlite3.Error, ValueError):
-            saved.data = previous
-            raise
+        with self._changing(saved):
+            if action == 'aim':
+                saved.set_aim(params['x'], params['y'], params['turn'])
+            elif action == 'next':
+                saved.next_hole(params['turn'])
+            elif action == 'simulate':
+                event = simulated_event(
+                    saved, params['distance_yd'], params['offline_yd'], params.get('carry_yd')
+                )
+                self.store.ingest(event, provenance='synthetic_demo')
+                saved.add(event)
+            else:
+                raise ValueError('Unknown game action.')
         self.publish_context()
         self.sessions_revision += 1
         if saved.data['ended']:
             self.backup_after_session()
 
     def correct_game(self, session_id, params):
-        self.drain_worker()
-        self.flush_practice()
-        if self.pending:
-            raise ValueError('Resolve pending saves before correcting the round.')
+        self._require_saved('Resolve pending saves before correcting the round.')
         if (
             self.practice
             and self.practice.data['id'] != session_id
             and not self.practice.data['ended']
         ):
             raise ValueError('Finish or abandon the active session before reopening this round.')
-        saved = (
-            self.practice
-            if self.practice and self.practice.data['id'] == session_id
-            else self.load_session(session_id)
-        )
+        saved = self._session(session_id)
         if not isinstance(saved, GolfSimSession):
             raise ValueError('Choose a golf round.')
-        previous = copy.deepcopy(saved.data)
-        try:
-            with self.store.transaction() if self.store else contextlib.nullcontext():
-                audit = saved.correct_shot(params['kind'], params['key'], params['turn'])
-                if self.store:
-                    self.store._audit(session_id, 'game_correction', audit)
-        except (OSError, sqlite3.Error, ValueError):
-            saved.data = previous
-            raise
+        with self._changing(saved):
+            audit = saved.correct_shot(params['kind'], params['key'], params['turn'])
+            self.store.audit(session_id, 'game_correction', audit)
         self.practice = saved
         self.publish_context()
         self.sessions_revision += 1
 
     def game_preview(self, session_id):
         from club_preview import build_preview
+        from analysis_schema import preview_sessions
 
-        saved = (
-            self.practice
-            if self.practice and self.practice.data['id'] == session_id
-            else self.load_session(session_id)
-        )
+        saved = self._session(session_id)
         if not isinstance(saved, GolfSimSession):
             raise ValueError('Choose a golf round.')
-        if self.store:
-            from analysis_schema import preview_sessions
-
-            with self.store.lock:
-                sessions, warnings = preview_sessions(self.store.connection, saved.data)
-        else:
-            sessions, warnings = [], []
+        with self.store.lock:
+            sessions, warnings = preview_sessions(self.store.connection, saved.data)
         result = build_preview(sessions, saved.data)
         result['warnings'] = warnings
         return result
 
     def game_recommendations(self, session_id):
         from analysis import build_report
+        from analysis_schema import preview_sessions
 
-        saved = (
-            self.practice
-            if self.practice and self.practice.data['id'] == session_id
-            else self.load_session(session_id)
-        )
+        saved = self._session(session_id)
         if not isinstance(saved, GolfSimSession):
             raise ValueError('Choose a golf round.')
         bag = (saved.data.get('equipment_selection') or {}).get('bag_id')
         if not bag or saved.data['game']['lie'] == 'green':
             return []
         collections = []
-        if self.store:
-            from analysis_schema import preview_sessions
-
-            with self.store.lock:
-                current = next((b for b in self.equipment['bags'] if b['id'] == bag), None)
-                for club in (current or {}).get('clubs', []):
-                    game = {
-                        **saved.data,
-                        'equipment_selection': dict(bag_id=bag, club_id=club['id']),
-                    }
-                    collections.extend(preview_sessions(self.store.connection, game)[0])
+        with self.store.lock:
+            current = next((b for b in self.equipment['bags'] if b['id'] == bag), None)
+            for club in (current or {}).get('clubs', []):
+                game = {**saved.data, 'equipment_selection': dict(bag_id=bag, club_id=club['id'])}
+                collections.extend(preview_sessions(self.store.connection, game)[0])
         report = build_report(
             collections,
             dict(mode='demo' if saved.data['demo'] else 'real', bag=bag, metric='total'),
@@ -761,53 +660,36 @@ class GolfService:
         ]
 
     def cleanup_range(self, session_id, params):
-        self.drain_worker()
-        self.flush_practice()
-        if self.pending:
-            raise ValueError('Resolve the pending shot save before cleanup.')
+        self._require_saved('Resolve the pending shot save before cleanup.')
         saved = self.range_session(session_id)
         equipment = (
             selection(self.equipment, params.get('bag_id', ''), params.get('club_id', ''))
             if params['action'] == 'retag'
             else None
         )
-        previous = copy.deepcopy(saved.data)
-        try:
-            with self.store.transaction() if self.store else contextlib.nullcontext():
-                batch = saved.cleanup(
-                    params['action'],
-                    params['keys'],
-                    params['revision'],
-                    params['reason'],
-                    equipment,
-                    params.get('batch_id'),
-                )
-                if self.store:
-                    self.store._audit(
-                        session_id, 'range_cleanup', saved.data['cleanup_history'][-1]
-                    )
-        except (OSError, sqlite3.Error, ValueError):
-            saved.data = previous
-            raise
+        with self._changing(saved):
+            batch = saved.cleanup(
+                params['action'],
+                params['keys'],
+                params['revision'],
+                params['reason'],
+                equipment,
+                params.get('batch_id'),
+            )
+            self.store.audit(session_id, 'range_cleanup', saved.data['cleanup_history'][-1])
         self.sessions_revision += 1
         return dict(practice=saved.data, summary=saved.summary(), batch_id=batch)
 
     def target_range(self, session_id, target, width, depth):
-        self.drain_worker()
-        if self.pending:
-            raise ValueError('Resolve the pending shot save before changing the target.')
+        self._require_saved('Resolve the pending shot save before changing the target.')
         saved = self.range_session(session_id)
         if saved is not self.practice or saved.data['ended']:
             raise ValueError('Only the active range can change its next-shot target.')
-        previous = copy.deepcopy(saved.data)
-        try:
+        with self._changing(saved):
             saved.data.update(
                 range_target=target, target=target, range_width=width, range_depth=depth
             )
             saved.save()
-        except (OSError, sqlite3.Error, ValueError):
-            saved.data = previous
-            raise
         self.publish_context()
         self.sessions_revision += 1
 
@@ -817,17 +699,11 @@ class GolfService:
             raise ValueError('Simulated shots are only available in an active Demo range.')
         if count not in (1, 10):
             raise ValueError('Generate one shot or a set of ten.')
-        previous = copy.deepcopy(saved.data)
-        try:
-            with self.store.transaction() if self.store else contextlib.nullcontext():
-                for _ in range(count):
-                    event = demo_event(saved, len(saved.data['shots']) + 1)
-                    if self.store:
-                        self.store.ingest(event, provenance='synthetic_demo')
-                    saved.add(event)
-        except (OSError, sqlite3.Error, ValueError):
-            saved.data = previous
-            raise
+        with self._changing(saved):
+            for _ in range(count):
+                event = demo_event(saved, len(saved.data['shots']) + 1)
+                self.store.ingest(event, provenance='synthetic_demo')
+                saved.add(event)
         self.sessions_revision += 1
 
     def change_practice(self, session_id, action, key=None):
@@ -835,14 +711,10 @@ class GolfService:
             raise ValueError("This session is no longer active. Refresh before changing it.")
         if action == 'exclude' and self.practice.data.get('session_kind') == 'driving_range':
             return self.exclude_saved(session_id, key)
-        self.drain_worker()
-        self.flush_practice()
-        if self.pending:
-            raise ValueError(
-                "Results are waiting to save. Resolve the save error before changing the session."
-            )
-        previous = copy.deepcopy(self.practice.data)
-        try:
+        self._require_saved(
+            "Results are waiting to save. Resolve the save error before changing the session."
+        )
+        with self._changing(self.practice):
             if action == "finish":
                 self.practice.finish()
             elif action == "abandon":
@@ -851,9 +723,6 @@ class GolfService:
                 if not any(s["key"] == key for s in self.practice.data["shots"]):
                     raise ValueError("Choose a shot from this session.")
                 self.practice.toggle_excluded(key)
-        except OSError:
-            self.practice.data = previous
-            raise
         if action == "abandon":
             self.practice = None
         self.publish_context()
@@ -861,17 +730,8 @@ class GolfService:
         if action in ('finish', 'abandon'):
             self.backup_after_session()
 
-    def session_path(self, session_id):
-        if not re.fullmatch(r"[0-9a-f]{32}", session_id):
-            raise ValueError("Invalid session identifier.")
-        return self.root / "practice_sessions" / (session_id + ".json")
-
     def exclude_saved(self, session_id, key):
-        saved = (
-            self.practice
-            if self.practice and self.practice.data['id'] == session_id
-            else self.load_session(session_id)
-        )
+        saved = self._session(session_id)
         if saved.data.get('session_kind') == 'driving_range':
             shot = next((s for s in saved.data['shots'] if s['key'] == key), None)
             if not shot:
@@ -897,7 +757,6 @@ class GolfService:
         return dict(practice=saved.data, summary=saved.summary())
 
     def delete_session(self, session_id):
-        path = self.session_path(session_id)
         if self.practice and self.practice.data["id"] == session_id:
             if not self.practice.data["ended"]:
                 raise ValueError("Finish or abandon the active session before deleting it.")
@@ -905,75 +764,34 @@ class GolfService:
                 raise ValueError(
                     "Results are waiting to save. Resolve the save error before deleting this session."
                 )
-        if self.store:
-            self.store.set_deleted(session_id, True)
-            if self.practice and self.practice.data['id'] == session_id:
-                self.practice = None
-            self.sessions_revision += 1
-            return
-        destination = path.parent / ".trash" / path.name
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        if destination.exists():
-            raise ValueError("A deleted copy of this session already exists. Restore it first.")
-        path.rename(destination)
-        if self.practice and self.practice.data["id"] == session_id:
+        self.store.set_deleted(session_id, True)
+        if self.practice and self.practice.data['id'] == session_id:
             self.practice = None
         self.sessions_revision += 1
 
     def restore_session(self, session_id):
-        if self.store:
-            self.store.set_deleted(session_id, False)
-            self.sessions_revision += 1
-            return
-        path = self.session_path(session_id)
-        source = path.parent / ".trash" / path.name
-        if path.exists():
-            raise ValueError("This session already exists; it was not overwritten.")
-        source.rename(path)
+        self.store.set_deleted(session_id, False)
         self.sessions_revision += 1
 
     def sessions(self, deleted=False):
         result = []
-        if self.store:
-            for data in self.store.list_sessions(deleted):
-                if self.store.session_owner(data['id']) != self.store.active_user():
-                    continue
-                session = self.load_session(data['id'], deleted)
-                result.append(
-                    dict(
-                        id=data['id'],
-                        started=data['started'],
-                        ended=data['ended'],
-                        drill=data['drill'],
-                        random_pace=data.get('random_pace', False),
-                        abandoned=data.get('abandoned', False),
-                        practice_type=data.get('practice_type', 'putting'),
-                        demo=data.get('demo', False),
-                        session_kind=data.get('session_kind'),
-                        captured=len(data['shots']),
-                        summary=session.summary(),
-                    )
-                )
-            return result
-        folder = self.root / "practice_sessions"
-        if deleted:
-            folder = folder / ".trash"
-        for path in folder.glob("*.json"):
-            try:
-                session = restore_model(PuttingSession.load(path))
-                result.append(
-                    dict(
-                        id=session.data["id"],
-                        started=session.data["started"],
-                        ended=session.data["ended"],
-                        drill=session.data["drill"],
-                        random_pace=session.data.get("random_pace", False),
-                        abandoned=session.data.get("abandoned", False),
-                        practice_type=session.data.get('practice_type', 'putting'),
-                        captured=len(session.data["shots"]),
-                        summary=session.summary(),
-                    )
-                )
-            except (OSError, ValueError, KeyError, TypeError):
+        for data in self.store.list_sessions(deleted):
+            if self.store.session_owner(data['id']) != self.store.active_user():
                 continue
-        return sorted(result, key=lambda s: s["started"], reverse=True)
+            session = self.load_session(data['id'], deleted)
+            result.append(
+                dict(
+                    id=data['id'],
+                    started=data['started'],
+                    ended=data['ended'],
+                    drill=data['drill'],
+                    random_pace=data.get('random_pace', False),
+                    abandoned=data.get('abandoned', False),
+                    practice_type=data.get('practice_type', 'putting'),
+                    demo=data.get('demo', False),
+                    session_kind=data.get('session_kind'),
+                    captured=len(data['shots']),
+                    summary=session.summary(),
+                )
+            )
+        return result

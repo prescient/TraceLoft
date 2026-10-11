@@ -13,7 +13,7 @@ from web_app import create_app
 class CorrectionTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.service = GolfService(self.temp.name, capture_detector=lambda: False)
+        self.service = GolfService(self.temp.name)
         self.client = TestClient(create_app(self.service), base_url='http://localhost')
 
     def tearDown(self):
@@ -168,7 +168,7 @@ class CorrectionTests(unittest.TestCase):
         params = dict(
             turn=p.data['game']['turn'], kind='misread', key=p.latest_played_shot()['key']
         )
-        with patch.object(self.service.store, '_audit', side_effect=OSError('disk failure')):
+        with patch.object(self.service.store, 'audit', side_effect=OSError('disk failure')):
             with self.assertRaises(OSError):
                 self.service.correct_game(p.data['id'], params)
         self.assertEqual(p.data, before)

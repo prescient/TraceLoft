@@ -200,7 +200,7 @@ class DistanceTests(unittest.TestCase):
 
     def test_sqlite_api_drill_lifecycle_export_backup_and_restore(self):
         with tempfile.TemporaryDirectory() as root:
-            service = GolfService(Path(root), capture_detector=lambda: False)
+            service = GolfService(Path(root))
             with TestClient(create_app(service), base_url='http://localhost') as client:
                 self.assertIn('ladder', [d['id'] for d in client.get('/api/drills').json()])
                 params = dict(
@@ -265,7 +265,7 @@ class DistanceTests(unittest.TestCase):
 
     def test_api_validation_leaves_no_partial_session(self):
         with tempfile.TemporaryDirectory() as root:
-            service = GolfService(Path(root), capture_detector=lambda: False)
+            service = GolfService(Path(root))
             with TestClient(create_app(service), base_url='http://localhost') as client:
                 for payload in (
                     dict(drill='Putting ladder', ladder_step=7),

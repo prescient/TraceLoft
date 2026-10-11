@@ -167,7 +167,7 @@ def install(service, anchor=None):
                     session.cleanup(
                         action, keys, session.data['cleanup_revision'], reason, equipment
                     )
-                    store._audit(
+                    store.audit(
                         session.data['id'], 'range_cleanup', session.data['cleanup_history'][-1]
                     )
 

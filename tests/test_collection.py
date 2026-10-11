@@ -10,7 +10,7 @@ from collection import CollectionSession
 class CollectionTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.service = GolfService(self.temp.name, capture_detector=lambda: False)
+        self.service = GolfService(self.temp.name)
         self.client = TestClient(create_app(self.service), base_url='http://localhost')
         self.bag = self.service.equipment['bags'][0]
         self.ids = [c['id'] for c in self.bag['clubs'][6:8]]

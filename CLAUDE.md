@@ -87,10 +87,11 @@ verified upgrade. Helper tests do not verify the interface in a real browser.
   publication. Played and drill outcomes stay pinned and are never rescored.
 - **Missing is not zero.** Unavailable measurements stay null throughout storage, the API, CSV and the UI.
   Reported carry/total are source metrics, so never fill them from a model.
-- **Mutations are atomic.** Service mutations snapshot `practice.data`, run inside
-  `store.transaction()`, and restore the snapshot on failure. Follow the existing pattern in
-  `web_service.py`. `ValueError` messages become HTTP 409 text shown to the golfer, so write them
-  as user-facing guidance.
+- **Mutations are atomic.** Wrap every service mutation in `with self._changing(session):`
+  (`web_service.py`). It runs one `store.transaction()` and restores the session's previous
+  in-memory state on any exception. Call `self._require_saved(message)` first so queued shots
+  save before state changes. `ValueError` messages become HTTP 409 text shown to the golfer, so
+  write them as user-facing guidance.
 - **Schema changes are migrations.** Bump `SCHEMA_VERSION`, take a verified backup, run inside
   `BEGIN IMMEDIATE`, and reconcile evidence counts/manifests before `COMMIT` (see `storage.py`).
   Never edit an earlier upgrade step.

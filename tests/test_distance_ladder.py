@@ -108,7 +108,7 @@ class LadderTests(unittest.TestCase):
 
     def test_failed_save_rolls_back_target_and_retry_scores_once(self):
         with tempfile.TemporaryDirectory() as folder:
-            service = GolfService(folder, capture_detector=lambda: False)
+            service = GolfService(folder)
             service.create_practice(dict(drill='Distance ladder'))
             sid = service.practice.data['id']
             e = event(1, 32, receipt_id='retry-range', practice_session_id=sid)
@@ -129,7 +129,7 @@ class LadderTests(unittest.TestCase):
 
     def test_sqlite_reload_scoring_export_and_lifecycle(self):
         with tempfile.TemporaryDirectory() as folder:
-            service = GolfService(folder, capture_detector=lambda: False)
+            service = GolfService(folder)
             client = TestClient(create_app(service), base_url='http://localhost')
             params = dict(
                 drill='Distance ladder',

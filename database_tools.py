@@ -154,10 +154,6 @@ def main():
     store = None
     try:
         if args.command == 'migrate':
-            from web_service import desktop_capture_running
-
-            if desktop_capture_running():
-                raise OSError('Stop desktop capture before migrating.')
             archive = preserve_legacy(args.root, path.parent / 'backups')
         store = Store(path, migration_lease_held=True)
         if args.command == 'migrate':

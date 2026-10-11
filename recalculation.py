@@ -211,7 +211,7 @@ def stage(store, family, filters, putting_model='saved'):
                     model,
                 ),
             )
-        store._audit(bid, 'stage_recalculation', dict(family=family, count=len(seen)))
+        store.audit(bid, 'stage_recalculation', dict(family=family, count=len(seen)))
     return resume(store, bid)
 
 
@@ -501,7 +501,7 @@ def publish(store, bid, selection_token):
         c.execute("UPDATE recalculation_batches SET status='published' WHERE batch_id=?", (bid,))
         for sid in {i['session_id'] for i in b['differences']}:
             save_collection(c, read_session(c, sid))
-        store._audit(bid, 'publish_recalculation', dict(publication_id=pid, count=b['expected']))
+        store.audit(bid, 'publish_recalculation', dict(publication_id=pid, count=b['expected']))
         return snapshot(c, bid)
 
 
@@ -547,5 +547,5 @@ def cancel(store, bid):
         store.connection.execute(
             "UPDATE recalculation_batches SET status='cancelled' WHERE batch_id=?", (bid,)
         )
-        store._audit(bid, 'cancel_recalculation', {})
+        store.audit(bid, 'cancel_recalculation', {})
         return snapshot(store.connection, bid)

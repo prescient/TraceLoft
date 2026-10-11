@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
-from analysis import build_report, report_csv
+from analysis import report_csv
 from putting_distance import DEFAULT_MODEL_ID
 from web_service import ROOT, DRILLS, GolfService
 
@@ -219,13 +219,9 @@ def create_app(service=None):
         task = None
         try:
             await service.input.start()
-            saved = (
-                service.store.connection.execute(
-                    "SELECT value FROM metadata WHERE key='relay_settings.v1'"
-                ).fetchone()
-                if service.store
-                else None
-            )
+            saved = service.store.connection.execute(
+                "SELECT value FROM metadata WHERE key='relay_settings.v1'"
+            ).fetchone()
             if saved:
                 await service.input.relay.configure(json.loads(saved[0]), service.input.port)
             task = asyncio.create_task(service.run())
@@ -290,7 +286,7 @@ def create_app(service=None):
         return {
             "app": "TraceLoft",
             "status": "ready",
-            "storage": "sqlite" if service.store else "legacy",
+            "storage": "sqlite",
             "architecture": "relay-v1",
             "input_port": service.input.port,
         }
@@ -301,13 +297,7 @@ def create_app(service=None):
 
     @app.get('/api/analysis')
     async def analysis(request: Request):
-        if service.store:
-            report = await asyncio.to_thread(service.store.analysis, dict(request.query_params))
-        else:
-            report = build_report(
-                [service.load_session(s['id']).data for s in service.sessions()],
-                dict(request.query_params),
-            )
+        report = await asyncio.to_thread(service.store.analysis, dict(request.query_params))
         if request.query_params.get('format') == 'csv':
             return Response(
                 report_csv(report),
@@ -377,12 +367,11 @@ def create_app(service=None):
             previous = {k: service.input.relay.state[k] for k in ('destination', 'host', 'port')}
             await service.input.relay.configure(settings, service.input.port)
             try:
-                if service.store:
-                    with service.store.transaction():
-                        service.store.connection.execute(
-                            "INSERT OR REPLACE INTO metadata VALUES('relay_settings.v1',?)",
-                            (json.dumps(settings),),
-                        )
+                with service.store.transaction():
+                    service.store.connection.execute(
+                        "INSERT OR REPLACE INTO metadata VALUES('relay_settings.v1',?)",
+                        (json.dumps(settings),),
+                    )
             except (OSError, sqlite3.Error):
                 await service.input.relay.configure(previous, service.input.port)
                 raise
@@ -540,10 +529,6 @@ def create_app(service=None):
     @app.post('/api/range/{session_id}/cleanup')
     async def range_cleanup(session_id: str, params: RangeCleanupParams):
         try:
-            if (
-                not service.practice or service.practice.data['id'] != session_id
-            ) and await asyncio.to_thread(service.capture_detector):
-                raise ValueError('Stop desktop capture before editing saved sessions.')
             return service.cleanup_range(session_id, params.model_dump())
         except FileNotFoundError:
             raise HTTPException(404, 'Session not found.')
@@ -629,20 +614,9 @@ def create_app(service=None):
     @app.delete("/api/sessions/{session_id}")
     async def delete_session(session_id: str):
         try:
-            saved = service.load_session(session_id)
+            service.load_session(session_id)
         except FileNotFoundError:
             raise HTTPException(404, "Session not found.")
-        own = service.practice and service.practice.data["id"] == session_id
-        if own and not service.practice.data["ended"]:
-            raise ValueError("Finish or abandon the active session before deleting it.")
-        if (
-            not own
-            and not saved.data["ended"]
-            and await asyncio.to_thread(service.capture_detector)
-        ):
-            raise ValueError(
-                "Stop capture in the desktop app before deleting an unfinished session it may be writing."
-            )
         service.delete_session(session_id)
         return service.snapshot()
 
@@ -665,18 +639,10 @@ def create_app(service=None):
 
     @app.post("/api/sessions/{session_id}/exclude")
     async def exclude_saved(session_id: str, params: ExcludeParams):
-        if (
-            not service.practice or service.practice.data["id"] != session_id
-        ) and await asyncio.to_thread(service.capture_detector):
-            raise ValueError(
-                "Stop desktop capture before editing saved sessions; it may still be writing this session."
-            )
         return service.exclude_saved(session_id, params.key)
 
     @app.get('/api/exports/csv')
     async def export_csv():
-        if not service.store:
-            raise HTTPException(409, 'SQLite storage is required.')
         content = await asyncio.to_thread(service.store.export)
         return Response(
             content,
@@ -686,8 +652,6 @@ def create_app(service=None):
 
     @app.post('/api/storage/backup')
     async def backup():
-        if not service.store:
-            raise HTTPException(409, 'SQLite storage is required.')
         path = await asyncio.to_thread(service.store.backup)
         return {'path': str(path), 'verified': True, 'protection': 'local_only'}
 
