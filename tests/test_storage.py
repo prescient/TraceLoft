@@ -1,5 +1,4 @@
 """Migration, atomicity, recovery and database-backed user journeys on isolated data."""
-import asyncio
 import copy
 import csv
 import io
@@ -16,7 +15,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from database_tools import ServiceLease, preserve_legacy, restore_snapshot
 from putting import PuttingSession
-from storage import Store, atomic_json, import_legacy, inspect_legacy, digest
+from storage import Store, atomic_json, import_legacy, digest
 from web_app import create_app
 from web_service import GolfService
 
@@ -83,7 +82,7 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(self.store.connection.execute('PRAGMA foreign_key_check').fetchall(),[])
 
     def test_duplicate_files_deduplicate_but_colliding_keys_do_not_merge(self):
-        data = self.legacy(collision=True)
+        self.legacy(collision=True)
         (self.root/'shots-copy.csv').write_bytes((self.root/'shots.csv').read_bytes())
         import_legacy(self.store,self.root)
         self.assertEqual(self.store.count('shots'),3)
@@ -138,7 +137,7 @@ class StorageTests(unittest.TestCase):
             restore_snapshot(backup,self.root/'other.sqlite3')
 
     def test_export_one_shot_multiple_observations_exclusions_and_text_safety(self):
-        data = self.legacy()
+        self.legacy()
         import_legacy(self.store,self.root)
         self.store.ingest(dict(event(3),club='=DANGEROUS'))
         with zipfile.ZipFile(io.BytesIO(self.store.export())) as archive:

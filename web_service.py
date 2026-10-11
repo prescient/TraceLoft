@@ -4,7 +4,6 @@ import copy
 import json
 import os
 import re
-import subprocess
 import contextlib
 import sqlite3
 import uuid
@@ -14,7 +13,7 @@ from pathlib import Path
 from shot_input import ShotInput
 from putting import PuttingSession
 from distance_ladder import DistanceLadderSession, RANGE_FIELDS, restore_model
-from storage import Store, database_path, import_legacy, atomic_json
+from storage import Store, database_path, import_legacy
 from database_tools import ServiceLease, preserve_legacy
 from equipment import default_catalog, edit_catalog, selection
 from driving_range import DrivingRangeSession, DRIVING_FIELDS, demo_event

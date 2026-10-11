@@ -100,7 +100,7 @@ def install(service, anchor=None):
                             if not session.add(event):
                                 raise ValueError('Synthetic sample was not accepted.')
                 shots=session.data['shots']
-                def cleanup(action, keys, reason, equipment=None):
+                def cleanup(action, keys, reason, equipment=None, session=session):
                     session.cleanup(action,keys,session.data['cleanup_revision'],reason,equipment)
                     store._audit(session.data['id'],'range_cleanup',session.data['cleanup_history'][-1])
                 bad=[s['key'] for i,s in enumerate(shots,1) if i%17==0]

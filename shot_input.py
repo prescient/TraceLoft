@@ -142,7 +142,7 @@ class ShotInput:
     async def accept_packet(self,packet,connection_id):
         from open_connect import validate_packet,simulator_packet
         vals=validate_packet(packet)
-        options=packet['ShotDataOptions'];extension=packet.get('TraceLoft',{})
+        extension=packet.get('TraceLoft',{})
         if not isinstance(extension,dict):raise ValueError('TraceLoft extension must be an object.')
         result=extension.get('Result','validated')
         if result not in ('validated','failed','logged'):raise ValueError('Invalid acquisition result.')

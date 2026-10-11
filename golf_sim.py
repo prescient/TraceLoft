@@ -1,5 +1,4 @@
 """Versioned endpoint golf game. Gameplay outcomes never replace source observations."""
-import json
 import copy
 import hashlib
 import math
@@ -11,7 +10,7 @@ from flight_model import predict
 from course_geometry import classify
 from bundled_courses import load_bundled
 from putting import PuttingSession, timestamp
-from putting_distance import distance_ft, required_speed_mph, model_context, DEFAULT_MODEL_ID
+from putting_distance import distance_ft, required_speed_mph, model_context
 from distance_ladder import numeric
 
 GAME_FIELDS = ('game_rough', 'game_sand', 'game_variation', 'game_gimme', 'game_geometry', 'game_acknowledged', 'game_course_id', 'game_holes', 'game_rollout_rough', 'game_rollout_ob')

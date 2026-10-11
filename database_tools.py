@@ -1,7 +1,6 @@
 """Offline migration/restore and local snapshot/export commands for TraceLoft."""
 import argparse
 import contextlib
-import hashlib
 import json
 import shutil
 import sqlite3

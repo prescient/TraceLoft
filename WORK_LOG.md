@@ -1,5 +1,17 @@
 # TraceLoft work log
 
+## 2026-10-11 — Reproducible installs, lint and verification tooling
+
+- Added `requirements-lock.txt` (exact transitive pins from the verified venv; Setup now installs
+  it), `requirements-dev.txt` (ruff 0.17.0) and `pyproject.toml` with a correctness-only lint set
+  (pyflakes, syntax, likely bugs). Removed unused imports/variables. Renamed a `match` variable that
+  ruff's parser rejected, and bound a demo closure variable explicitly. A flagged closure in
+  `courses/refine_boulder_fairways.py` was a false positive (called within its own iteration).
+- `verify.py` now finds Node from `--node`, `TRACELOFT_NODE`, PATH or Program Files. It reports a
+  missing required suite as "not run" and fails, tolerates a missing git, and runs ruff when
+  installed. Added `tests/test_verify.py`.
+- Verified: `python verify.py` passed **188 Python**, **63 JavaScript** tests and lint.
+
 ## 2026-10-11 — CLAUDE.md and codebase review
 
 - Added `CLAUDE.md` for Claude Code. It imports AGENTS.md and condenses DESIGN_PRINCIPLES.md,

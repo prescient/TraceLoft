@@ -1,10 +1,8 @@
 """Full-swing scoring, capture readiness and database journeys on disposable data."""
 import asyncio
-import contextlib
 import copy
 import csv
 import io
-import json
 import tempfile
 import unittest
 import zipfile
@@ -13,7 +11,6 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from distance_ladder import DistanceLadderSession
-from storage import Store
 from web_app import create_app
 from web_service import GolfService
 

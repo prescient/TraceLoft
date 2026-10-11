@@ -16,7 +16,6 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
 from analysis import build_report, report_csv
-from putting import PuttingSession
 from putting_distance import DEFAULT_MODEL_ID
 from web_service import ROOT, DRILLS, GolfService
 

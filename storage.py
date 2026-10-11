@@ -801,7 +801,7 @@ class Store:
             for shot in shots:
                 # One explicit report supplies the row; never blend values from competing reports.
                 report = reports.get(shot['id'])
-                for field,(metric,unit,factor) in FIELDS.items():
+                for field,(_metric,unit,_factor) in FIELDS.items():
                     shot[field + '_' + ('degrees' if unit=='deg' else unit)] = report[SOURCE_FIELDS[field][0]] if report else None
             files = {'shots.csv': shots, 'metric_values.csv':metrics, 'session_attempts.csv':attempts}
             field_sets = {'shots.csv':shot_fields,'metric_values.csv':metric_fields,'session_attempts.csv':attempt_fields}

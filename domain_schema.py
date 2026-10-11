@@ -4,7 +4,6 @@ JSON is retained only as legacy evidence and whole-artifact geometry/model data.
 Typed document leaves preserve drill-specific settings and ordered state exactly;
 entities used in joins have explicit identity and foreign-key tables.
 """
-import copy
 import json
 import uuid
 from storage import encoded, identity, now

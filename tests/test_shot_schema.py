@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from database_tools import ServiceLease, restore_snapshot
-from shot_schema import SOURCE_FIELDS, evidence_manifest, identity as report_identity
+from shot_schema import SOURCE_FIELDS, evidence_manifest
 from storage import ROOT, SCHEMA, Store, digest, encoded, identity
 
 

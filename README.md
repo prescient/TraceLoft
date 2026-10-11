@@ -24,8 +24,9 @@ Closing the browser leaves the service running; **Stop TraceLoft.cmd** stops it.
 restores the unfinished session without adding or ending any shots.
 
 Fresh Windows installation: install Python 3.12, run **Setup TraceLoft.cmd**, then launch.
-Command-line alternative: `python -m venv .venv`, install `requirements-web.txt` in it, then run
-`python web_app.py`. The application modules also support ordinary Python/uvicorn on other hosts;
+Command-line alternative: `python -m venv .venv`, install `requirements-lock.txt` in it, then run
+`python web_app.py`. `requirements-web.txt` lists the direct dependencies; the lock file pins the
+verified transitive set. Development checks additionally use `requirements-dev.txt` (ruff). The application modules also support ordinary Python/uvicorn on other hosts;
 Windows launch scripts are the verified distribution path.
 
 ## Responsibilities
@@ -108,9 +109,10 @@ approaches for future browser simulation. Research findings are distinct from im
 ## Verification and limits
 
 Run `.venv\Scripts\python -m unittest discover -s tests` and `node --test tests/*.mjs`.
-Or run `python verify.py`: it selects the project venv, runs both suites, and writes logs plus a
-commit-linked JSON report outside the repository (override with `--output-dir`). It exits nonzero
-when a suite fails. Browser/device journey checks are still separate; helper tests alone do not
+Or run `python verify.py`: it selects the project venv, runs both suites plus ruff lint when
+installed, and writes logs plus a commit-linked JSON report outside the repository (override with
+`--output-dir`). Node is found from `--node`, `TRACELOFT_NODE`, PATH or the standard install
+folder. It exits nonzero when a suite fails or a required suite could not run. Browser/device journey checks are still separate; helper tests alone do not
 verify the interface in a real browser.
 Use a separate database and input/HTTP ports for state-changing checks.
 Live browsers use `/ws?protocol=2` revision notifications and fetch `/api/state` on changes/recovery.

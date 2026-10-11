@@ -36,7 +36,9 @@ Key documents: [README](README.md), [NAVIGATION](NAVIGATION.md), [DECISIONS](DEC
 ```bash
 python verify.py
 ```
-Runs both suites and writes logs plus a report outside the repo. It needs `node` on PATH.
+Runs both suites plus ruff lint and writes logs plus a report outside the repo. If `node` is not on
+PATH, pass `--node <path>` or set `TRACELOFT_NODE`; a required suite that cannot run fails the
+verification. Install the lint tool with `.venv\Scripts\python -m pip install -r requirements-dev.txt`.
 You can also run the suites separately:
 
 ```bash
@@ -47,8 +49,13 @@ You can also run the suites separately:
 node --test tests/*.mjs
 ```
 
-On a fresh machine, `Setup TraceLoft.cmd` creates `.venv` from `requirements-web.txt`
-(Python 3.12). Helper tests do not verify the interface in a real browser.
+```bash
+.venv\Scripts\python -m ruff check .
+```
+
+On a fresh machine, `Setup TraceLoft.cmd` creates `.venv` from `requirements-lock.txt`
+(Python 3.12). `requirements-web.txt` lists direct dependencies; update the lock only after a
+verified upgrade. Helper tests do not verify the interface in a real browser.
 
 ## Protect the user's live data
 

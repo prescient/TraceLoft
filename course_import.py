@@ -5,7 +5,6 @@ import json
 import math
 import urllib.parse
 import urllib.request
-from pathlib import Path
 from course_geometry import in_polygon, in_ring
 from putting import timestamp
 

@@ -1,13 +1,12 @@
 from bundled_courses import COURSE_IDS
 import asyncio
 import copy
-import json
 import math
 import tempfile
 import unittest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
-from course_import import inspect, preview, save, catalog, load, ring, fetch_osm
+from course_import import preview, save, catalog, ring, fetch_osm
 from course_geometry import classify
 from web_service import GolfService
 from web_app import create_app

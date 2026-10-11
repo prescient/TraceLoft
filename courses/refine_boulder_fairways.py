@@ -60,7 +60,7 @@ def build():
         a,b,d,e,f,g = c['image']['transform']
         def world(p):
             x,y = p[0]*1536/1774, p[1]*768/887
-            return [round(b*x+e*y+g,6),round(a*x+d*y+f,6)]
+            return [round(b*x+e*y+g,6),round(a*x+d*y+f,6)]  # noqa: B023 - called only in this iteration
         c['surfaces']['fairway'] = [dict(outer=[world(p) for p in smooth_ring(EDGES[number])],holes=[])]
         c['provenance'].update(geometry_review='fairway_edge_v3',
             fairway_registration='Reviewed native-art control points; smooth perimeter ignores mowing stripes and joins the putting apron.')

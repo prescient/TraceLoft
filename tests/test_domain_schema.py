@@ -1,5 +1,5 @@
 import copy
-import json
+import sqlite3
 import tempfile
 import unittest
 import uuid
@@ -26,7 +26,7 @@ class DomainTests(unittest.TestCase):
 
     def test_relational_authority_and_immutable_legacy_evidence(self):
         d=self.session();sid=d['id'];self.assertEqual(self.store.load_session(sid),d)
-        with self.assertRaises(Exception):self.c.execute("UPDATE sessions SET payload_json='{}' WHERE id=?",(sid,))
+        with self.assertRaises(sqlite3.DatabaseError):self.c.execute("UPDATE sessions SET payload_json='{}' WHERE id=?",(sid,))
         self.c.execute("INSERT OR REPLACE INTO metadata VALUES('equipment_catalog.v1','{}')")
         self.assertEqual(self.store.equipment_catalog()['bags'][0],self.bag)
         self.c.execute("UPDATE session_fields SET integer_value=1 WHERE session_id=? AND path='/demo'",(sid,))

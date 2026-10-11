@@ -1,0 +1,16 @@
+# Tool configuration only; TraceLoft is not packaged. Runtime pins: requirements-web.txt.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["third_party"]
+
+[tool.ruff.format]
+# Avoid a quote-normalization diff across modules that intentionally mix quote styles.
+quote-style = "preserve"
+
+[tool.ruff.lint]
+# Correctness only: undefined/unused names, syntax errors and likely bugs.
+select = ["F", "E9", "PLE", "B"]
+# zip(strict=), raise-from and call-in-default are style choices here, not defects.
+ignore = ["B008", "B904", "B905"]

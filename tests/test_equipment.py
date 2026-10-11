@@ -3,7 +3,6 @@ import asyncio
 import copy
 import csv
 import io
-import json
 import tempfile
 import unittest
 import zipfile
@@ -11,7 +10,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from equipment import selection
 from storage import Store
 from web_app import create_app
 from web_service import GolfService

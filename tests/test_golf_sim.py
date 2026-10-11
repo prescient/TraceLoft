@@ -164,7 +164,6 @@ class GameTests(unittest.TestCase):
         self.assertEqual(r.status_code,200)
         p=self.service.practice
         self.assertEqual(self.simulate(p,100).status_code,409)
-        import json
         self.assertEqual(self.service.input.context()['game_context'],p.context())
         event=dict(kind='record',session_id='live-test',seq=1,result='validated',practice_session_id=p.data['id'],
             game_context=p.context(),vals=dict(ball_speed=100,launch_ang=20,launch_dir=0,total=100,offline=0))

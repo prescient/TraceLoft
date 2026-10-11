@@ -1,6 +1,5 @@
 """Open-ended range, immutable flight predictions and session-scoped recoverable cleanup."""
 import copy
-import math
 import random
 import statistics
 import uuid

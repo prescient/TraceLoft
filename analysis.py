@@ -60,7 +60,7 @@ def build_report(sessions, params):
         ranges=json.loads(params.get('ranges','{}'))
     except (ValueError,TypeError):raise ValueError('Choose valid numeric ranges.')
     if not isinstance(ranges,dict) or any(k not in METRICS for k in ranges):raise ValueError('Choose valid numeric range metrics.')
-    for metric,bounds in ranges.items():
+    for bounds in ranges.values():
         if not isinstance(bounds,dict) or not bounds or set(bounds)-{'min','max'}:raise ValueError('Choose valid numeric range bounds.')
         if any(type(v) not in (int,float) or not math.isfinite(v) for v in bounds.values()):raise ValueError('Numeric bounds must be finite.')
         if bounds.get('min',-math.inf)>bounds.get('max',math.inf):raise ValueError('Minimum must not exceed maximum.')
