@@ -12,7 +12,14 @@
   shot deltas/lazy trajectories, registry/query/migration work remain planned.
 - Added a repeatable whole-suite verification command (`python verify.py`) with external logs/report;
   controller regressions and real-browser reconnect/edit checks now cover the live-update foundation.
-  Frozen migration snapshots and full feature lifecycle coverage remain pending.
+- Completed 2026-10-11 (codebase review): lock file plus correctness lint; one-time formatting;
+  atomic service mutations; event loop isolated from the writer lock (snapshot reads,
+  lock-free revisions, threaded backups); batched session reads; numbered migration steps;
+  storage split; server-side drill registry; escape-by-default `html` templates; docs
+  reorganized to current state. See WORK_LOG.
+- Remaining: freezing migration DDL as immutable per-version files; typed per-drill request
+  models and the browser feature lifecycle; converting older `innerHTML` templates to `html` as
+  they are edited; incremental live deltas and bounded detail reads.
 - Future extensions: server-shared dynamic analysis views, provider contracts and operational
   receipt/save/calculation/backup diagnostics. Desktop/video remain future product features below.
 

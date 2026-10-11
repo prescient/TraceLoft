@@ -1,5 +1,27 @@
 # TraceLoft work log
 
+## 2026-10-11 — Documentation reorganized to current state
+
+- DESIGN_PRINCIPLES.md: the ~12 sections appended after "Related documents" (some unheaded) are
+  regrouped under "11. Feature-specific rules" (Range, Cross-session analysis, Play, On-course
+  dispersion, Courses/artwork/imports, Ball replay, Relay, Golfers/equipment/calculations,
+  Product name). A script confirmed all 299 content lines were preserved verbatim. Resolved the
+  §9 contradiction: forwarding defaults to Off and the saved Relay choice is restored on restart
+  (matches D48, the Relay section and the code).
+- NAVIGATION.md: the current map, screens, shared navigation and transition tables now come first.
+  They are corrected for the Capture→Relay change (Relay row, Export CSV/Back up database on Relay,
+  "TraceLoft home", every current `#setup/<drill>` route from `web/navigation.js`, `#play/import`),
+  and the obsolete Start/Stop capture row is removed. Feature path notes follow under topical
+  headings. Dated verification evidence, the removed Capture/VDD screen and the retired
+  fictional-hole library moved to a final "Verification history" section. A script listed every
+  line not carried verbatim; all were old dated headings or the intended corrections.
+- README.md: schema 2/3/5 history notes merged into one current storage section; course
+  paragraphs grouped under Play; tooling, snapshot reads and CLAUDE.md referenced. Fixed a stale
+  claim that the redesign plan still tracks users and relational equipment (implemented in schema 3).
+- BACKLOG: the architecture item records today's completed work and what remains.
+- Checks: relative links in the edited documents resolve. Documentation only; no application
+  behavior changed.
+
 ## 2026-10-11 — Escape-by-default HTML templates
 
 - Added an `html` template tag and `raw()` to `web/charts.js`. Interpolations are escaped unless

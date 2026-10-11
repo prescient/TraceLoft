@@ -5,10 +5,6 @@ or changing interfaces, drills, games and analysis tools. They are design requir
 work, not a claim that every existing screen already meets them. Later user instructions can change
 the direction; update this document when a principle changes.
 
-Keep golfer selection compact in the header and freeze session ownership at launch. Configuration/
-replacement editing and bulk tags belong in secondary dialogs with explicit scope and Undo. Preserve
-original readings, recorded labels and played outcomes through these changes.
-
 ## 1. Design for the golfer standing at the putting setup
 
 The practice screen should answer three questions at a glance: what happened on my last putt,
@@ -178,7 +174,8 @@ must remain distinct; dynamic browser-saved views must not be presented as froze
 - The background Python service owns shot input, storage and shared practice state; browsers present and control it.
   UI rendering and network requests must not block shot detection or create competing workers.
 - Preserve the user's local workflow: localhost access without pairing; LAN access is an explicit
-  launcher option. Keep GSPro sending explicit and off by default on service startup.
+  launcher option. Simulator forwarding is an explicit Relay choice that defaults to Off; the
+  saved choice is restored on restart (see Relay and separate acquisition, and D48).
 - Persist confirmed results and report failed saves. Keep finish, abandon, exclusion and deletion distinct.
 - New-shot updates must preserve unfinished local edits, caret/focus, expanded sections, selected
   shots and scroll position within the same session. Changing golfer/session or completing a drill
@@ -203,17 +200,12 @@ For an interface change, check the affected journeys, not only the new button or
   honestly; an old screenshot or audit is historical evidence, not proof of a new implementation.
 - Update affected documentation and [WORK_LOG.md](WORK_LOG.md) with the change and verification evidence.
 
-## Related documents
+## 11. Feature-specific rules
 
-- [AGENTS.md](AGENTS.md): development entry point and requirements for applying these principles.
-- [NAVIGATION.md](NAVIGATION.md): implemented paths, guards, draft behavior and navigation audit.
-- [designs/README.md](designs/README.md): visual targets and implementation screenshots.
-- [README.md](README.md): app architecture, launchers and current operating instructions.
-- [DECISIONS.md](DECISIONS.md): technical decisions and their evidence.
-- [BACKLOG.md](BACKLOG.md): feature priorities, planned research and remaining acceptance work.
+These rules apply the principles above to individual features. They were added as each
+feature was designed; [DECISIONS.md](DECISIONS.md) and [WORK_LOG.md](WORK_LOG.md) record when.
 
-
-## Range-specific interpretation
+### Range
 
 Driving range uses reported outcome tiles plus separately labeled OpenGolfCoach model views.
 Carry/total plots identify coordinate provenance; target-width decoration must not imply verified
@@ -233,13 +225,13 @@ and a nearest-rank 80% radial extent, requiring five positions. Do not present e
 as a confidence interval or future-shot probability. Note independently scaled axes; circle extents
 must not be clipped. Recompute from corrected tags, filters and cleanup state in live and saved views.
 
-## Cross-session analysis
+### Cross-session analysis
 
 Use median and IQR with metric-specific sample counts; preserve missing values. Keep demo and real
 cohorts separate. Explain session-attempt counting, exclusions and source provenance. Manual exclusion
 rate is not an automated outlier/mishit rate. Warn when mixed clubs/intents make trends incomparable.
 
-## Simple golf games
+### Play: rounds, scoring and layout
 
 Multi-hole rounds keep the current hole's played shots, penalties and gimmes separate from round
 totals. Pause scoring visibly between holes and require Next hole before accepting play at the next
@@ -287,6 +279,25 @@ Distinguish actual-shot count from next stroke number; never hide an automatic g
 Map aiming should expose ball-to-aim and aim-to-pin distances, with explicit units and no implication
 that straight-line distances already account for lie or flight adjustments.
 
+Landing rules belong to Python scoring, with versioned landing/surface/rollout evidence per shot.
+Separate starting-lie distance reductions from carry-landing rollout reductions in setup. Sand stops
+at carry; rough/OB reduce only remaining rollout. Keep raw carry/total unchanged and disclose
+interpolated lateral landing; missing carry skips the rule with feedback. Animate the saved landing
+and final points without moving the airborne landing when rollout shortens. Preserve older outcomes.
+
+### On-course dispersion
+
+On-course dispersion is a historical planning preview. Use paired coordinates, retain lateral bias
+and club distance when aim changes, separate real/demo and named wedge intents, and honor effective
+tags and analysis exclusions. Show source, sample coverage and whether lie effects are applied.
+Never recycle final offline for carry or label smoothed density as future-shot probability. Hide
+full-swing planning on the green and in historical review; preserve score and exits.
+
+Use one bright blue for on-course dispersion previews, with a bold, screen-sized outline and dark
+contrast backing over detailed terrain. Keep range scatter colors specific to each bag/club.
+
+### Courses, artwork and imports
+
 Course artwork is cosmetic and must follow saved scoring geometry. Use masks or geometry-based
 compositing to keep visible hazard/lie edges aligned; provide a boundary overlay for inspection and
 a simple rendering fallback. Prefer map taps plus Aim at pin over left/right step buttons, retaining
@@ -304,36 +315,12 @@ as design targets until a uniform image-to-yard transform and terrain polygons h
 Do not present unregistered concept art as playable geometry. Keep aim/ball/pin and dispersion
 overlays separate, and preserve immutable versions once a hole has been played.
 
-On-course dispersion is a historical planning preview. Use paired coordinates, retain lateral bias
-and club distance when aim changes, separate real/demo and named wedge intents, and honor effective
-tags and analysis exclusions. Show source, sample coverage and whether lie effects are applied.
-Never recycle final offline for carry or label smoothed density as future-shot probability. Hide
-full-swing planning on the green and in historical review; preserve score and exits.
-
-Use one bright blue for on-course dispersion previews, with a bold, screen-sized outline and dark
-contrast backing over detailed terrain. Keep range scatter colors specific to each bag/club.
-
-## Product name
-
-Use **TraceLoft** in visible app copy, window/page titles and launch instructions. The wordmark
-uses navy Trace and cobalt Loft within the pure-white Vector design. Historical GolfData
-artwork and internal compatibility identifiers may retain the old name.
-
-
 Course import workbench: distinguish unsaved edits, durable drafts and published fixed versions.
 Allow incomplete valid geometry to be drafted, but show explicit publication blockers. Every applied
 edit/reopen clears review approval; failed edits retain the last valid geometry. Preserve original
 source and coordinate registration, offer keyboard equivalents to map taps and Undo, and never
 modify existing rounds when publishing corrections. Structural validation is not geographic
 verification. Save/export applies only finished shapes; communicate pending drawing clearly.
-
-## Relay simplicity and separate acquisition (2026-10-03)
-
-TraceLoft listens automatically; users choose Off, GSPro or Infinite Tees once. Save that choice
-immediately and restore it on restart. Hide optional port overrides in Connection details. Show
-source readiness separately from simulator connectivity. Keep OCR/calibration in the private source
-app. Replace in-drill Start/Stop capture with a Relay link. Input disconnected/unready shows an
-actionable warning; healthy recording uses only the header. Keep raw diagnostics out of practice.
 
 Course artwork review: generated aerials may drift from their input guides. Trace/reconcile the
 finished hazards and putting surfaces, inspect all holes with scoring outlines, and register
@@ -346,7 +333,16 @@ geometry validity nor matching aspect ratios prove terrain alignment. Correct re
 new immutable course/hole versions, preserve older packages and frozen rounds, and state when a
 new round is needed to use the revised layout. Keep image-analysis dependencies out of the app.
 
-## Ball replay (2026-10-03)
+Course tracing must ignore mowing stripes and lighting changes inside a continuous playing surface.
+Inspect the approach-to-green connection and both fairway edges at full artwork resolution; a passing
+geometry/hash check is not visual approval. Use reviewed control points to refine uncertain color masks.
+
+For illustrated-map adaptations, use maps for routing and photos for atmosphere. Register finished
+artwork rather than assuming AI preserved a guide. Preserve separate fairway patches and grass
+islands within sand; lake reflections must not become land islands. Keep native aspect ratio and
+uniform yard scale, and label approximate map geometry without claiming surveyed tees or elevation.
+
+### Ball replay
 
 Recording, scores, completion warnings and correction controls update immediately; animation must
 never gate them. Use source carry/total anchors where available and label modeled shape, hang time,
@@ -357,20 +353,19 @@ old playback on a new shot, correction or navigation. Review requires explicit r
 world coordinates and final scored position authoritative; hazard replays return to the saved
 penalty position, and gimme strokes do not become invented ball movements.
 
-Course tracing must ignore mowing stripes and lighting changes inside a continuous playing surface.
-Inspect the approach-to-green connection and both fairway edges at full artwork resolution; a passing
-geometry/hash check is not visual approval. Use reviewed control points to refine uncertain color masks.
+### Relay and separate acquisition
 
-For illustrated-map adaptations, use maps for routing and photos for atmosphere. Register finished
-artwork rather than assuming AI preserved a guide. Preserve separate fairway patches and grass
-islands within sand; lake reflections must not become land islands. Keep native aspect ratio and
-uniform yard scale, and label approximate map geometry without claiming surveyed tees or elevation.
+TraceLoft listens automatically; users choose Off, GSPro or Infinite Tees once. Save that choice
+immediately and restore it on restart. Hide optional port overrides in Connection details. Show
+source readiness separately from simulator connectivity. Keep OCR/calibration in the private source
+app. Replace in-drill Start/Stop capture with a Relay link. Input disconnected/unready shows an
+actionable warning; healthy recording uses only the header. Keep raw diagnostics out of practice.
 
-Landing rules belong to Python scoring, with versioned landing/surface/rollout evidence per shot.
-Separate starting-lie distance reductions from carry-landing rollout reductions in setup. Sand stops
-at carry; rough/OB reduce only remaining rollout. Keep raw carry/total unchanged and disclose
-interpolated lateral landing; missing carry skips the rule with feedback. Animate the saved landing
-and final points without moving the airborne landing when rollout shortens. Preserve older outcomes.
+### Golfers, equipment and calculations
+
+Keep golfer selection compact in the header and freeze session ownership at launch. Configuration/
+replacement editing and bulk tags belong in secondary dialogs with explicit scope and Undo. Preserve
+original readings, recorded labels and played outcomes through these changes.
 
 Calculation management belongs in a secondary Analyze disclosure, with clear ready/missing/error
 coverage, current-versus-proposed values and an explicit Publish action. A preview must not change
@@ -379,3 +374,18 @@ previews require refresh. Preserve missing measurements and label selected analy
 Bag and wedge summaries display coverage per metric and keep configuration cohorts separate. Changing
 a cohort invalidates its published Play profile until review. Local golfer selection must not mix
 equipment, shots, tags or statistics across owners; it is not remote authentication.
+
+### Product name
+
+Use **TraceLoft** in visible app copy, window/page titles and launch instructions. The wordmark
+uses navy Trace and cobalt Loft within the pure-white Vector design. Historical GolfData
+artwork and internal compatibility identifiers may retain the old name.
+
+## Related documents
+
+- [AGENTS.md](AGENTS.md): development entry point and requirements for applying these principles.
+- [NAVIGATION.md](NAVIGATION.md): implemented paths, guards, draft behavior and navigation audit.
+- [designs/README.md](designs/README.md): visual targets and implementation screenshots.
+- [README.md](README.md): app architecture, launchers and current operating instructions.
+- [DECISIONS.md](DECISIONS.md): technical decisions and their evidence.
+- [BACKLOG.md](BACKLOG.md): feature priorities, planned research and remaining acceptance work.
