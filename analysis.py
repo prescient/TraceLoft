@@ -7,6 +7,10 @@ from collections import defaultdict
 from driving_range import effective_equipment
 
 METRICS = {
+    'club_speed': ('Club head speed','mph'), 'smash_factor': ('Reported Smash Factor','ratio'),
+    'club_path': ('Club path','°'), 'attack_angle': ('Angle of attack','°'),
+    'spin_axis': ('Spin tilt axis','°'), 'back_spin': ('Back spin','rpm'),
+    'side_spin': ('Side spin','rpm'), 'curve': ('Curve','yd'),
     'carry': ('Carry','yd'), 'total': ('Total','yd'), 'absolute_offline': ('Absolute offline','yd'),
     'offline': ('Signed offline','yd'), 'ball_speed': ('Ball speed','mph'),
     'launch_ang': ('Launch angle','°'), 'launch_dir': ('Start line','°'),

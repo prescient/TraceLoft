@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 FIELDS = {
     'ball_speed': ('ball.speed', 'mph', .44704),
     'launch_ang': ('ball.launch_angle', 'deg', 1),
@@ -213,6 +213,18 @@ class Store:
                 raise
             finally:
                 if lease: lease.close()
+        if self.connection.execute('PRAGMA user_version').fetchone()[0] == 3:
+            lease=None
+            try:
+                if not new_database and not migration_lease_held:
+                    from database_tools import ServiceLease
+                    lease=ServiceLease(self.path)
+                self._upgrade_analysis(backup=not new_database)
+            except BaseException:
+                self.connection.close()
+                raise
+            finally:
+                if lease:lease.close()
         self.profile = json.loads(self.connection.execute(
             "SELECT payload FROM mapping_versions WHERE id='golfdata.foresight_screen.parsed.v1'").fetchone()[0])
         self.extended_profile = json.loads((ROOT / 'data/metric_mapping.v2.json').read_text('utf-8'))['profiles'][0]
@@ -283,6 +295,38 @@ class Store:
         except BaseException:
             if self.connection.in_transaction:self.connection.execute('ROLLBACK')
             raise
+
+    def _upgrade_analysis(self,backup=True):
+        from analysis_schema import DDL,backfill
+        from shot_schema import evidence_manifest
+        snapshot=self.backup() if backup else None;evidence=evidence_manifest(self.connection)
+        try:
+            self.connection.executescript('BEGIN IMMEDIATE;\n'+DDL)
+            backfill(self.connection)
+            if self.connection.execute('PRAGMA foreign_key_check').fetchall() or evidence_manifest(self.connection)!=evidence:
+                raise ValueError('Analysis migration reconciliation failed.')
+            self.connection.execute('INSERT INTO metadata VALUES(?,?)',('schema_migration.v4',encoded(dict(from_schema=3,to_schema=4,backup=str(snapshot) if snapshot else None,at=now(),stage='reproducible_collection_cohorts'))))
+            self.connection.execute('PRAGMA user_version=4');self.connection.execute('COMMIT')
+        except BaseException:
+            if self.connection.in_transaction:self.connection.execute('ROLLBACK')
+            raise
+
+    def analysis(self,params):
+        from analysis_schema import report
+        with self.lock:return report(self.connection,params)
+
+    def collection_analysis(self,session_id):
+        from analysis_schema import collection_snapshot
+        with self.lock:
+            if self.session_owner(session_id)!=self.active_user():raise ValueError('Switch golfer to view this collection.')
+            return collection_snapshot(self.connection,session_id)
+
+    def select_equipment_profile(self,session_id):
+        from analysis_schema import select_profile
+        with self.transaction():
+            aid=select_profile(self.connection,session_id)
+            self._audit(session_id,'publish_equipment_profile',dict(analysis_id=aid))
+            return aid
 
     def active_user(self):
         from domain_schema import active_user
@@ -583,6 +627,8 @@ class Store:
                 save_attempt_results(self.connection,data,shot,ordinal,legacy=imported)
             from domain_schema import write_session
             write_session(self.connection,data,backfill=imported)
+            from analysis_schema import save_collection
+            save_collection(self.connection,data)
             self._audit(sid, 'import_session' if imported else 'save_session', {'shots':len(data['shots'])})
 
     def set_deleted(self, session_id, deleted):
@@ -665,7 +711,8 @@ class Store:
                           'derived_metric_selection','attempt_derived_results','shot_trajectories',
                           'users','session_owners','shot_owners','bags','clubs','bag_revisions','club_revisions',
                           'bag_memberships','shot_contexts','context_selection','session_plans','session_plan_items',
-                          'session_fields','attempt_fields','tags','shot_tag_events'):
+                          'session_fields','attempt_fields','tags','shot_tag_events',
+                          'analysis_runs','analysis_members','collection_results','group_metric_results','bag_gap_results','equipment_profile_selection'):
                 cursor = self.connection.execute(f'SELECT * FROM {table} ORDER BY rowid')
                 files[table+'.csv'] = [dict(r) for r in cursor]
                 field_sets[table+'.csv'] = [d[0] for d in cursor.description]

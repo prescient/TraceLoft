@@ -391,7 +391,13 @@ class GolfService:
         from club_preview import build_preview
         saved=self.practice if self.practice and self.practice.data['id']==session_id else self.load_session(session_id)
         if not isinstance(saved,GolfSimSession):raise ValueError('Choose a golf round.')
-        return build_preview(self.store.list_sessions() if self.store else [],saved.data)
+        if self.store:
+            from analysis_schema import preview_sessions
+            with self.store.lock:sessions,warnings=preview_sessions(self.store.connection,saved.data)
+        else:sessions,warnings=[],[]
+        result=build_preview(sessions,saved.data)
+        result['warnings']=warnings
+        return result
 
     def game_recommendations(self, session_id):
         from analysis import build_report
@@ -399,10 +405,17 @@ class GolfService:
         if not isinstance(saved,GolfSimSession):raise ValueError('Choose a golf round.')
         bag=(saved.data.get('equipment_selection') or {}).get('bag_id')
         if not bag or saved.data['game']['lie']=='green':return []
-        sessions=self.store.list_sessions() if self.store else []
-        collections=[s for s in sessions if s.get('collection_kind')]
+        collections=[]
+        if self.store:
+            from analysis_schema import preview_sessions
+            with self.store.lock:
+                current=next((b for b in self.equipment['bags'] if b['id']==bag),None)
+                for club in (current or {}).get('clubs',[]):
+                    game={**saved.data,'equipment_selection':dict(bag_id=bag,club_id=club['id'])}
+                    collections.extend(preview_sessions(self.store.connection,game)[0])
         report=build_report(collections,dict(mode='demo' if saved.data['demo'] else 'real',bag=bag,metric='total'))
         factor=1-saved.data['game_settings'].get(saved.data['game']['lie']+'_percent',0)/100
+        if factor<=0:return []
         needed=saved.summary()['remaining_yd']/factor
         available=[g for g in report['groups'] if g['metrics']['total']['count']>=5]
         available.sort(key=lambda g:abs(g['metrics']['total']['median']-needed))

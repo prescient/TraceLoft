@@ -13,6 +13,7 @@ export function renderCollectionSetup(app,old,launch,notice,eq,wedge=false) {
 }
 
 export function mappingRows(data) {
+  if(data.collection_analysis)return [...data.collection_analysis.rows].sort((a,b)=>(b.median??-1)-(a.median??-1));
   return data.collection_plan.map(eq=>{
     const shots=data.shots.filter(included).filter(s=>{const e=equipment(s);return e.bag_id===eq.bag_id&&e.club_id===eq.club_id;});
     return {...eq,...robustSummary(shots,data.range_metric)};
@@ -25,8 +26,11 @@ function intervalChart(rows) {
 }
 export function decorateCollection(app,data,active,context) {
   if(!data.collection_kind)return;
-  if(data.demo_reference)app.querySelector('.range-demo')?.insertAdjacentHTML('afterend','<p class="form-hint section-space">Tour reference demo: full-swing averages anchor synthetic samples. Dispersion, rollout, GW/SW/LW and partial swings are illustrative, not measured Tour or player data. Hybrid is a generic reference, not a specific loft. <a href="https://www.trackman.com/blog/introducing-updated-tour-averages" target="_blank" rel="noopener">Trackman source ↗</a></p>');
-  if(data.collection_kind==='wedge'){decorateMatrix(app,data,active,context);return;}
+  if(context.collectionAnalysis&&!data.collection_analysis){
+    context.collectionAnalysis().then(snapshot=>{if(!snapshot||!app.querySelector('.range-view'))return;const rendered=app.querySelector('[data-collection-session]');if(rendered?.dataset.collectionSession!==data.id)return;app.querySelector('.collection-summary,.matrix-summary')?.remove();app.querySelector('.wedge-next')?.remove();decorateCollection(app,{...data,collection_analysis:snapshot},active,context);}).catch(e=>context.notice(e.message));
+  }
+  if(data.demo_reference&&!app.querySelector('.collection-tour-note'))app.querySelector('.range-demo')?.insertAdjacentHTML('afterend','<p class="collection-tour-note form-hint section-space">Tour reference demo: full-swing averages anchor synthetic samples. Dispersion, rollout, GW/SW/LW and partial swings are illustrative, not measured Tour or player data. Hybrid is a generic reference, not a specific loft. <a href="https://www.trackman.com/blog/introducing-updated-tour-averages" target="_blank" rel="noopener">Trackman source ↗</a></p>');
+  if(data.collection_kind==='wedge'){decorateMatrix(app,data,active,context);bindCollectionProfile(app,data,context);return;}
   app.querySelector('[data-range-action="target"]')?.remove();
   const rows=mappingRows(data),complete=rows.filter(r=>r.count>=data.collection_samples).length;
   app.querySelector('h1').textContent=data.drill+(active?'':' · review');
@@ -34,11 +38,22 @@ export function decorateCollection(app,data,active,context) {
   const panel=document.createElement('section');panel.className='card collection-summary section-space';
   panel.innerHTML=`<div class="chart-head"><div><p class="eyebrow">${esc(data.collection_plan[0].bag_name)} / ${esc(data.range_metric)} · YD</p><h2>Bag map</h2></div><strong>${complete}/${rows.length} clubs sampled</strong></div><p class="form-hint">This map uses all included shots for the planned clubs, independent of workspace filters. Goal: ${data.collection_samples} readings per club. Dots show median; bands show Q1–Q3 (middle 50%). Gap is to the next shorter sampled club. Overlap describes these samples, not future-shot probability.</p><div class="mapping-layout"><div>${intervalChart(rows)}</div><div class="table-wrap"><table><thead><tr><th>Club</th><th>n / goal</th><th>Median / IQR · yd</th><th>Gap · yd</th>${active?'<th>Collect</th>':''}</tr></thead><tbody>${rows.map((r,i)=>{const next=rows.slice(i+1).find(x=>x.median!=null);return `<tr><th>${esc(r.club_label)}</th><td>${r.count}/${data.collection_samples}${r.count>=data.collection_samples?' ✓':''}</td><td>${n(r.median)} / ${n(r.iqr)}</td><td>${next&&r.median!=null?n(r.median-next.median):'—'}${next&&r.q1!=null&&next.q3!=null&&r.q1<=next.q3?'<small class="range-stat-detail">IQR overlap</small>':''}</td>${active?`<td><button class="btn small" data-collect-club="${esc(r.club_id)}">${r.club_id===data.equipment_selection?.club_id?'Selected':'Select'}</button></td>`:''}</tr>`;}).join('')}</tbody></table></div></div><div class="form-foot"><button class="btn quiet" data-mapping-csv>Export bag map CSV</button><span class="form-hint">${complete===rows.length?'Sample goal reached. Finish when you are ready.':'Small samples remain descriptive. Missing distance never counts as zero.'}</span></div>`;
   app.querySelector('.range-hero').insertAdjacentElement('afterend',panel);
+  bindCollectionProfile(app,data,context);
   panel.querySelectorAll('[data-collect-club]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await context.select({bag_id:data.collection_plan[0].bag_id,club_id:b.dataset.collectClub});}catch(e){context.notice(e.message);b.disabled=false;}});
   panel.querySelector('[data-mapping-csv]').onclick=()=>{
     const csv=mappingCsv(data);
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'})),a=document.createElement('a');a.href=url;a.download=`bag-map-${data.id}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
+}
+
+function bindCollectionProfile(app,data,context) {
+  const panel=app.querySelector('.collection-summary,.matrix-summary');if(!panel)return;
+  panel.dataset.collectionSession=data.id;
+  if(!data.collection_analysis||!context.publishProfile)return;
+  const box=document.createElement('div');box.className='form-foot';
+  const snapshot=data.collection_analysis,ready=snapshot.rows.some(r=>r.count>=data.collection_samples);
+  box.innerHTML=`<button class="btn quiet" data-publish-profile ${!ready||snapshot.selected_for_play?'disabled':''}>${snapshot.selected_for_play?'Selected for Play':'Use this collection in Play'}</button><span class="form-hint">Saved analysis ${esc(snapshot.analysis_id.slice(0,8))} · ${esc(snapshot.counting)} Publishing replaces this bag’s ${data.collection_kind==='wedge'?'wedge':'mapping'} reference in this data mode.</span>`;
+  panel.append(box);box.querySelector('button').onclick=async e=>{e.target.disabled=true;try{await context.publishProfile();e.target.textContent='Selected for Play';context.notice('Saved collection selected for Play. Source shots and past rounds are unchanged.');}catch(err){e.target.disabled=false;context.notice(err.message);}};
 }
 
 export function mappingCsv(data) {

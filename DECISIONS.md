@@ -168,3 +168,7 @@ Use provisional middle tee pads and label Provided yardages instead of inferring
 Keep uniform approximate route scale, native image proportions, grass cutouts and split fairways.
 Shared review tooling supports native dimensions and first-version packages. Preserve older
 courses and frozen rounds; no acquisition or database schema changes.
+
+## D61 — SQL analyses and frozen calibration cohorts
+
+Analyze defaults to source columns. Bag/wedge results freeze exact report/context/derived IDs, inclusion flags and distinct physical-shot membership. Explicit per-golfer/bag/kind/data-mode publication is invalidated by cohort changes; future predictions use selected versions, historical scores remain pinned.

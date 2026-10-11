@@ -260,6 +260,8 @@ function renderRunner() {
   if(data.session_kind==='driving_range') {
     const refreshRange=()=>{if(view==='runner'&&(review?.practice??state.practice)?.id===data.id)renderRunner();};
     renderRange(app,data,state,!!review,sessionNotice,{
+      collectionAnalysis:()=>api(`/api/collection/${data.id}/analysis`),
+      publishProfile:()=>api(`/api/collection/${data.id}/profile`,{}),
       cell:async params=>{update(await api(`/api/collection/${data.id}/cell`,params));refreshRange();},
       equipment:equipmentContext,notice,current:()=>state.practice?.equipment_selection,redraw:refreshRange,
       select:async selection=>{update(await api(`/api/practice/${data.id}/equipment`,selection));refreshRange();},

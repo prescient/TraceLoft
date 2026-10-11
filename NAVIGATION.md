@@ -484,3 +484,7 @@ Judges Course adds a third 18-hole library choice using the same setup/launch/re
 Full/front/back choices keep original numbering; Provided yardages identifies the supplied
 scorecard without guessing a tee color. Isolated browser verification covered Back 9 setup,
 club selection, live map, Green/overview, boundary toggle, ended review and Play menu.
+
+## Analytical controls
+
+Analyze → Metric versions, configurations and tags → choose basis/configuration/tags → Apply. Bag mapping or Wedge matrix → sampled result → Use this collection in Play. No top-level route changes; these controls are secondary disclosures/actions.

@@ -3,7 +3,7 @@
 Design and migration plan — 2026-10-10. Stage 1 (schema 2) implements wide source reports,
 separate immutable derived results, attempt pins, readable views and expanded CSV export.
 Schema 3 implements golfers/equipment/context/tags/plans and typed session state. See
-[implemented database](SHOT_DATABASE.md). Group analyses and batch recalculation remain proposed.
+[implemented database](SHOT_DATABASE.md). Schema 4 adds SQL-backed Analyze, immutable collection cohorts, per-metric coverage and explicit profile publication. Batch recalculation remains proposed.
 This updates the earlier preference for long-form metric values as the main analytical interface.
 The user now prioritizes named columns and a separate, recalculable derived-metrics table.
 
@@ -492,3 +492,9 @@ Stage 1 adds wide source/derived storage and compatible readers/writers without 
 evidence or saved game/drill outcomes. Users, relational equipment/context/plans, versioned group
 analyses, SQL-backed Analyze and complete recalculation workflows remain pending. See
 [implemented scope and upgrade procedure](SHOT_DATABASE.md).
+
+## Schema 4 analytical collections
+
+Analyze joins source/selected derived columns, golfer ownership and effective equipment context directly in SQL. Tags use EXISTS (any/all), configurations have a separate filter, and source-reported values remain the default. Collection results live in `analysis_runs`, `analysis_members`, `collection_results`, `group_metric_results` and `bag_gap_results`; `v_bag_map_results` and `v_wedge_matrix_results` are readable views. Each cell counts distinct physical shots matching its frozen planned configuration. Removing/excluding/retagging creates a new immutable cohort.
+
+Use **Use this collection in Play** on a sampled map/matrix to select that bag’s reference for that data mode. Changed cohorts require review and republication; incompatible equipment configurations do not pool. Original historical configurations that cannot be established stay unknown. Future predictions use selected analytical flight outputs; saved rounds/reviews retain their original pins. Recommendations use the same ownership/configuration/profile policy.

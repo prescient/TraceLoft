@@ -237,3 +237,9 @@ course/hole geometry in the existing session payload. Old active/review rounds r
 v1 layouts and outcomes, including across restart. Both original packages remain loadable, and
 their raster assets are unchanged. Boulder v2 is also retained after the fairway-only v3 update.
 These catalog updates need no SQLite migration or backfill.
+
+## Schema 4 analytical collections
+
+Analyze joins source/selected derived columns, golfer ownership and effective equipment context directly in SQL. Tags use EXISTS (any/all), configurations have a separate filter, and source-reported values remain the default. Collection results live in `analysis_runs`, `analysis_members`, `collection_results`, `group_metric_results` and `bag_gap_results`; `v_bag_map_results` and `v_wedge_matrix_results` are readable views. Each cell counts distinct physical shots matching its frozen planned configuration. Removing/excluding/retagging creates a new immutable cohort.
+
+Use **Use this collection in Play** on a sampled map/matrix to select that bag’s reference for that data mode. Changed cohorts require review and republication; incompatible equipment configurations do not pool. Original historical configurations that cannot be established stay unknown. Future predictions use selected analytical flight outputs; saved rounds/reviews retain their original pins. Recommendations use the same ownership/configuration/profile policy.

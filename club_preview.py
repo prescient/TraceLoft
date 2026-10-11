@@ -44,7 +44,7 @@ def build_preview(sessions, game):
                 elif abs(right) <= total:
                     endpoints['reported_total'] = dict(forward=math.sqrt(total*total-right*right), right=right)
             flight = shot.get('flight') or {}
-            if flight.get('status') == 'ready' and flight.get('model') == MODEL:
+            if flight.get('status') == 'ready' and (flight.get('model') == MODEL or flight.get('analytical_version')):
                 for metric in ('carry', 'total'):
                     point = flight.get(metric+'_point_yd') or {}
                     if finite(point.get('forward')) and finite(point.get('right')) and point['forward'] >= 0:

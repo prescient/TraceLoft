@@ -265,8 +265,8 @@ def create_app(service=None):
 
     @app.get('/api/analysis')
     async def analysis(request: Request):
-        sessions=service.store.list_sessions() if service.store else [service.load_session(s['id']).data for s in service.sessions()]
-        report=await asyncio.to_thread(build_report,sessions,dict(request.query_params))
+        if service.store:report=await asyncio.to_thread(service.store.analysis,dict(request.query_params))
+        else:report=build_report([service.load_session(s['id']).data for s in service.sessions()],dict(request.query_params))
         if request.query_params.get('format')=='csv':
             return Response(report_csv(report),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="traceloft-analysis.csv"'})
         return report
@@ -440,6 +440,16 @@ def create_app(service=None):
     async def add_bag(params: BagParams):
         service.edit_bag(params.revision, params.name)
         return service.snapshot()
+
+    @app.get('/api/collection/{session_id}/analysis')
+    async def collection_analysis(session_id: str):
+        return service.store.collection_analysis(session_id)
+
+    @app.post('/api/collection/{session_id}/profile')
+    async def collection_profile(session_id: str):
+        result=service.store.select_equipment_profile(session_id)
+        service.sessions_revision+=1
+        return dict(analysis_id=result)
 
     @app.post('/api/golfers/select')
     async def golfer(params: GolferParams):

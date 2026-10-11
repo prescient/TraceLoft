@@ -167,3 +167,9 @@ schema 2 with the older app. Backups remain local; Google Drive is still planned
 Versioned bag-map/matrix cohorts/profile selection, SQL-backed Analyze filtering and full calculation
 lineage/recalculation UI remain tracked in [the backlog](../BACKLOG.md). Core equipment, context and
 session authority are relational in schema 3; numerical storage retains the schema-2 layout.
+
+## Schema 4 analytical collections
+
+Analyze joins source/selected derived columns, golfer ownership and effective equipment context directly in SQL. Tags use EXISTS (any/all), configurations have a separate filter, and source-reported values remain the default. Collection results live in `analysis_runs`, `analysis_members`, `collection_results`, `group_metric_results` and `bag_gap_results`; `v_bag_map_results` and `v_wedge_matrix_results` are readable views. Each cell counts distinct physical shots matching its frozen planned configuration. Removing/excluding/retagging creates a new immutable cohort.
+
+Use **Use this collection in Play** on a sampled map/matrix to select that bag’s reference for that data mode. Changed cohorts require review and republication; incompatible equipment configurations do not pool. Original historical configurations that cannot be established stay unknown. Future predictions use selected analytical flight outputs; saved rounds/reviews retain their original pins. Recommendations use the same ownership/configuration/profile policy.

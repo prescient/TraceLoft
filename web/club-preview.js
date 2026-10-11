@@ -77,7 +77,7 @@ export function mountClubPreview(app,data,state,ctx,active) {
   ctx.preview().then(payload=>{
     if(!host.isConnected)return;
     if(payload.equipment?.club_id!==equipment.club_id||payload.equipment?.bag_id!==equipment.bag_id){describe('Equipment changed','Overlay off');host.textContent='Equipment changed. Select your club again to refresh the preview.';return;}
-    if(!payload.profiles.length){describe(equipment.club_label+' · no matching mapping','Overlay off');host.innerHTML=`<p class="form-hint">No ${data.demo?'demo':'real'} mapping for ${esc(equipment.club_label)} yet. Collect paired distance and offline readings in <a href="#setup/bag-mapping">Bag mapping</a> or <a href="#setup/wedge-matrix">Wedge matrix</a>. Your round stays active.</p>`;return;}
+    if(!payload.profiles.length){describe(equipment.club_label+' · no matching mapping','Overlay off');host.innerHTML=`<p class="form-hint">${(payload.warnings??[]).map(esc).join(' ')} No compatible ${data.demo?'demo':'real'} mapping for ${esc(equipment.club_label)} yet. Collect paired distance and offline readings in <a href="#setup/bag-mapping">Bag mapping</a> or <a href="#setup/wedge-matrix">Wedge matrix</a>. Your round stays active.</p>`;return;}
     const draw=()=>{
       const profile=payload.profiles.find(p=>p.id===selectedProfiles.get(key))??payload.profiles[0];selectedProfiles.set(key,profile.id);
       const view=profile.views[`${pref.source}_${pref.metric}`],points=view.points,stats=view.distance;

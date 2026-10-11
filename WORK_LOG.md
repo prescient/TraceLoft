@@ -606,3 +606,7 @@
   idle production through the normal launcher: complete current session snapshot matched before/after,
   including all 40 existing shots, selected equipment and settings. Confirmed all three course choices.
   No production shots were generated/deleted. Stopped QA, closed its tab and reset viewport sizing.
+
+## 2026-10-10 — Schema 4 SQL analyses and collection results
+
+Implemented SQL metric/context reads, tag any/all and config filters, immutable bag/wedge cohorts, per-metric coverage, gap results and Play profile publication/staleness. Verified 19 focused Python tests (SQL parity, tag counts, ownership, configuration changes, immutable cleanup cohorts/republication plus existing analysis/collection/preview/schema tests) and all 49 JavaScript tests. Isolated migrated-copy UI checked advanced Analyze controls and empty-user state. Production remains schema 2 until final cutover.

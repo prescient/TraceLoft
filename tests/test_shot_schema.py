@@ -112,7 +112,7 @@ class ShotSchemaTests(unittest.TestCase):
         self.store.close()
         self.store = Store(self.path)
         self.assertEqual(self.store.load_session(data['id']),data)
-        self.assertEqual(len(list((self.path.parent/'backups').glob('*.sqlite3'))),2)
+        self.assertEqual(len(list((self.path.parent/'backups').glob('*.sqlite3'))),3)
 
     def test_failed_migration_rolls_back_to_v1(self):
         data,_,_,before = self.legacy_database()

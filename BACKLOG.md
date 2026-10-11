@@ -531,7 +531,7 @@ Real-course sources/import enhancements remain optional deferred work.
 - [x] Complete typed session-state/outcome/correction storage and exact review/resume parity in schema 3.
 - [x] Move equipment/context/plans to relational tables; preserve physical IDs/labels/configurations
   and immutable legacy evidence. Add audited many-to-many tags with physical-shot/attempt scope/Undo.
-- [ ] Add reproducible group analyses/profile selection without changing existing cleanup scopes.
+- [x] Add reproducible group analyses/profile selection without changing existing cleanup scopes.
 - [x] Implement local golfer profiles/selection and user ownership backfill/guards; preserve existing
   single-player history, flag ambiguous attribution and prevent cross-user bag/statistical mixing.
   Remote authentication/authorization remains a separate future feature.
@@ -541,7 +541,7 @@ Real-course sources/import enhancements remain optional deferred work.
   retagging dependencies and historical review in isolation before production cutover.
 
 See [redesign](docs/DATABASE_REDESIGN.md) and [implemented schema 2](docs/SHOT_DATABASE.md).
-Schema 3 adds relational core state; group analyses and recalculation workflows remain pending.
+Schema 4 adds SQL-backed Analyze and immutable bag/wedge cohorts with explicit Play selection. Batch recalculation remains pending.
 
 Status: core SQLite import/capture/practice persistence, typed registry, CSV export and verified local
 backup/restore implemented; cutover and verification are tracked in WORK_LOG.md.

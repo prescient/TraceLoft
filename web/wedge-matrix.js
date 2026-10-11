@@ -2,6 +2,7 @@ import {escape as esc} from './charts.js';
 import {robustSummary,equipment,included} from './range-data.js';
 const n=v=>Number.isFinite(v)?v.toFixed(1):'—';
 export function matrixCells(data) {
+  if(data.collection_analysis)return data.collection_analysis.rows;
   return data.collection_plan.flatMap(eq=>data.swing_labels.map(label=>{
     const shots=data.shots.filter(included).filter(s=>{const e=equipment(s);return e.bag_id===eq.bag_id&&e.club_id===eq.club_id&&s.swing_label===label;});
     return {...eq,label,...robustSummary(shots,data.range_metric),launch:robustSummary(shots,'launch_ang'),spin:robustSummary(shots,'total_spin')};
