@@ -1,5 +1,26 @@
 # TraceLoft work log
 
+## 2026-10-10 — Repeatable verification and handoff
+
+- Added `python verify.py`: selects the project venv when present, runs Python discovery and all
+  JavaScript helper/controller tests, exits nonzero on failure and writes logs plus a commit/dirty-tree
+  report outside the repository by default. Manual browser checks remain explicitly separate.
+  Fixed Windows cp1252 printing of Node's Unicode test markers after the first reporting run failed.
+- Final end-to-end command passed: **184 Python tests and 63 JavaScript tests**. Saved report/logs
+  under the external `GolfData/architecture-qa/verification` folder; tablet screenshot is also there
+  (one directory above). Backend/browser behavior checks use separate synthetic data.
+- Additional browser QA: restarted the isolated service, restored its same 13-shot session and
+  retained the unfinished draft/caret/focus; completed it, exited and opened saved review with its
+  correct identity and exits. New browser code also opened the older production service without
+  console errors. Closed temporary tabs, reset viewport and stopped the isolated service.
+- Automatic approval review rejected the production restart command with a policy block and no
+  more specific reason. The command did not execute. Production remains on its existing process,
+  port 8765/input 900, with the same unfinished 40-shot session. Backend improvements are committed
+  and tested but take effect after the normal service restart. No production test shots or cleanup.
+- Remaining architecture work: incremental live deltas/lazy trajectories, typed neutral feature
+  registry/browser lifecycle, shared SQL selection/paged detail, frozen migrations, and prediction/
+  backup latency. Keep these incremental and preserve the established integrity/design boundaries.
+
 ## 2026-10-10 — Stable expansion during live updates
 
 - Follow-up review replaced positional detail expansion with stable section identities. When the

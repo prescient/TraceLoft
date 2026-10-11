@@ -52,3 +52,8 @@ range selections remain in their view model. Old clients receive changed-only sn
 also support an older server during an upgrade. Full-history state fetches on changes still exist:
 incremental shot deltas, lazy trajectories and bounded detail remain follow-up work, along with
 feature mount/update/dispose rather than whole-runner repainting.
+
+Stage 6's repeatable verification command is available as `python verify.py`, with automatic project
+venv selection, both suites, nonzero failure exit and external logs/report including commit and dirty
+tree state. This supplements controller/backend regressions and manual browser/device checks;
+it does not claim to automate every browser journey. Frozen migration files remain pending.

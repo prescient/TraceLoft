@@ -108,6 +108,10 @@ approaches for future browser simulation. Research findings are distinct from im
 ## Verification and limits
 
 Run `.venv\Scripts\python -m unittest discover -s tests` and `node --test tests/*.mjs`.
+Or run `python verify.py`: it selects the project venv, runs both suites, and writes logs plus a
+commit-linked JSON report outside the repository (override with `--output-dir`). It exits nonzero
+when a suite fails. Browser/device journey checks are still separate; helper tests alone do not
+verify the interface in a real browser.
 Use a separate database and input/HTTP ports for state-changing checks.
 Live browsers use `/ws?protocol=2` revision notifications and fetch `/api/state` on changes/recovery.
 Idle connections send no repeated snapshots. Older clients/servers remain compatible during an

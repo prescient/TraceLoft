@@ -10,6 +10,9 @@
 - Completed: lazy recalculation cache, incremental attempt/typed-state writes, idle-safe revision
   notifications and browser response/focus/edit guards. State fetches still contain full history;
   shot deltas/lazy trajectories, registry/query/migration work remain planned.
+- Added a repeatable whole-suite verification command (`python verify.py`) with external logs/report;
+  controller regressions and real-browser reconnect/edit checks now cover the live-update foundation.
+  Frozen migration snapshots and full feature lifecycle coverage remain pending.
 - Future extensions: server-shared dynamic analysis views, provider contracts and operational
   receipt/save/calculation/backup diagnostics. Desktop/video remain future product features below.
 
