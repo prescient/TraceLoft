@@ -1,5 +1,28 @@
 # TraceLoft work log
 
+## 2026-10-11 — Browser QA of the review changes (isolated instance)
+
+- Ran an isolated service (separate database, input 9901, HTTP 8799) from a scratchpad script that
+  calls `create_app` directly. Running `web_app.py` would have overwritten and then deleted the
+  repository's `web_runtime.json`, which belongs to the user's real service.
+- Checked at 1366×1024:
+  - Practice selector from the drill registry; `#setup/pace` → Launch → runner with the
+    "Waiting for source" warning.
+  - Two synthetic Open Connect putts arrived through live revisions (2/10, latest putt, In window).
+  - The abandon confirmation markup (`html` helper) was byte-exact, and confirm returned to Practice.
+  - Sessions list (threaded snapshot read), Delete → notice with Undo → restored.
+  - Relay → Back up database (verified snapshot path shown). The post-abandon background
+    backup also produced a verified copy and manifest.
+  - Analyze and Play loaded; a demo round's preview/recommendations endpoints returned 200.
+- Checked at 390×844: Sessions had no horizontal overflow.
+- No console errors.
+- The user's real service (8765/900, PID unchanged, unfinished session) was not touched and still
+  runs the previous backend until its next normal restart. The web UI files are served from the
+  working tree, so its browsers load the new JavaScript; those changes need no new API.
+- Not verified: physical iPad Safari/touch, and every drill/game journey (only the ones above).
+- Follow-up suggestion, not implemented: `web_app.main()` writes `web_runtime.json` for any
+  instance, so a second instance started with `web_app.py` clobbers the launcher's runtime file.
+
 ## 2026-10-11 — Documentation reorganized to current state
 
 - DESIGN_PRINCIPLES.md: the ~12 sections appended after "Related documents" (some unheaded) are
