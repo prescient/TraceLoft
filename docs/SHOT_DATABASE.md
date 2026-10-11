@@ -1,38 +1,33 @@
-# Readable shot database — schema 3
+# Readable shot database — schema 5
 
-Schema 3 adds local golfers, relational equipment revisions/membership, immutable shot contexts,
-audited many-to-many tags, frozen collection plans and typed session/attempt state. The browser
-receives compatible JSON DTOs assembled from relational rows. Legacy payloads are immutable evidence.
+SQLite is authoritative at `%USERPROFILE%\GolfData\data\golfdata.sqlite3`, outside OneDrive.
+The additive migration retains existing shot IDs, raw packets, reports, original units, sessions,
+scores, inclusion decisions and correction history. [ERD](DATABASE_ERD.md) shows the main relationships.
 
-Use the header golfer button to create/select profiles; end/abandon active sessions before switching.
-Each golfer has independent bags/history. Existing single-player sessions and linked shots belong to
-My golfer; unassigned inbound history remains unassigned. Profiles do not add authentication.
+## Start with these views
 
-Manage bags → Specifications appends configurations; cosmetic rename keeps physical identity and
-configuration. Replace creates a new physical club. Old labels/configuration links and plans stay
-frozen. Unknown historical configuration lineage remains null. Range → select shots → Tags supports
-audited add/remove, physical-shot/attempt scope and Undo; tags never change analytical inclusion.
+| View | Row meaning |
+| --- | --- |
+| `v_shots_source` | One physical shot and its explicitly selected source report |
+| `v_session_current_metrics` | One attempt, golfer/equipment context, all source columns and selected analytical outputs |
+| `v_session_shots` | One attempt with its original pinned flight/putting results for historical review |
+| `v_session_equipment` | Original or corrected effective club/bag identity and configuration |
+| `v_shot_tags` | Currently applied physical-shot or session-attempt tag associations |
+| `v_bag_map_results` | One immutable per-club bag-map result with distance coverage/quartiles |
+| `v_wedge_matrix_results` | One immutable club/swing cell with distance, launch and spin coverage |
+| `v_calculation_history` | All derived versions, methodology, publication selection and recorded lineage |
 
-Readable context views: `v_session_equipment`, `v_session_state`, `v_attempt_outcomes`, `v_shot_tags`.
-`session_fields`/`attempt_fields` retain variable drill settings, scalar outcomes and ordered
-correction history as typed leaves with readable paths, including empty/null/list distinctions.
-Frozen course geometry/model artifacts retain JSON; legacy payloads are not editable fallbacks.
+Deleted sessions remain queryable for recovery. Everyday app analysis omits them and scopes by golfer.
+Physical shots can appear in several sessions: Analyze counts attempts; calibration cohorts count
+ distinct physical shots. Each metric has its own available count; missing readings are not zeros.
 
-The v2 → v3 upgrade creates a verified snapshot, then backfills and compares every reconstructed
-session DTO and original evidence hashes transactionally. Failure rolls back; `schema_migration.v3`
-records the result. Restore accepts versions 1–3. CSV ZIP includes the new entity/context/plan/state/
-tag tables and equipment view. The schema-2 numerical design below remains in place.
+## Source columns
 
-The first stage of the [database redesign](DATABASE_REDESIGN.md) is implemented. SQLite retains
-the same file, shot IDs, raw packets, observations, original typed metrics and saved game/drill
-outcomes. Named source columns and separately versioned calculations now support direct SQL and
-CSV without pivoting the metric registry. This is not the completed users/equipment/session migration.
-
-## Source reports
-
-`shot_source_metrics` contains one report per observation, linked by `shot_id` and `observation_id`.
-It has all 18 core columns, including **reported total distance**. Source total is used directly;
-modeled total is separate. No report silently supplies another report's missing values.
+`shot_source_metrics` has one immutable normalized report per observation, linked by `shot_id`.
+All 18 columns are first-class, including reported **total distance**. The producer should supply total;
+legacy/other-source missing or invalid values remain null with quality evidence, never a modeled fallback.
+No competing reports are blended. `shot_primary_source` explicitly selects a physical-shot report;
+raw packets and all observations remain available. Reported Smash Factor stays separate from calculated.
 
 | Column | Unit |
 | --- | --- |
@@ -85,91 +80,80 @@ observations reference the archived v2 specification. Use `TraceLoft.Metrics.sma
 supplied value; TraceLoft does not infer this source cell from speeds. Neither the columns nor mapping
 produce club readings absent from the source app.
 
-## Derived results and saved outcomes
 
-- `calculation_runs`: model family/version, output revision, parameters, provenance and optional
-  genuine code hash. Each stage-1 specification groups its per-shot results; there is no batch
-  recalculation scheduler/publication UI yet.
-- `shot_derived_metrics`: immutable wide scalar results linked to shot, run, input fingerprint and
-  non-null context identity. Flight includes carry/total endpoints, apex, descent, hang time and shape.
-  Putting includes estimated distance, target/error and Stimp. Source features include absolute
-  offline, calculated Smash Factor and the signed reported-total-minus-carry difference.
-- `calculation_inputs`: the exact source report used by the result; composite keys reject another
-  shot's report. Dependency graphs between calculation families remain a later migration stage.
-- `shot_trajectories`: immutable complete sampled paths, outside the scalar metric table.
-- `derived_metric_selection`: the explicitly selected analytical result per shot/family/context.
-- `attempt_derived_results`: pinned flight/putting result for each original practice/game attempt.
-  Analytical version selection does not replace these pins or rescore the round.
+## Golfers, equipment and tags
 
-Historical saved estimates are extracted without rerunning their models. Their provenance is
-`legacy_saved_outcome_incomplete_lineage`, with no invented code hash or computation timestamp:
-`created_at` records extraction, not an unknown original calculation time. Newly saved attempt
-artifacts are labeled `saved_attempt_snapshot`; the existing model ID/inputs/assumptions remain
-available, and complete code/dependency lineage is still follow-up work. Complete immutable result
-artifacts remain evidence/compatibility documents; scalar columns drive numerical reads.
+The header golfer button creates/selects local profiles; finish or abandon an active session first.
+Each profile owns its bags, sessions and analyses. Existing single-player sessions and linked shots
+belong to My golfer; unassigned inbound history stays unassigned. Profiles do not add authentication.
 
-`Store.write_derived_result(...)` appends or idempotently retries a result. `select=True` explicitly
-publishes that individual analytical result. Old versions remain available. Multi-shot staging,
-coverage review, interrupted-run recovery and atomic group-profile publication are not implemented
-by this initial API. Current drills continue to save their live outcomes under their existing rules.
+`bags` and `clubs` identify physical equipment. `club_revisions` stores make/model/loft/shaft/settings;
+`bag_revisions` and `bag_memberships` record membership and labels. Manage bags → Specifications
+appends a configuration; renaming keeps physical identity/configuration; Replace makes a new physical
+club. Immutable `shot_contexts` and frozen `session_plans` preserve historical selection/configuration.
+Historical configurations that cannot be established remain unknown. Specified new configurations
+cannot borrow unknown historical readings for calibration.
 
-```sql
-SELECT shot_id, model_family, context_id, model_version,
-       calculated_smash_factor, absolute_offline_yd,
-       total_distance_yd, model_total_distance_yd
-FROM v_shots_analysis
-WHERE model_family = 'source_features' AND context_id = 'shot';
+`tags` is the reusable vocabulary; `shot_tag_events` is an audited add/remove ledger, one association
+per tag and scope. A shot may have many tags. Range → select shots → Tags supports attempt or physical
+shot scope, add/remove and Undo. Tags never silently change inclusion. Analyze supports any/all tag matching.
 
-SELECT session_id, ordinal, shot_id, excluded,
-       total_distance_yd, model_total_distance_yd,
-       estimated_distance_ft, putting_result_id
-FROM v_session_shots
-WHERE session_id = :session_id
-ORDER BY ordinal;
-```
+Core state is relational. `session_fields`/`attempt_fields` use typed paths for varying drill settings,
+ordered corrections and scalar outcomes. Browser JSON is reconstructed from these rows. Immutable JSON
+is retained for original evidence, whole frozen course geometry, model parameters and trajectories;
+legacy session payloads are not editable state or an analytical fallback.
 
-`v_shots_source` has one row per physical shot. `v_session_shots` has one per session attempt,
-including excluded/deleted history; filter intentionally for an analysis. `v_shots_analysis` has one
-row per selected shot/family/context (or one null-result row). Always filter family/context before
-aggregating so different calculations do not multiply shots. It exposes no automatic source/model
-coalescing. Bag/club names/tags and user ownership await the relational context migration; use current
-app exports for those labels meanwhile.
+## Collection results and Play
 
-## Upgrade, export and recovery
+`analysis_runs` freezes a collection specification; `analysis_members` records exact physical shot,
+report, equipment context, flight version and inclusion decisions. `collection_results`,
+`group_metric_results` and `bag_gap_results` store median/type-7 quartiles and per-metric coverage.
+Each cell uses the planned configuration and deduplicates physical shots. Cleanup creates a new
+immutable cohort. The UI reads persisted cells instead of treating browser summaries as the authority.
 
-Stop the owning service before offline upgrade. Startup also performs the upgrade while holding its
-normal owner lease. A verified schema-1 snapshot/manifest is created first; all DDL/backfill and the
-schema marker commit together. An interruption rolls back to schema 1. Typed-row SHA-256 manifests
-reconcile original evidence, sessions, attempts and game outcomes exactly, in addition to counts and
-foreign keys. The migration report lives in `metadata.schema_migration.v2` and records the backup.
+On a sampled bag map/matrix choose **Use this collection in Play**. `equipment_profile_selection`
+selects a cohort per golfer/bag/kind/data mode. Changes require review and republication; incompatible
+configurations never pool. Recommendations and density previews share the same policy. Without explicit
+publication, compatible historical collections remain available as before. Future previews use selected
+analytical flight versions; completed rounds and original flight animations retain their saved pins.
 
-```powershell
-.venv\Scripts\python.exe -B database_tools.py upgrade --dry-run
-.venv\Scripts\python.exe -B database_tools.py upgrade
-```
+## Recalculation and publication
 
-CSV ZIP export retains its earlier files and adds source reports/quality/selection, derived results,
-calculation runs/inputs/selection, attempt pins and paths. The existing `shots.csv` distance row now
-uses one explicitly selected report rather than choosing individual fields from different reports.
-Wide report exports retain all 18 columns and every competing report. Missing cells are blank.
-`shots_source.csv` is the simple 18-metric export with one selected report per physical shot;
-`session_shots_wide.csv` has one row per attempt with pinned outcomes. The manifest documents row
-shapes so all-report/all-version exports are not mistaken for extra physical shots.
+Analyze → **Calculation methods and version history** → choose family → **Preview recalculation**.
+The applied Analyze filters define the scope. Flight uses pinned OpenGolfCoach; putting can retain its
+saved method or compare constant-Stimp/Fuse flat braking using frozen Stimp/target; source comparisons
+calculate smash, absolute offline and signed reported-total-minus-carry rollout.
 
-CLI backup/export/upgrade require the owner lease; stop the running service or use Relay's existing
-in-app backup/export actions. Restoring accepts verified schema-1 or schema-2 snapshots into a new
-destination. Opening a restored v1 snapshot in this version upgrades it with another verified backup.
-To roll back software, use the pre-upgrade schema-1 snapshot with matching schema-1 code. Do not open
-schema 2 with the older app. Backups remain local; Google Drive is still planned.
+`calculation_runs` identifies an immutable model specification, not a lifecycle batch.
+`recalculation_batches` records lifecycle; `recalculation_inputs` freezes exact report/attempt/equipment
+context, inclusion, handedness, Stimp and target. `shot_derived_metrics` holds named outputs;
+`calculation_inputs`/`calculation_lineage` record dependencies. The current implementations consume
+source reports directly; they do not depend on earlier derived outputs. Saved legacy runs honestly
+retain incomplete lineage and null historical code hashes. New batches hash actual adapter and installed
+flight implementation code. Resume refuses to mix changed code into an old specification.
 
-## Remaining migration work
+Preview shows ready/unavailable/error/pending coverage and scalar changes. Publication requires a
+nonempty batch with every output ready, unchanged source/context/inclusion and a fresh selection token.
+Errors, missing inputs and interrupted batches cannot replace selected results. Interrupted batches
+resume their missing outputs idempotently. Old batches can be reviewed/refreshed and republished while
+their inputs remain valid. Publication appends an audit with prior/result IDs; it never rewrites source,
+historical attempt pins or scores. Selected calibration cohorts become stale if their flight versions change.
 
-Versioned bag-map/matrix cohorts/profile selection, SQL-backed Analyze filtering and full calculation
-lineage/recalculation UI remain tracked in [the backlog](../BACKLOG.md). Core equipment, context and
-session authority are relational in schema 3; numerical storage retains the schema-2 layout.
+Use **Metric versions, configurations and tags → Metric values → Selected analytical calculations**
+to analyze selected outputs. Source values remain the default. Choosing a calculated focus metric sets
+that basis before Apply. Derived estimates and supplied launch/club inputs are labeled separately.
 
-## Schema 4 analytical collections
+## Export and recovery
 
-Analyze joins source/selected derived columns, golfer ownership and effective equipment context directly in SQL. Tags use EXISTS (any/all), configurations have a separate filter, and source-reported values remain the default. Collection results live in `analysis_runs`, `analysis_members`, `collection_results`, `group_metric_results` and `bag_gap_results`; `v_bag_map_results` and `v_wedge_matrix_results` are readable views. Each cell counts distinct physical shots matching its frozen planned configuration. Removing/excluding/retagging creates a new immutable cohort.
+Analyze filtered CSV includes basis, shot/report/configuration/context IDs and selected model/result
+IDs. Calculation history CSV contains all versions for the current golfer, including stale versions.
+The full CSV ZIP includes entity/state/tag/cohort/batch/publication tables and the readable wide/history
+views. ZIP is an all-database administrative export, including deleted/excluded shots and all golfers.
+Spreadsheet text is escaped; genuine numeric values retain their signs.
 
-Use **Use this collection in Play** on a sampled map/matrix to select that bag’s reference for that data mode. Changed cohorts require review and republication; incompatible equipment configurations do not pool. Original historical configurations that cannot be established stay unknown. Future predictions use selected analytical flight outputs; saved rounds/reviews retain their original pins. Recommendations use the same ownership/configuration/profile policy.
+Each existing-database schema upgrade makes a verified snapshot before its transaction. Schemas 2→3
+reconcile every session DTO and evidence hash; later steps verify original evidence and foreign keys.
+`schema_migration.v2` through `.v5` record the steps. An interrupted upgrade rolls back and can retry.
+Restore accepts verified schemas 1–5 and creates a separate destination; older snapshots need the
+matching older app or an upgrade. Keep snapshots before replacing the live file. See
+[operations](DATABASE_OPERATIONS.md). Google Drive/off-device backup and remote authentication remain future work.

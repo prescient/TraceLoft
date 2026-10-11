@@ -108,7 +108,7 @@ def main():
         with contextlib.closing(sqlite3.connect(f'{path.resolve().as_uri()}?mode=ro',uri=True)) as source:
             print(json.dumps(dict(dry_run=True,current_schema=source.execute('PRAGMA user_version').fetchone()[0],
                 target_schema=SCHEMA_VERSION,shots=source.execute('SELECT count(*) FROM shots').fetchone()[0],
-                stage='relational_golfers_equipment_sessions'),indent=2))
+                stage='relational_core_sql_analytics_and_staged_recalculation'),indent=2))
         return
     if args.command == 'restore':
         if not args.snapshot or not args.output:

@@ -73,6 +73,9 @@ QUERY = '''SELECT a.*,s.started,s.drill,s.revision,s.deleted_at,o.user_id,
  d.carry_distance_yd model_carry_distance_yd,d.total_distance_yd model_total_distance_yd,d.offline_distance_yd model_ball_offline_yd,
  d.apex_ft model_ball_apex_ft,d.descent_angle_deg model_ball_descent_angle_deg,d.hang_time_s model_hang_time_s,
  d.carry_forward_yd,d.carry_right_yd,d.total_forward_yd,d.total_right_yd,
+ features.calculated_smash_factor,features.source_rollout_yd,put.estimated_distance_ft,put.distance_error_ft,
+ features.result_id features_result_id,put.result_id putting_result_id,
+ flight_run.model_version flight_model_version,put_run.model_version putting_model_version,
  (SELECT text_value FROM session_fields f WHERE f.session_id=a.session_id AND f.path='/collection_kind') collection_kind,
  (SELECT text_value FROM attempt_fields f WHERE f.session_id=a.session_id AND f.ordinal=a.ordinal AND f.path='/receipt_id') receipt_id
  FROM session_attempts a JOIN sessions s ON s.id=a.session_id JOIN session_owners o ON o.session_id=s.id
@@ -81,8 +84,19 @@ QUERY = '''SELECT a.*,s.started,s.drill,s.revision,s.deleted_at,o.user_id,
  LEFT JOIN v_session_equipment eq ON eq.session_id=a.session_id AND eq.ordinal=a.ordinal
  JOIN shot_source_metrics r ON r.observation_id=a.observation_id
  LEFT JOIN attempt_derived_results pin ON pin.session_id=a.session_id AND pin.ordinal=a.ordinal AND pin.model_family='flight'
- LEFT JOIN derived_metric_selection selected ON selected.shot_id=a.shot_id AND selected.model_family='flight' AND selected.context_id=pin.context_id
+ LEFT JOIN calculation_attempt_contexts ac ON ac.session_id=a.session_id AND ac.ordinal=a.ordinal AND ac.model_family='flight'
+ LEFT JOIN derived_metric_selection selected ON selected.shot_id=a.shot_id AND selected.model_family='flight' AND selected.context_id=COALESCE(pin.context_id,ac.context_id)
  LEFT JOIN shot_derived_metrics d ON d.result_id=selected.result_id
+ LEFT JOIN calculation_runs flight_run ON flight_run.run_id=d.run_id
+ LEFT JOIN derived_metric_selection sf ON sf.shot_id=a.shot_id AND sf.model_family='source_features' AND sf.context_id='shot'
+ LEFT JOIN shot_derived_metrics features ON features.result_id=sf.result_id AND EXISTS(
+ SELECT 1 FROM calculation_inputs dep JOIN shot_primary_source primary_report ON primary_report.shot_id=dep.shot_id AND primary_report.report_id=dep.report_id
+ WHERE dep.result_id=sf.result_id)
+ LEFT JOIN attempt_derived_results pp ON pp.session_id=a.session_id AND pp.ordinal=a.ordinal AND pp.model_family='putting'
+ LEFT JOIN calculation_attempt_contexts pc ON pc.session_id=a.session_id AND pc.ordinal=a.ordinal AND pc.model_family='putting'
+ LEFT JOIN derived_metric_selection ps ON ps.shot_id=a.shot_id AND ps.model_family='putting' AND ps.context_id=COALESCE(pp.context_id,pc.context_id)
+ LEFT JOIN shot_derived_metrics put ON put.result_id=ps.result_id AND put.status='ready'
+ LEFT JOIN calculation_runs put_run ON put_run.run_id=put.run_id
  WHERE o.user_id=? AND s.deleted_at IS NULL'''
 
 
@@ -93,10 +107,12 @@ def read_rows(c,user_id=None,session_id=None):
 
 
 def metric_values(row,basis='source'):
+    row=dict(row)
     values={k:row[SOURCE_FIELDS[k][0]] for k in METRICS if k in SOURCE_FIELDS}
     if basis=='flight':
         for key in ('carry','total','offline','peak_height','descent_ang','hang_time'):
             values[key]=row.get('model_'+SOURCE_FIELDS[key][0]) if row.get('flight_status')=='ready' else None
+        for key in ('calculated_smash_factor','source_rollout_yd','estimated_distance_ft','distance_error_ft'):values[key]=row[key]
     return values
 
 
@@ -117,7 +133,7 @@ def sessions_for_analysis(c,user_id=None,basis='source',tag_names=(),tag_match='
         sessions[r['session_id']]=dict(id=r['session_id'],started=r['started'],drill=r['drill'],session_kind=r['session_kind'],practice_type=r['practice_type'],demo=bool(r['simulated']),shots=[])
     for row in rows:
         shot=dict(key=row['legacy_key'],captured=row['captured'],receipt_id=row['receipt_id'],
-                  vals=metric_values(row,basis),excluded=bool(row['excluded']),removed=bool(row['removed']),
+                  vals=metric_values(row,basis),excluded=bool(row['excluded']),removed=bool(row['removed']),simulated=bool(row['simulated']),
                   **{k:row[k] for k in ('bag_id','bag_name','club_id','club_label','swing_label') if row[k] is not None})
         # Preserve source-only legacy demo descent spelling without decoding old snapshots.
         if shot['vals'].get('descent_ang') is None and row['simulated'] and basis=='source':
@@ -134,8 +150,10 @@ def report(c,params,user_id=None):
     r=build_report(sessions_for_analysis(c,user_id,basis,names,match,params.get('configuration','')),params)
     r['filters'].update(basis=basis,tags=', '.join(names),tag_match=match,configuration=params.get('configuration',''))
     r['options']['tags']=[r[0] for r in c.execute('SELECT name FROM tags WHERE user_id=? ORDER BY name',(user_id or active_user(c),))]
+    picked={(row['session_id'],row['key']) for row in r['rows']}
+    r['lineage']=[{k:row[k] for k in ('session_id','legacy_key','shot_id','report_id','configuration_id','context_id','flight_result_id','flight_model_version','putting_result_id','putting_model_version','features_result_id')} for row in read_rows(c,user_id) if (row['session_id'],row['legacy_key']) in picked]
     r['options']['configurations']={r['configuration_id']:f"{r['club_label']} · config {r['configuration_id'][:6]}" for r in c.execute('SELECT DISTINCT configuration_id,club_label FROM v_session_equipment WHERE user_id=? AND configuration_id IS NOT NULL',(user_id or active_user(c),))}
-    if basis=='flight':r['method']='Selected OpenGolfCoach analytical flight estimates; launch/club fields are source inputs. Median/type-7 IQR. Missing model outputs stay unavailable; saved scores/reviews stay pinned.'
+    if basis=='flight':r['method']='Selected analytical flight/putting/source-feature results; launch/club fields are source inputs. Median/type-7 IQR. Missing model outputs stay unavailable; saved scores/reviews stay pinned.'
     return r
 
 
@@ -145,7 +163,7 @@ def save_collection(c,data):
     rows=read_rows(c,owner,sid)
     signature=[{k:r[k] for k in ('session_id','ordinal','shot_id','report_id','context_id','configuration_id','flight_result_id','excluded','removed','swing_label')} for r in rows]
     params=dict(plan=data['collection_plan'],labels=data.get('swing_labels',['']),sample_goal=data['collection_samples'],metric=data['range_metric'],mode=data['demo'])
-    fingerprint=hashlib.sha256(encoded([params,signature]).encode()).hexdigest()
+    fingerprint=hashlib.sha256(encoded([sid,params,signature]).encode()).hexdigest()
     aid=identity('collection:'+sid+':'+fingerprint)
     existing=c.execute('SELECT 1 FROM analysis_runs WHERE analysis_id=?',(aid,)).fetchone()
     if not existing:
@@ -222,7 +240,7 @@ def preview_sessions(c,game,user_id=None):
         if not r['excluded'] and not r['removed']:
             if duplicate in seen:continue
             seen.add(duplicate)
-        s=sessions.setdefault(r['session_id'],dict(id=r['session_id'],started=r['started'],collection_kind=kind,demo=game['demo'],shots=[]))
+        s=sessions.setdefault(r['session_id'],dict(id=r['session_id'],started=r['started'],drill=r['drill'],practice_type='full_swing',collection_kind=kind,demo=game['demo'],shots=[]))
         shot=dict(key=r['legacy_key'],captured=r['captured'],vals=metric_values(r),excluded=bool(r['excluded']),removed=bool(r['removed']),swing_label=r['swing_label'],**{k:r[k] for k in ('bag_id','bag_name','club_id','club_label')})
         if r['flight_status']=='ready':
             shot['flight']=dict(status='ready',model=json.loads(r['flight_json']).get('model'),analytical_version=True,

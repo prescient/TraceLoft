@@ -359,3 +359,11 @@ Separate starting-lie distance reductions from carry-landing rollout reductions 
 at carry; rough/OB reduce only remaining rollout. Keep raw carry/total unchanged and disclose
 interpolated lateral landing; missing carry skips the rule with feedback. Animate the saved landing
 and final points without moving the airborne landing when rollout shortens. Preserve older outcomes.
+
+Calculation management belongs in a secondary Analyze disclosure, with clear ready/missing/error
+coverage, current-versus-proposed values and an explicit Publish action. A preview must not change
+statistics or historical scores. Show version identity and allow interrupted work to resume; stale
+previews require refresh. Preserve missing measurements and label selected analytical estimates.
+Bag and wedge summaries display coverage per metric and keep configuration cohorts separate. Changing
+a cohort invalidates its published Play profile until review. Local golfer selection must not mix
+equipment, shots, tags or statistics across owners; it is not remote authentication.

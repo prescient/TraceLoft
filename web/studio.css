@@ -295,3 +295,5 @@ body:has(.play-map-stage) .topbar{min-height:56px}
 .shot-motion-controls button{min-height:44px;flex-shrink:0}
 .shot-motion-controls [hidden]{display:none}
 .shot-motion-layer{filter:drop-shadow(0 1px 2px #08204199)}
+
+.calculation-preview-table{max-height:320px;overflow:auto}.calculation-preview-table thead th{position:sticky;top:0;background:var(--surface);z-index:1}

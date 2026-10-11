@@ -7,6 +7,10 @@ from collections import defaultdict
 from driving_range import effective_equipment
 
 METRICS = {
+    'calculated_smash_factor': ('Calculated Smash Factor','ratio'),
+    'source_rollout_yd': ('Calculated source rollout','yd'),
+    'estimated_distance_ft': ('Estimated putting distance','ft'),
+    'distance_error_ft': ('Estimated putting distance error','ft'),
     'club_speed': ('Club head speed','mph'), 'smash_factor': ('Reported Smash Factor','ratio'),
     'club_path': ('Club path','°'), 'attack_angle': ('Angle of attack','°'),
     'spin_axis': ('Spin tilt axis','°'), 'back_spin': ('Back spin','rpm'),
@@ -99,9 +103,13 @@ def build_report(sessions, params):
 def report_csv(report):
     stream=io.StringIO(newline='');writer=csv.writer(stream)
     fields=['session_id','session_started','key','captured','bag_name','club_label','swing_label','excluded','simulated']
-    writer.writerow(fields+[f'{m} ({METRICS[m][1]})' for m in METRICS])
+    version_fields=['metric_basis','shot_id','report_id','configuration_id','context_id','flight_result_id','flight_model_version','putting_result_id','putting_model_version','features_result_id'] if 'lineage' in report else []
+    lineage={(r['session_id'],r['legacy_key']):r for r in report.get('lineage',[])}
+    writer.writerow(fields+[f'{m} ({METRICS[m][1]})' for m in METRICS]+version_fields)
     def safe(v):
         if isinstance(v,str) and v.lstrip().startswith(('=','+','-','@')):return "'"+v
         return v
-    for r in report['rows']:writer.writerow([safe(r.get(k)) for k in fields]+[r['values'][m] for m in METRICS])
+    for r in report['rows']:
+        versions={**lineage.get((r['session_id'],r['key']),{}),'metric_basis':report['filters'].get('basis','source')}
+        writer.writerow([safe(r.get(k)) for k in fields]+[r['values'][m] for m in METRICS]+[safe(versions.get(k)) for k in version_fields])
     return '\ufeff'+stream.getvalue()

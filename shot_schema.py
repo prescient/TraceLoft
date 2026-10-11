@@ -309,6 +309,8 @@ def save_attempt_results(connection, session, attempt, ordinal, *, legacy=False)
 
 
 def source_features(connection, shot_id):
+    selected=connection.execute("SELECT r.provenance FROM derived_metric_selection s JOIN shot_derived_metrics d USING(result_id) JOIN calculation_runs r USING(run_id) WHERE s.shot_id=? AND s.model_family='source_features' AND s.context_id='shot'",(shot_id,)).fetchone()
+    if selected and selected['provenance']=='recalculation_batch_v1':return
     row = connection.execute('SELECT r.* FROM shot_primary_source p JOIN shot_source_metrics r ON r.report_id=p.report_id WHERE p.shot_id=?', (shot_id,)).fetchone()
     if not row:
         return

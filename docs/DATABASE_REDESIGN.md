@@ -1,9 +1,15 @@
+<!-- Current implementation: schema 5 supersedes historical proposal/stage notes below. -->
 # Readable shot data and versioned calculations
+**Current implementation — schema 5 (2026-10-10):** source/derived wide metrics, relational golfers,
+equipment/configurations/context/tags/session state, SQL-backed Analyze, immutable bag/wedge cohorts
+and staged recalculation/publication are implemented. Historical outcomes remain pinned. Start with
+[current database guide](SHOT_DATABASE.md) and its ERD; Google Drive backup remains proposed.
+
 
 Design and migration plan — 2026-10-10. Stage 1 (schema 2) implements wide source reports,
 separate immutable derived results, attempt pins, readable views and expanded CSV export.
 Schema 3 implements golfers/equipment/context/tags/plans and typed session state. See
-[implemented database](SHOT_DATABASE.md). Schema 4 adds SQL-backed Analyze, immutable collection cohorts, per-metric coverage and explicit profile publication. Batch recalculation remains proposed.
+[implemented database](SHOT_DATABASE.md). Schema 4 adds SQL-backed Analyze, immutable collection cohorts, per-metric coverage and explicit profile publication. Schema 5 implements staged batch recalculation, exact input lineage, version history and reviewed publication.
 This updates the earlier preference for long-form metric values as the main analytical interface.
 The user now prioritizes named columns and a separate, recalculable derived-metrics table.
 

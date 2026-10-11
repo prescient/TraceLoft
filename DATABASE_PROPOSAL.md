@@ -1,16 +1,21 @@
+<!-- Current implementation: schema 5 supersedes historical proposal/stage notes below. -->
 # TraceLoft storage and analytics proposal
+**Current implementation — schema 5 (2026-10-10):** source/derived wide metrics, relational golfers,
+equipment/configurations/context/tags/session state, SQL-backed Analyze, immutable bag/wedge cohorts
+and staged recalculation/publication are implemented. Historical outcomes remain pinned. Start with
+[current database guide](docs/SHOT_DATABASE.md) and its ERD; Google Drive backup remains proposed.
+
 
 **Implemented update — 2026-10-10:** schema 3 adds relational golfers/equipment/context/tags/plans
-and typed session state. Legacy JSON is immutable evidence. Group analyses and recalculation UI
-remain next migration work. Later implemented updates take precedence over older proposal text below.
+and typed session state. Legacy JSON is immutable evidence. Schema 4 adds collection analyses;
+schema 5 adds recalculation previews and publication. Later implemented updates take precedence over older proposal text below.
 
 **Design update — 2026-10-10:** the user prefers named columns for source-reported shot metrics
 and a separate, versioned derived-metrics table linked by shot ID. The
 [readable database redesign](docs/DATABASE_REDESIGN.md) supersedes the long-form-first recommendation
 below for the next analytical schema. The user confirmed 17 source metrics; total distance remains
 the eighteenth core source column. Stage 1 is implemented as schema 2: wide source/derived
-tables, preserved evidence and compatible session reads. The remaining relational entities and
-recalculation workflows are proposed. See [implemented scope](docs/SHOT_DATABASE.md).
+tables, preserved evidence and compatible session reads. The relational core and recalculation workflows are implemented in schemas 3–5. See [implemented scope](docs/SHOT_DATABASE.md).
 Retain the original raw/typed evidence and provenance during an additive, verified transition.
 
 Status: core SQLite schema/import, capture/practice persistence, CSV export and local backup/restore
@@ -18,8 +23,8 @@ implemented 2026-10-01; production cutover verification is recorded in WORK_LOG.
 multiple-bag catalog and per-attempt equipment snapshots are now implemented for Distance ladder in
 existing SQLite metadata/payloads, shared with Driving range. Range attempt payloads now also hold
 immutable OpenGolfCoach estimates, synthetic flags and audited/reversible session-scoped bulk cleanup.
-Full physical-equipment entities, cross-session cleanup/analysis sets, automatic outliers, course
-entities and other vendor adapters below remain proposed.
+Physical equipment and reproducible analysis membership are implemented. Automatic outliers, relational
+course entities and other vendor adapters below remain proposed.
 Putting estimates now live in saved session/attempt outcomes with versioned context; they are exported separately from measured metric values. Calibration-model entities below remain proposed. See [model notes](docs/PUTTING_DISTANCE.md).
 See [operation and recovery](docs/DATABASE_OPERATIONS.md) for the implemented scope.
 Manufacturer documentation establishes metric

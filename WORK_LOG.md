@@ -610,3 +610,22 @@
 ## 2026-10-10 — Schema 4 SQL analyses and collection results
 
 Implemented SQL metric/context reads, tag any/all and config filters, immutable bag/wedge cohorts, per-metric coverage, gap results and Play profile publication/staleness. Verified 19 focused Python tests (SQL parity, tag counts, ownership, configuration changes, immutable cleanup cohorts/republication plus existing analysis/collection/preview/schema tests) and all 49 JavaScript tests. Isolated migrated-copy UI checked advanced Analyze controls and empty-user state. Production remains schema 2 until final cutover.
+
+## 2026-10-10 — Schema 5 staged recalculation and version history
+
+- Added immutable batch inputs/results/lineage, hashed calculation specifications, incremental
+  resumable outputs, current-versus-proposed coverage previews and guarded atomic publication.
+  Flight, saved/alternative putting models and source comparisons are supported. Source columns,
+  original attempt pins, drills and game scores remain unchanged. Added owned history CSV, filtered
+  export lineage and a readable current-metrics view; documented the implemented ERD.
+- Fixed empty collection fingerprint collisions and restored practice identity to SQL-backed club
+  recommendations. Migrated-copy reconciliation matches all 47 session DTOs and hashes all 12 original
+  evidence tables; all eight real/demo × all/full/putting/game Analyze modes match legacy reports.
+  Foreign keys are clean. No production test shots or calculation publications were created.
+- Focused 32 Python tests and all 49 JavaScript tests passed. Isolated Vector UI reviewed calculation
+  staging/publication/history and selected bag-map publication at 1366×1024; Analyze and bag-map
+  controls/tables fit 390×844 without outer horizontal overflow. Physical iPad Safari remains unverified.
+  Final full suite: 170 Python tests passed in 275.569s; 49 JavaScript tests passed.
+  Wedge review shows all 12 persisted cells and publication controls. Preview table is bounded and
+  keyboard-scrollable; screenshot saved outside the repository. Documentation links and diff checks pass.
+  Production cutover results follow below.

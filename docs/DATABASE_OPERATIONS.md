@@ -1,8 +1,14 @@
+<!-- Current implementation: schema 5 supersedes historical proposal/stage notes below. -->
 # Source separation update — 2026-10-03
+**Current implementation — schema 5 (2026-10-10):** source/derived wide metrics, relational golfers,
+equipment/configurations/context/tags/session state, SQL-backed Analyze, immutable bag/wedge cohorts
+and staged recalculation/publication are implemented. Historical outcomes remain pinned. Start with
+[current database guide](SHOT_DATABASE.md) and its ERD; Google Drive backup remains proposed.
+
 
 Schema 3 stores golfers/equipment/context/tags/plans and typed session state relationally. The upgrade
 backs up and reconciles every reconstructed session and original evidence. Legacy JSON is immutable
-evidence. See [current database guide](SHOT_DATABASE.md); restore accepts schema versions 1–3.
+evidence. See [current database guide](SHOT_DATABASE.md); restore accepts schema versions 1–5.
 
 The first [database redesign](DATABASE_REDESIGN.md) stage is implemented as schema 2: 18 named
 source columns including reported total, separate immutable derived results and readable views.
@@ -243,3 +249,17 @@ These catalog updates need no SQLite migration or backfill.
 Analyze joins source/selected derived columns, golfer ownership and effective equipment context directly in SQL. Tags use EXISTS (any/all), configurations have a separate filter, and source-reported values remain the default. Collection results live in `analysis_runs`, `analysis_members`, `collection_results`, `group_metric_results` and `bag_gap_results`; `v_bag_map_results` and `v_wedge_matrix_results` are readable views. Each cell counts distinct physical shots matching its frozen planned configuration. Removing/excluding/retagging creates a new immutable cohort.
 
 Use **Use this collection in Play** on a sampled map/matrix to select that bag’s reference for that data mode. Changed cohorts require review and republication; incompatible equipment configurations do not pool. Original historical configurations that cannot be established stay unknown. Future predictions use selected analytical flight outputs; saved rounds/reviews retain their original pins. Recommendations use the same ownership/configuration/profile policy.
+
+## Schema 5 upgrade and recovery
+
+Stop the service gracefully before an offline upgrade. Opening Store upgrades older databases in
+order, writing verified SQLite backups before each schema transition. Relational backfill compares
+all session DTOs and hashes original evidence; subsequent stages check evidence and foreign keys.
+Use `python database_tools.py upgrade --dry-run` to inspect the planned scope (see CLI help for paths).
+Keep backup manifests alongside snapshots. Restore validates schema, checksum and counts, then a
+matching/current application can upgrade the restored database; do not overwrite an open service DB.
+
+In Analyze, calculation previews stage immutable outputs. Publication changes selected analytical
+versions only after complete coverage and dependency checks. Interrupted staging is resumable while
+its code hash matches; unavailable/error batches cannot publish. Historical review and game outcomes
+remain pinned. See [readable schema and version workflow](SHOT_DATABASE.md) and [ERD](DATABASE_ERD.md).

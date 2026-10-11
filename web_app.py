@@ -73,6 +73,18 @@ class PracticeParams(BaseModel):
     game_acknowledged: bool = False
 
 
+class CalculationParams(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    family: Literal['flight','putting','source_features']='flight'
+    filters: dict[str,str]=Field(default_factory=dict)
+    putting_model: str='saved'
+
+
+class CalculationPublishParams(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    selection_token: str=Field(min_length=64,max_length=64)
+
+
 class GameTurnParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
     turn: int = Field(ge=0)
@@ -274,6 +286,37 @@ def create_app(service=None):
     @app.get('/api/input/context')
     async def input_context():
         return service.input.context()
+
+    @app.get('/api/calculations')
+    async def calculation_batches():return service.store.calculation_batches()
+
+    @app.post('/api/calculations')
+    async def stage_calculation(params: CalculationParams):
+        return await asyncio.to_thread(service.store.stage_calculations,params.family,params.filters,params.putting_model)
+
+    @app.get('/api/calculations/history.csv')
+    async def calculation_export():
+        return Response(await asyncio.to_thread(service.store.calculation_history_csv),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="traceloft-calculation-history.csv"'})
+
+    @app.get('/api/calculations/{batch_id}')
+    async def calculation_preview(batch_id: str):return service.store.calculation_snapshot(batch_id)
+
+    @app.post('/api/calculations/{batch_id}/resume')
+    async def calculation_resume(batch_id: str):return await asyncio.to_thread(service.store.resume_calculations,batch_id)
+
+    @app.post('/api/calculations/{batch_id}/cancel')
+    async def calculation_cancel(batch_id: str):
+        from recalculation import cancel
+        return await asyncio.to_thread(cancel,service.store,batch_id)
+
+    @app.post('/api/calculations/{batch_id}/publish')
+    async def calculation_publish(batch_id: str,params: CalculationPublishParams):
+        result=await asyncio.to_thread(service.store.publish_calculations,batch_id,params.selection_token)
+        service.sessions_revision+=1
+        return result
+
+    @app.get('/api/shots/{shot_id}/calculations')
+    async def shot_calculation_history(shot_id: str):return service.store.calculation_history(shot_id)
 
     forwarding_lock=asyncio.Lock()
 

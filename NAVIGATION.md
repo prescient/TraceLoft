@@ -488,3 +488,12 @@ club selection, live map, Green/overview, boundary toggle, ended review and Play
 ## Analytical controls
 
 Analyze → Metric versions, configurations and tags → choose basis/configuration/tags → Apply. Bag mapping or Wedge matrix → sampled result → Use this collection in Play. No top-level route changes; these controls are secondary disclosures/actions.
+
+Analyze → Calculation methods and version history → choose family/method → Preview recalculation
+→ inspect coverage and changed values → Publish. Saved batch → Review → Refresh preview or Resume
+interrupted run → Publish. History CSV downloads owned calculation versions without changing selection.
+Changing the golfer scopes all these paths. Missing/error/pending inputs or changed source, equipment,
+inclusion or selected versions block publication; review/refresh remains available. Publication affects
+analytical selections and future Play profiles, while session review and saved scores retain their pins.
+Verified staging/publication/history review and collection publication in the isolated browser at
+1366×1024; advanced controls and tables retain internal scrolling at 390×844. No top-level route changes.

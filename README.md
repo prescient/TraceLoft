@@ -1,4 +1,10 @@
+<!-- Current implementation: schema 5 supersedes historical proposal/stage notes below. -->
 # TraceLoft
+**Current implementation — schema 5 (2026-10-10):** source/derived wide metrics, relational golfers,
+equipment/configurations/context/tags/session state, SQL-backed Analyze, immutable bag/wedge cohorts
+and staged recalculation/publication are implemented. Historical outcomes remain pinned. Start with
+[current database guide](docs/SHOT_DATABASE.md) and its ERD; Google Drive backup remains proposed.
+
 
 A local golf practice, play and analysis app with a source-neutral shot relay. The Python service
 records shots and sessions in SQLite and serves the pure-white Vector web interface.

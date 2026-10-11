@@ -535,18 +535,17 @@ Real-course sources/import enhancements remain optional deferred work.
 - [x] Implement local golfer profiles/selection and user ownership backfill/guards; preserve existing
   single-player history, flag ambiguous attribution and prevent cross-user bag/statistical mixing.
   Remote authentication/authorization remains a separate future feature.
-- [ ] Implement idempotent model runs, immutable results/input context, explicit analytical version
+- [x] Implement idempotent model runs, immutable results/input context, explicit analytical version
   selection, recalculation preview/publication and version-aware wide/history CSV exports.
 - [ ] Verify source reconciliation, rollback/restore, interrupted runs, missing inputs, exclusions,
   retagging dependencies and historical review in isolation before production cutover.
 
-See [redesign](docs/DATABASE_REDESIGN.md) and [implemented schema 2](docs/SHOT_DATABASE.md).
-Schema 4 adds SQL-backed Analyze and immutable bag/wedge cohorts with explicit Play selection. Batch recalculation remains pending.
+See [redesign](docs/DATABASE_REDESIGN.md) and [implemented schema 5](docs/SHOT_DATABASE.md).
+Schema 5 adds staged, resumable recalculation with exact input lineage, reviewed analytical publication and version-aware exports. Production cutover verification is recorded in WORK_LOG.md.
 
 Status: core SQLite import/capture/practice persistence, typed registry, CSV export and verified local
 backup/restore implemented; cutover and verification are tracked in WORK_LOG.md.
-See [database operations](docs/DATABASE_OPERATIONS.md). Advanced analytics/equipment/cleanup/source
-adapters remain open. OneDrive is not syncing; local snapshots are not off-device protection.
+See [database operations](docs/DATABASE_OPERATIONS.md). Automatic outlier detection, additional source adapters and remote backup remain open. OneDrive is not syncing; local snapshots are not off-device protection.
 
 - Recommend SQLite owned by the Python service outside the OneDrive workspace, with structured
   shots/sessions/physical clubs/bag revisions and a versioned typed metric catalog.

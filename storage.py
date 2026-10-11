@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 FIELDS = {
     'ball_speed': ('ball.speed', 'mph', .44704),
     'launch_ang': ('ball.launch_angle', 'deg', 1),
@@ -225,6 +225,17 @@ class Store:
                 raise
             finally:
                 if lease:lease.close()
+        if self.connection.execute('PRAGMA user_version').fetchone()[0] == 4:
+            lease=None
+            try:
+                if not new_database and not migration_lease_held:
+                    from database_tools import ServiceLease
+                    lease=ServiceLease(self.path)
+                self._upgrade_calculations(backup=not new_database)
+            except BaseException:
+                self.connection.close();raise
+            finally:
+                if lease:lease.close()
         self.profile = json.loads(self.connection.execute(
             "SELECT payload FROM mapping_versions WHERE id='golfdata.foresight_screen.parsed.v1'").fetchone()[0])
         self.extended_profile = json.loads((ROOT / 'data/metric_mapping.v2.json').read_text('utf-8'))['profiles'][0]
@@ -297,12 +308,11 @@ class Store:
             raise
 
     def _upgrade_analysis(self,backup=True):
-        from analysis_schema import DDL,backfill
+        from analysis_schema import DDL
         from shot_schema import evidence_manifest
         snapshot=self.backup() if backup else None;evidence=evidence_manifest(self.connection)
         try:
             self.connection.executescript('BEGIN IMMEDIATE;\n'+DDL)
-            backfill(self.connection)
             if self.connection.execute('PRAGMA foreign_key_check').fetchall() or evidence_manifest(self.connection)!=evidence:
                 raise ValueError('Analysis migration reconciliation failed.')
             self.connection.execute('INSERT INTO metadata VALUES(?,?)',('schema_migration.v4',encoded(dict(from_schema=3,to_schema=4,backup=str(snapshot) if snapshot else None,at=now(),stage='reproducible_collection_cohorts'))))
@@ -314,6 +324,49 @@ class Store:
     def analysis(self,params):
         from analysis_schema import report
         with self.lock:return report(self.connection,params)
+
+    def _upgrade_calculations(self,backup=True):
+        from recalculation import DDL
+        from analysis_schema import backfill
+        from shot_schema import evidence_manifest
+        snapshot=self.backup() if backup else None;evidence=evidence_manifest(self.connection)
+        try:
+            self.connection.executescript('BEGIN IMMEDIATE;\n'+DDL)
+            backfill(self.connection)
+            if self.connection.execute('PRAGMA foreign_key_check').fetchall() or evidence_manifest(self.connection)!=evidence:
+                raise ValueError('Calculation migration reconciliation failed.')
+            self.connection.execute('INSERT INTO metadata VALUES(?,?)',('schema_migration.v5',encoded(dict(from_schema=4,to_schema=5,backup=str(snapshot) if snapshot else None,at=now(),stage='staged_calculation_publication'))))
+            self.connection.execute('PRAGMA user_version=5');self.connection.execute('COMMIT')
+        except BaseException:
+            if self.connection.in_transaction:self.connection.execute('ROLLBACK')
+            raise
+
+    def stage_calculations(self,family,filters,putting_model='saved'):
+        from recalculation import stage
+        return stage(self,family,filters,putting_model)
+
+    def resume_calculations(self,batch_id):
+        from recalculation import resume
+        return resume(self,batch_id)
+
+    def publish_calculations(self,batch_id,token):
+        from recalculation import publish
+        return publish(self,batch_id,token)
+
+    def calculation_snapshot(self,batch_id):
+        from recalculation import snapshot
+        with self.lock:return snapshot(self.connection,batch_id)
+
+    def calculation_history(self,shot_id):
+        from recalculation import history
+        with self.lock:return history(self.connection,shot_id)
+
+    def calculation_batches(self):
+        with self.lock:return [dict(r) for r in self.connection.execute('SELECT * FROM recalculation_batches WHERE user_id=? ORDER BY created_at DESC LIMIT 100',(self.active_user(),))]
+
+    def calculation_history_csv(self):
+        from recalculation import csv_history
+        with self.lock:return csv_history(self.connection)
 
     def collection_analysis(self,session_id):
         from analysis_schema import collection_snapshot
@@ -712,12 +765,14 @@ class Store:
                           'users','session_owners','shot_owners','bags','clubs','bag_revisions','club_revisions',
                           'bag_memberships','shot_contexts','context_selection','session_plans','session_plan_items',
                           'session_fields','attempt_fields','tags','shot_tag_events',
-                          'analysis_runs','analysis_members','collection_results','group_metric_results','bag_gap_results','equipment_profile_selection'):
+                          'analysis_runs','analysis_members','collection_results','group_metric_results','bag_gap_results','equipment_profile_selection',
+                          'recalculation_batches','recalculation_inputs','recalculation_outputs','calculation_lineage',
+                          'calculation_attempt_contexts','calculation_publications','calculation_publication_items'):
                 cursor = self.connection.execute(f'SELECT * FROM {table} ORDER BY rowid')
                 files[table+'.csv'] = [dict(r) for r in cursor]
                 field_sets[table+'.csv'] = [d[0] for d in cursor.description]
-            for view,name in (('v_shots_source','shots_source.csv'),('v_session_shots','session_shots_wide.csv'),('v_session_equipment','session_equipment.csv')):
-                cursor = self.connection.execute(f'SELECT * FROM {view} ORDER BY shot_id')
+            for view,name in (('v_shots_source','shots_source.csv'),('v_session_shots','session_shots_wide.csv'),('v_session_equipment','session_equipment.csv'),('v_calculation_history','calculation_history.csv'),('v_session_current_metrics','session_current_metrics.csv'),('v_bag_map_results','bag_map_results.csv'),('v_wedge_matrix_results','wedge_matrix_results.csv')):
+                cursor = self.connection.execute(f'SELECT * FROM {view}')
                 files[name] = [dict(r) for r in cursor]
                 field_sets[name] = [d[0] for d in cursor.description]
             output = io.BytesIO()

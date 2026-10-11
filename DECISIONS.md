@@ -172,3 +172,14 @@ courses and frozen rounds; no acquisition or database schema changes.
 ## D61 — SQL analyses and frozen calibration cohorts
 
 Analyze defaults to source columns. Bag/wedge results freeze exact report/context/derived IDs, inclusion flags and distinct physical-shot membership. Explicit per-golfer/bag/kind/data-mode publication is invalidated by cohort changes; future predictions use selected versions, historical scores remain pinned.
+
+## D62 — Reviewed calculation publication and preserved history (2026-10-10)
+
+Freeze exact report, shot, attempt, equipment context, inclusion flags, handedness and putting settings
+for each batch. Hash the adapter and installed flight implementation. Commit outputs independently so
+interrupted runs can resume without duplication; changed code requires a new batch. Require complete
+ready coverage, unchanged dependencies and a freshly reviewed selection token before atomic publication.
+Keep source reports and historical drill/game pins immutable. Analytical publication can change future
+statistics and invalidate dependent Play profiles, but never rescore old sessions. Preserve old results,
+publication history and model lineage in readable views and CSV. Analyze defaults to reported metrics,
+including total distance; estimates require explicit selection and labels.
