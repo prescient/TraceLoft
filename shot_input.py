@@ -120,14 +120,51 @@ def validate(envelope):
     return event, age <= 15 and not envelope.get('recovered', False)
 
 
+def live_estimate(event):
+    """The live-view copy of a stored event, with an OpenGolfCoach flight estimate when the source
+    reported no carry (e.g. Premier memory capture). Display only: the stored measurements never
+    change, and drills keep scoring on reported distances. Shots without measured spin and launch
+    (putts) get no estimate; a putt is not a flight."""
+    vals = event['vals']
+    if vals.get('carry') is not None or not (vals.get('total_spin') or 0) > 0:
+        return event
+    if not (vals.get('launch_ang') or 0) > 0:
+        return event
+    from flight_model import MODEL, predict
+
+    flight = predict(vals)
+    if flight.get('status') != 'ready':
+        return event
+    m = flight['metrics']
+    return dict(
+        event,
+        estimate=dict(
+            model=MODEL, carry=m['carry_yd'], total=m['total_yd'], offline=m['offline_yd']
+        ),
+    )
+
+
+def source_delivers(packet):
+    """Whether the sender declared that it sends shots to the simulator itself (TraceCapture)."""
+    extension = packet.get('TraceLoft')
+    return isinstance(extension, dict) and extension.get('SimulatorDelivery') == 'source'
+
+
 class Relay:
-    """Direct optional simulator output. A reconnect never replays a stored shot."""
+    """Direct optional simulator output. A reconnect never replays a stored shot.
+
+    While a connected shot source delivers to the simulator itself (`SimulatorDelivery: 'source'`),
+    the relay steps aside: it holds no simulator connection, so the source can connect (GSPro accepts
+    one client), and it forwards nothing, so no shot reaches the simulator twice. The destination
+    setting still applies: it reaches the source through TraceLoft.Context['simulator'].
+    """
 
     def __init__(self):
         self.writer = None
         self.task = None
         self.number = 0
         self.ready = False
+        self.delegated = False
         self.state = dict(
             destination='off',
             enabled=False,
@@ -138,6 +175,7 @@ class Relay:
             last_response=None,
             player={},
             sent=0,
+            delegated=False,
         )
         self.lock = asyncio.Lock()
 
@@ -169,6 +207,10 @@ class Relay:
         from open_connect import Frames, heartbeat
 
         while self.state['enabled']:
+            if self.delegated:
+                self.state['status'] = 'Sent directly by the shot source'
+                await asyncio.sleep(0.5)
+                continue
             writer = None
             try:
                 reader, writer = await asyncio.wait_for(
@@ -210,7 +252,18 @@ class Relay:
                 self.writer = None
                 self.state['connected'] = False
                 self.state['player'] = {}
-            await asyncio.sleep(2)
+            if not self.delegated:
+                await asyncio.sleep(2)
+
+    def delegate(self, delegated):
+        """Step aside while the connected source delivers to the simulator (see the class doc)."""
+        if delegated == self.delegated:
+            return
+        self.delegated = self.state['delegated'] = delegated
+        if delegated and self.writer:
+            self.writer.close()  # frees the simulator for the source; _connect then idles
+        if not delegated and self.state['enabled']:
+            self.state['status'] = 'Reconnecting to the simulator'
 
     async def send(self, payload):
         from open_connect import wire
@@ -263,7 +316,15 @@ class ShotInput:
         )
 
     def context(self):
-        return copy.deepcopy(self.service.input_context)
+        """Context returned with every Code 200. `simulator` is the user's Relay destination, for a
+        source that delivers to the simulator itself ('off' means send nothing)."""
+        relay = self.relay.state
+        return dict(
+            copy.deepcopy(self.service.input_context),
+            simulator=dict(
+                destination=relay['destination'], host=relay['host'], port=relay['port']
+            ),
+        )
 
     async def accept_packet(self, packet, connection_id):
         from open_connect import validate_packet, simulator_packet
@@ -365,7 +426,7 @@ class ShotInput:
                 if target:
                     target.data = previous
                 raise
-            self.service.remember_record(event, read=True)
+            self.service.remember_record(live_estimate(event), read=True)
             self.service.sessions_revision += 1
             self.service.publish_context()
             self.service.save_error = ''
@@ -373,7 +434,14 @@ class ShotInput:
                 received=self.state['received'] + 1, last_shot=event['captured_at'], error=''
             )
             forwarded = False
-            if live and result == 'validated' and self.relay.state['enabled']:
+            by_source = source_delivers(packet)
+            if (
+                live
+                and result == 'validated'
+                and self.relay.state['enabled']
+                and not by_source
+                and not self.relay.delegated
+            ):
                 self.relay.number += 1
                 forwarded = await self.relay.send(simulator_packet(packet, self.relay.number))
                 if forwarded:
@@ -385,6 +453,9 @@ class ShotInput:
                         (
                             'socket_write_reported_unacknowledged'
                             if forwarded
+                            # The source sends live shots itself; TraceLoft has no evidence of it.
+                            else 'handled_by_source'
+                            if by_source and self.relay.state['enabled']
                             else 'not_established',
                             encoded(
                                 dict(
@@ -392,6 +463,7 @@ class ShotInput:
                                     live=live,
                                     destination=self.relay.state['destination'],
                                     simulator_receipt='unconfirmed',
+                                    simulator_sender='source' if by_source else 'relay',
                                 )
                             ),
                             event['receipt_id'],
@@ -451,6 +523,7 @@ class ShotInput:
                             error='',
                         )
                         self.relay.ready = ready
+                        self.relay.delegate(source_delivers(packet))
                         # Standard packets are numbered per connection. Extended durable receipts survive reconnects.
                         if (
                             options['ContainsBallData']
@@ -498,6 +571,7 @@ class ShotInput:
                     running=False, connected=False, status='Waiting for shot source'
                 )
                 self.relay.ready = False
+                self.relay.delegate(False)  # the relay serves the next source again
 
     def tick(self):
         if time.monotonic() - self.last_seen > 15:

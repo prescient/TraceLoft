@@ -1,5 +1,17 @@
 # TraceLoft backlog
 
+## TraceCapture Premier memory source — 2026-10-11
+
+- Done: shots without spin (`SpinUnavailable`); simulator settings published in Context; the relay
+  steps aside for a source that delivers to the simulator itself (`SimulatorDelivery: 'source'`);
+  labeled OpenGolfCoach carry/total/offline estimates in Relay's latest shot when no carry is
+  reported (D61).
+- Pending, after a live session proves the TraceCapture simulator path: retire the relay's
+  forwarding code (keep it while other Open Connect senders may rely on it), and decide whether
+  Range, Distance Ladder, Collection and Play may score on modeled distances for sources that report
+  none. Today they score on reported carry/total only, so memory-source swings are recorded unscored
+  there (Range still shows its OpenGolfCoach flight).
+
 ## Architecture/performance improvements — requested 2026-10-10
 
 - Recalculation lazy session cache; incremental attempt/state persistence; revision notifications

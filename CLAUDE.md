@@ -84,7 +84,8 @@ verified upgrade. Helper tests do not verify the interface in a real browser.
 - **Record first.** A shot is committed to SQLite before it is acknowledged or forwarded. Forwarding
   to GSPro/Infinite Tees is optional, defaults to Off, and the user's saved Relay choice is restored
   on restart (D48). Forwarding never blocks storage beyond its bounded write timeout and never
-  replays stored shots.
+  replays stored shots. A source declaring `SimulatorDelivery: 'source'` (TraceCapture) sends to the
+  simulator itself; the relay then steps aside and only publishes the destination in Context (D61).
 - **One input owner.** Only one Open Connect producer may connect at a time. Localhost needs no
   pairing; LAN mode is an explicit launcher option.
 - **Evidence is immutable.** Raw packets, `metric_values` and source reports never change.

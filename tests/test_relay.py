@@ -302,6 +302,87 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len([x for x in received if x['ShotDataOptions']['ContainsBallData']]), 1)
         self.assertEqual(self.service.store.count('shots'), 2)
 
+    async def test_source_that_delivers_to_the_simulator_takes_over_from_the_relay(self):
+        connections = []
+        received = []
+
+        async def simulator(reader, writer):
+            connections.append(writer)
+            self.writers.append(writer)
+            frames = Frames()
+            try:
+                while data := await reader.read(8192):
+                    received.extend(frames.feed(data))
+                    writer.write(wire(dict(Code=200, Message='OK')))
+                    await writer.drain()
+            except OSError:
+                pass
+
+        self.sim = await asyncio.start_server(simulator, '127.0.0.1', 0)
+        port = self.sim.sockets[0].getsockname()[1]
+        relay = self.service.input.relay
+        await relay.configure(dict(destination='gspro', port=port), self.service.input.port)
+        for _ in range(40):
+            if relay.state['connected']:
+                break
+            await asyncio.sleep(0.05)
+        self.assertTrue(relay.state['connected'])
+        context = self.service.input.context()['simulator']
+        self.assertEqual(context, dict(destination='gspro', host='127.0.0.1', port=port))
+
+        beat = heartbeat(True)
+        beat['DeviceID'] = 'TraceCapture'
+        beat['TraceLoft'] = dict(SimulatorDelivery='source')
+        r, w = await self.client()
+        reply = await self.exchange(r, w, beat)
+        self.assertEqual(reply['TraceLoft']['Context']['simulator']['destination'], 'gspro')
+        for _ in range(40):
+            if not relay.state['connected']:
+                break
+            await asyncio.sleep(0.05)
+        self.assertFalse(relay.state['connected'])  # the simulator is free for the source
+        self.assertTrue(relay.state['delegated'])
+
+        p = shot()
+        p['DeviceID'] = 'TraceCapture'
+        p['TraceLoft'] = dict(
+            ReceiptId='r1', ProducerId='tc', StreamId='s', SimulatorDelivery='source'
+        )
+        p['TraceLoft']['CapturedAt'] = datetime.now(timezone.utc).isoformat()
+        response = await self.exchange(r, w, p)
+        self.assertFalse(response['TraceLoft']['forwarded'])
+        status, evidence = self.service.store.connection.execute(
+            'SELECT status, evidence_json FROM delivery_events'
+        ).fetchone()
+        self.assertEqual(status, 'handled_by_source')
+        self.assertEqual(json.loads(evidence)['simulator_sender'], 'source')
+        self.assertFalse([x for x in received if x['ShotDataOptions']['ContainsBallData']])
+
+        w.close()  # the source disconnects: the relay serves the next source again
+        for _ in range(80):
+            if relay.state['connected']:
+                break
+            await asyncio.sleep(0.05)
+        self.assertFalse(relay.state['delegated'])
+        self.assertTrue(relay.state['connected'])
+        self.assertGreaterEqual(len(connections), 2)
+
+    async def test_live_view_estimates_flight_only_without_reported_carry(self):
+        swing = shot()
+        swing['BallData'] = dict(Speed=120.0, VLA=14.0, HLA=1.0, TotalSpin=3000, SpinAxis=2.0)
+        await self.service.input.accept_packet(swing, 'sender')
+        estimate = self.service.latest_read.get('estimate')
+        if estimate is None:  # OpenGolfCoach not installed in this environment
+            self.skipTest('OpenGolfCoach unavailable')
+        self.assertGreater(estimate['carry'], 100)
+        self.assertNotIn('carry', self.service.latest_read['vals'])  # measurements unchanged
+        reported = shot(2)
+        reported['BallData'] = dict(swing['BallData'], CarryDistance=150.0)
+        await self.service.input.accept_packet(reported, 'sender')
+        self.assertNotIn('estimate', self.service.latest_read)
+        await self.service.input.accept_packet(shot(3), 'sender')  # a putt: zero spin and launch
+        self.assertNotIn('estimate', self.service.latest_read)
+
 
 if __name__ == '__main__':
     unittest.main()

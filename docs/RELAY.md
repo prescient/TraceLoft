@@ -44,6 +44,16 @@ Optional `TraceLoft` extension:
   Foresight putts read by TraceCapture's Premier memory source. BallData then needs no spin pair and
   must carry no spin field. The shot is stored with spin null, never zero. The relay forwards it with
   TotalSpin, SpinAxis, BackSpin and SideSpin all 0, because simulators require spin.
+- SimulatorDelivery='source' declares that the sender delivers live shots to the simulator itself
+  (TraceCapture, D61). While such a sender is connected, the relay closes its simulator connection, so
+  the sender can connect (GSPro accepts one client), and forwards nothing. The audit status is
+  `handled_by_source`. Relay shows "Sent directly by the shot source" and resumes when the sender
+  disconnects. TraceLoft.Context.simulator = {destination, host, port} tells the sender where to send.
+  'off' means send nothing.
+
+When a stored shot reports no carry but has measured spin and launch, Relay's latest-shot view adds an
+"Estimated flight" table with OpenGolfCoach carry, total and offline (D61). It is display-only: stored
+measurements and drill scoring are unchanged.
 
 Ordinary Open Connect senders need none of these extensions. Same-connection duplicate shot numbers
 with identical packets are acknowledged once; conflicting data is rejected. Standard Open Connect

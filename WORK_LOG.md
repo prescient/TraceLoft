@@ -1,5 +1,28 @@
 # TraceLoft work log
 
+## 2026-10-11 — Simulator hand-off to TraceCapture; live flight estimates (D61)
+
+- `ShotInput.context()` adds `simulator` (Relay destination, host, port) to every Code 200 context.
+- `Relay.delegate()`: a connected sender whose packets declare `TraceLoft.SimulatorDelivery: 'source'`
+  makes the relay:
+  - release the simulator connection and idle ("Sent directly by the shot source");
+  - forward nothing, while each such shot is audited `handled_by_source`.
+  The relay reconnects when that sender disconnects. Relay's page explains the state.
+- `live_estimate()`: when a shot reports no carry but has spin and launch above zero, the live read
+  carries an OpenGolfCoach estimate of carry, total and offline. Relay shows it under "Estimated
+  flight", labeled as modeled. Stored measurements and drill scoring are unchanged.
+- Tests (`tests/test_relay.py`):
+  - takeover with a fake simulator: context, release, no forwarding, audit row, resume on disconnect;
+  - estimates for a swing, none with reported carry, none for a putt.
+- **Verification:**
+  - Isolated tests pass.
+  - A cross-repo smoke ran against an isolated instance (temp database, input 9901, web 8791) with a
+    fake simulator and TraceCapture's real packet code and simulator link: exactly two shots reached
+    the simulator, both on TraceCapture's connection; the relay released and later resumed; the putt
+    played as zero spin; the swing got estimates (carry 181.9, total 187.5, offline 6.5 yd).
+  - Not verified: a real GSPro or Infinite Tees session, a real browser check of the Relay page, and
+    the user's real service (not restarted yet).
+
 ## 2026-10-11 — Shots measured without spin (Premier memory putts)
 
 - TraceCapture's new Premier memory source reads Foresight putts, which the LPi measures without spin

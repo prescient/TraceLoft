@@ -1,5 +1,18 @@
 # TraceLoft architecture decisions
 
+## D61 — Simulator delivery by the shot source; modeled distances for memory capture (2026-10-11)
+
+The user moved live simulator delivery into TraceCapture (its D53): TraceCapture sends each shot to
+GSPro or Infinite Tees the moment ball and spin are known, without waiting for TraceLoft's database.
+TraceLoft keeps the destination choice: Relay's setting is published as `Context.simulator`, and
+'Off' means nothing is sent. A sender declaring `TraceLoft.SimulatorDelivery: 'source'` makes the
+relay release the simulator connection and forward nothing while that sender is connected, so no shot
+reaches a simulator twice; other Open Connect senders still use the relay. Putts measured without
+spin (`SpinUnavailable`) are stored with null spin and play as zero spin. Foresight Premier's main
+menu reports no distances, so TraceLoft models carry, total and offline with OpenGolfCoach (the
+pinned `flight_model`). They are labeled estimates in the live view and never fill reported columns.
+Whether drills may score on them is a separate, pending decision.
+
 ## D60 — Relational domain state and compatible DTOs (2026-10-10)
 
 Schema 3 makes golfers, equipment/configuration/membership, contexts/tags/plans relational. Typed

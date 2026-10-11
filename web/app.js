@@ -539,7 +539,9 @@ function updateRelay() {
   source.innerHTML = html`<strong>${state.capture.status}</strong><p>${state.input.device || 'No source connected'} · ${state.input.received} records stored this run</p>${state.input.error ? html`<p class="session-error">${state.input.error}</p>` : ''}`;
   const relay = state.relay;
   app.querySelector('#relay-output').innerHTML =
-    html`<strong>${relay.status}</strong><p>${relay.sent} shots sent this run</p>${relay.enabled && !relay.connected ? html`<p class="form-hint">Open the selected simulator. Relay reconnects automatically; earlier shots are not replayed.</p>` : ''}`;
+    relay.delegated && relay.enabled
+      ? html`<strong>${relay.status}</strong><p>${state.input.device} sends each live shot to the simulator itself, using this destination. Relay forwards nothing while it is connected.</p>`
+      : html`<strong>${relay.status}</strong><p>${relay.sent} shots sent this run</p>${relay.enabled && !relay.connected ? html`<p class="form-hint">Open the selected simulator. Relay reconnects automatically; earlier shots are not replayed.</p>` : ''}`;
   const select = app.querySelector('#relay-destination');
   if (!select.disabled) select.value = relay.destination;
   app.querySelector('#relay-logs').textContent = state.logs.join('\n');
@@ -566,13 +568,21 @@ function updateRelay() {
     club_path: '°'
   };
   const vals = state.read?.vals;
+  const estimate = state.read?.estimate;
+  const round = v => (v == null ? '—' : Number(v).toFixed(1));
   app.querySelector('#relay-read').innerHTML = vals
     ? html`<h2>Latest measurements</h2><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${Object.entries(
         vals
       ).map(
         ([k, v]) =>
           html`<tr><td>${k.replaceAll('_', ' ')}${units[k] ? ' · ' + units[k] : ''}</td><td>${v ?? '—'}</td></tr>`
-      )}</tbody></table>`
+      )}</tbody></table>${
+        estimate
+          ? html`<h2 class="section-space">Estimated flight</h2><p class="form-hint">Modeled by OpenGolfCoach from ball speed, launch and spin. Not measured; the shot source reported no distances.</p><table><thead><tr><th>Estimate</th><th>Value</th></tr></thead><tbody>${['carry', 'total', 'offline'].map(
+              k => html`<tr><td>${k} · yd (estimate)</td><td>${round(estimate[k])}</td></tr>`
+            )}</tbody></table>`
+          : ''
+      }`
     : html`<p class="form-hint">Waiting for the first shot.</p>`;
 }
 
