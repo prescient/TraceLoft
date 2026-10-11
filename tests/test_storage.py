@@ -16,7 +16,8 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from database_tools import ServiceLease, preserve_legacy, restore_snapshot
 from putting import PuttingSession
-from storage import Store, atomic_json, import_legacy, digest
+from legacy_import import import_legacy
+from storage import Store, atomic_json, digest
 from web_app import create_app
 from web_service import GolfService
 

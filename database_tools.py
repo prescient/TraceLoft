@@ -8,17 +8,8 @@ import sqlite3
 import zipfile
 from pathlib import Path
 
-from storage import (
-    ROOT,
-    SCHEMA_VERSION,
-    Store,
-    atomic_json,
-    database_path,
-    digest,
-    import_legacy,
-    inspect_legacy,
-    now,
-)
+from legacy_import import import_legacy, inspect_legacy
+from storage import ROOT, SCHEMA_VERSION, Store, atomic_json, database_path, digest, now
 
 
 class ServiceLease:

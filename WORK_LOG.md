@@ -1,6 +1,19 @@
-# TraceLoft work log
+﻿# TraceLoft work log
 
-## 2026-10-11 — Event loop no longer waits on background database work
+## 2026-10-11 â€” Storage module split and table-driven migrations
+
+- Moved the four schema upgrades out of `Store` into `migrations.py`: a `STEPS` table and one
+  `_apply` runner for backup, `BEGIN IMMEDIATE`, reconciliation, report, version bump and
+  rollback. Store.__init__ replaces four copy-pasted lease/upgrade blocks with one call; the
+  lease is now held across consecutive steps. Reports keep their previous keys.
+- Moved `export()` to `storage_export.py` (Store.export delegates) and the pre-SQLite import
+  (`legacy_files`, `inspect_legacy`, `import_legacy`) to `legacy_import.py`. `storage.py` went
+  from about 1,650 to 1,137 formatted lines. No schema or behavior change.
+- Added `tests/test_migrations.py` (contiguous steps reach SCHEMA_VERSION; failed reconciliation
+  rolls back DDL, report and version; success records a report with its backup). The existing
+  v1â†’v5 upgrade test still covers the real steps.
+
+## 2026-10-11 â€” Event loop no longer waits on background database work
 
 - Problem: exports, backups and calculation staging ran on worker threads while holding the
   single writer lock (staging for its whole selection). The event loop took that same lock for
@@ -34,7 +47,7 @@
   The first run exposed a Windows temp-cleanup race with the background backup; the store now
   joins background copies on close.
 
-## 2026-10-11 — Atomic service mutations and legacy-path removal
+## 2026-10-11 â€” Atomic service mutations and legacy-path removal
 
 - Fixed: `change_practice` restored in-memory state only for `OSError`. A `ValueError` (or any
   other error) during finish/abandon/exclude could leave the live session saying "ended" while
@@ -52,7 +65,7 @@
   database-write rollback within a change, target change after a queued save).
 - Verified: `python verify.py` passed **192 Python** and **63 JavaScript** tests and lint.
 
-## 2026-10-11 — One-time formatting commit
+## 2026-10-11 â€” One-time formatting commit
 
 - At the user's request, formatted all Python with ruff (`6371296`) and web JS/CSS/test modules with
   prettier 3.6.2. The commit is formatting only and is listed in `.git-blame-ignore-revs`.
@@ -60,7 +73,7 @@
 - Verified: `node --check` on every `web/*.js`; `python verify.py` passed 188 Python and 63
   JavaScript tests and lint. A real-browser smoke test follows the later behavior commits.
 
-## 2026-10-11 — Reproducible installs, lint and verification tooling
+## 2026-10-11 â€” Reproducible installs, lint and verification tooling
 
 - Added `requirements-lock.txt` (exact transitive pins from the verified venv; Setup now installs
   it), `requirements-dev.txt` (ruff 0.17.0) and `pyproject.toml` with a correctness-only lint set
@@ -72,11 +85,11 @@
   installed. Added `tests/test_verify.py`.
 - Verified: `python verify.py` passed **188 Python**, **63 JavaScript** tests and lint.
 
-## 2026-10-11 — CLAUDE.md and codebase review
+## 2026-10-11 â€” CLAUDE.md and codebase review
 
 - Added `CLAUDE.md` for Claude Code. It imports AGENTS.md and condenses DESIGN_PRINCIPLES.md,
   the module map, live-data isolation, architectural invariants and code conventions. It notes
-  that the saved Relay choice is restored on restart (D48); §9 of the design principles still
+  that the saved Relay choice is restored on restart (D48); Â§9 of the design principles still
   says sending stays off on startup.
 - Documentation only; no application behavior changed. Checked the CLAUDE.md links and checked
   its claims against `web_service.py`, `web_app.py`, `storage.py` and `shot_input.py`. Full suites
@@ -85,7 +98,7 @@
 - The maintainability/extensibility/reliability findings were reported to the user. They are not
   yet in BACKLOG.md.
 
-## 2026-10-10 — Repeatable verification and handoff
+## 2026-10-10 â€” Repeatable verification and handoff
 
 - Added `python verify.py`: selects the project venv when present, runs Python discovery and all
   JavaScript helper/controller tests, exits nonzero on failure and writes logs plus a commit/dirty-tree
@@ -106,14 +119,14 @@
   registry/browser lifecycle, shared SQL selection/paged detail, frozen migrations, and prediction/
   backup latency. Keep these incremental and preserve the established integrity/design boundaries.
 
-## 2026-10-10 — Stable expansion during live updates
+## 2026-10-10 â€” Stable expansion during live updates
 
 - Follow-up review replaced positional detail expansion with stable section identities. When the
   first shot adds provenance details, an open cleanup-history section keeps its state rather than
   transferring it to the new section. Three interaction-state regressions passed, including the
   new insertion/count-change case. No data or navigation changes.
 
-## 2026-10-10 — Revision notifications and browser continuity
+## 2026-10-10 â€” Revision notifications and browser continuity
 
 - Added server epoch/revision stamps and protocol-2 WebSocket change notices. Idle checks do not
   reconstruct history, calculate summary or inspect trajectories. Store locking prevents announcing
@@ -128,20 +141,20 @@
   JavaScript tests cover races/reconnect disposal and interaction-state restoration.
 - Isolated browser QA (port 8778, separate synthetic database): arrival of shots 12/13 updated latest
   feedback while retaining draft text/caret/focus/scroll and an open target modal. Saving its target
-  succeeded. Reviewed 1366×1024 and 1376×1032 iPad Pro landscape plus 390×844 phone; no page overflow,
+  succeeded. Reviewed 1366Ã—1024 and 1376Ã—1032 iPad Pro landscape plus 390Ã—844 phone; no page overflow,
   exits remain available. Found and fixed animation-finish repaint losing drafts during this review.
 - Limit: changes still fetch full state and can repaint the runner; shot deltas/lazy trajectories and
   feature update/dispose remain explicit follow-ups. User's production 40-shot range was inspected
   read-only; no production shot changes were made for testing.
 
-## 2026-10-10 — Incremental attempt persistence
+## 2026-10-10 â€” Incremental attempt persistence
 
 - Scorers now append the new attempt and resulting state in the existing receipt transaction.
   Typed session fields synchronize only changed leaves; corrections synchronize only changed
   attempts. A bounded revision-aware digest cache publishes only after the outer commit, so failed
   receipts/retries cannot skip writes. Immutable original payloads and outcome pins remain intact.
 - Isolated SQLite trigger probe: recording attempt 100 inserts only attempt 100's fields, with zero
-  field writes to attempts 1–99. Changing a target writes no attempt fields; excluding attempt 2
+  field writes to attempts 1â€“99. Changing a target writes no attempt fields; excluding attempt 2
   updates only its inclusion and reason leaves. Cold reads, container-shape changes, rollback/retry
   and rejection of removed/reordered attempts are covered by five new storage regressions.
 - Full project-venv suite: 180 Python tests passed; 55 JavaScript tests passed. Initial global-Python
@@ -149,7 +162,7 @@
   production database edits or restart. Remaining costs include prefix validation/digest checks on
   general corrections, collection aggregation, summary calculation and prediction during ingestion.
 
-## 2026-10-10 — Architecture review and recalculation cache
+## 2026-10-10 â€” Architecture review and recalculation cache
 
 - Reviewed the supplied findings against storage/domain persistence, recalculation and live state.
   Kept the existing service/SQLite/browser architecture and documented the six-stage improvement
@@ -159,14 +172,14 @@
   including publication, pinned outcomes, interruption/recovery, missing inputs and stale guards.
   No production data writes or service restart; incremental persistence is next.
 
-## 2026-10-10 — Future desktop and swing-video backlog
+## 2026-10-10 â€” Future desktop and swing-video backlog
 
 - Added future desktop packaging and shot/attempt-linked swing video, including synchronization,
   playback, file recovery and separate retention/provenance. Retain tablet access and the private
   TraceCapture boundary. No desktop/video implementation is included in the current Analyze work.
 - Checked the backlog wording and Git whitespace; documentation only, no data or runtime changes.
 
-## 2026-10-10 — Relational golfers, equipment, session state and tags
+## 2026-10-10 â€” Relational golfers, equipment, session state and tags
 
 - Added schema 3, verified v2 backup, transactional backfill/evidence reconciliation and exact DTO
   reconstruction. Relational rows replace editable equipment/session JSON; frozen artifacts remain JSON.
@@ -175,12 +188,12 @@
 - Added header golfer dialog, Manage bags Specifications/Replace and Range bulk Tags controls.
 - Verification: 156 Python tests and 49 JS tests passed; four new relational tests and 29 affected
   storage/equipment/migration tests passed. Isolated real-data migration reconstructed all 47 sessions
-  exactly with evidence/foreign-key checks. iPad 1366×1024/phone 390×844 browser review verified golfer
+  exactly with evidence/foreign-key checks. iPad 1366Ã—1024/phone 390Ã—844 browser review verified golfer
   creation, spec save, demo capture, tag save/Undo, end and golfer-dialog return; fixed submission CSS
   selector caught in review. Physical iPad remains unverified. Production stays on schema 2 until the
   analysis migration and final cutover checks.
 
-## 2026-10-10 — Readable source/derived migration, stage 1
+## 2026-10-10 â€” Readable source/derived migration, stage 1
 
 - Released schema 2 with 18 core named source columns including reported total distance, all-report
   evidence, per-field availability/quality and explicit whole-report selection. Source total never
@@ -217,7 +230,7 @@
   scope. Checked Markdown links, mapping JSON and whitespace. No navigation/visual-layout changes;
   responsive JS behavior remains passing, physical iPad/live-monitor acceptance was not rerun.
 
-## 2026-10-10 — Database redesign application impact audit
+## 2026-10-10 â€” Database redesign application impact audit
 
 - Mapped Relay, equipment, session/drill lifecycle, range cleanup, bag mapping/gapping, wedge matrix,
   putting, Play profiles/scoring, Analyze and exports/recovery to the proposed relational schema.
@@ -231,7 +244,7 @@
 - Verification: checked touched Markdown local links, implementation references and Git whitespace.
   Documentation-only audit; application tests/UI checks are acceptance work for implementation.
 
-## 2026-10-10 — Club edits during active sessions
+## 2026-10-10 â€” Club edits during active sessions
 
 - Read current equipment edit/selection, receipt freezing, collection grouping and existing tests.
   Confirmed rename preserves club ID and old shot names, add creates ID, remove clears a removed
@@ -242,7 +255,7 @@
   plans do not automatically adopt new clubs; historical retagging remains explicit/audited.
 - Checked document links/whitespace; documentation only, no user bag edits or service/database changes.
 
-## 2026-10-10 — Golfer ownership and relational core
+## 2026-10-10 â€” Golfer ownership and relational core
 
 - Extended database design with local users/golfer profiles and explicit ownership of bags, clubs,
   shots, sessions, tags and group analyses. Sources remain device identities, not users. Defined
@@ -255,7 +268,7 @@
 - Updated D59/backlog and migration acceptance. Checked touched document links and Git whitespace.
   Design-only changes; no production database writes, service restart, UI or application behavior change.
 
-## 2026-10-10 — Equipment/context and group-result schema clarification
+## 2026-10-10 â€” Equipment/context and group-result schema clarification
 
 - Verified implemented storage against equipment.py, collection.py, storage.py, driving_range.py,
   analysis.py and collection UI/docs: bag catalog in metadata JSON, frozen equipment/swing labels and
@@ -271,7 +284,7 @@
 - Updated D59/backlog; checked local links and whitespace consistency. Documentation only, no
   production writes/schema changes or test/UI rerun needed.
 
-## 2026-10-10 — Confirmed GC3 column dictionary
+## 2026-10-10 â€” Confirmed GC3 column dictionary
 
 - The user supplied four club and thirteen ball/flight labels (17 total). Updated the design table
   with all 17 named/unit-specific nullable columns, retaining existing total distance as an additional
@@ -282,7 +295,7 @@
 - Updated proposal, D59 and backlog. Checked dictionary against the supplied labels, local Markdown
   links and Git whitespace. Documentation only; no schema migration, live writes or recomputation.
 
-## 2026-10-10 — Readable database redesign proposal
+## 2026-10-10 â€” Readable database redesign proposal
 
 - Reviewed implemented schema, mappings, model payloads and prior database design/operations.
   Opened the production SQLite file read-only (without constructing Store): schema v1, 1,305 shots,
@@ -302,7 +315,7 @@
   status. Checked touched Markdown local links and Git whitespace consistency. Documentation only;
   app behavior/schema are unchanged, so no application suite or UI review rerun was necessary.
 
-## 2026-10-03 — Full 18 / Front 9 / Back 9
+## 2026-10-03 â€” Full 18 / Front 9 / Back 9
 
 - Added touch-sized round choices with par/yardage in setup. Freeze selected holes/totals in the
   session; Back 9 starts at 10, Front 9 ends at 9. Scorecards/review contain only selected holes.
@@ -313,26 +326,26 @@
   complete both nines on both courses, check pause/resume/persistence, final-hole Misread/recompletion,
   selected totals and invalid choices. Existing full-course and correction tests remain passing.
 - Isolated browser/SQLite at 8879 verified both course totals, Back 9 starting hole 10, scorecard
-  10–18, holeout → Next 11 → Misread 10, End/review selection and edit setup → Front 9 start 1.
-  Checked 1376×1032 iPad setup, 1366×900 map, 1600×1000 desktop and 390×844 phone. Phone has no
+  10â€“18, holeout â†’ Next 11 â†’ Misread 10, End/review selection and edit setup â†’ Front 9 start 1.
+  Checked 1376Ã—1032 iPad setup, 1366Ã—900 map, 1600Ã—1000 desktop and 390Ã—844 phone. Phone has no
   horizontal page overflow. Saved setup screenshot in design notes. No physical iPad Safari/touch
   or LAN testing; no production simulated shots.
 - Updated design/navigation/decisions, course guides, SQLite operating notes, README and backlog.
   Restarted production service on 8765 to load the API additions; it was idle before restart and
   remained idle afterward. Verified live catalog and all selected-nine totals. Existing data retained.
 
-## 2026-10-03 — Fit full courses to the wide map
+## 2026-10-03 â€” Fit full courses to the wide map
 
 - Replaced square/letterboxed camera framing with a responsive viewBox. Landscape overview trims
   peripheral scenery; green view fills the panel and stays inside registered artwork. All layers
   retain uniform world scale. Phone overview keeps the full saved frame. No course files changed.
 - Automated checks cover tee/pin/playing-line visibility, aspect ratio and artwork bounds for all
   36 holes at three landscape ratios, plus legacy/narrow framing and immutable coordinates.
-  Isolated browser verified Boulder overview/green at 1366×900, aligned boundary overlay and map
+  Isolated browser verified Boulder overview/green at 1366Ã—900, aligned boundary overlay and map
   center tap converting to the correct world coordinates. Saved screenshot in design notes.
 - Updated the approved layout notes and design principles to replace the former letterbox behavior.
 
-## 2026-10-03 — Retire standalone starter holes
+## 2026-10-03 â€” Retire standalone starter holes
 
 - Removed Meadow One, Willow Cove, Pine Bend and Meadow Reach from the built-in catalog and new
   round setup. Default API/constructor rounds now use Boulder Beach; removed the obsolete browser
@@ -341,7 +354,7 @@
   Isolated browser on 8879 confirms only the two full courses in Play and setup. Production data
   unchanged. Updated README, navigation and backlog.
 
-## 2026-10-03 — Map-first Play implementation
+## 2026-10-03 â€” Map-first Play implementation
 
 - Implemented approved Option 1 in the Vector interface: compact hole/round scorecard, club row,
   full-width map and on-map distance/lie/next-stroke/estimated putting pace. Removed the position
@@ -356,15 +369,15 @@
   round totals. Isolated service/SQLite on 8879 verified club selection, tap/pin/numeric aim, preview
   modes and source, scoring boundaries, putting units/pace, gimme finish, Misread reopening and
   gimme removal, completion/Next hole, End round and historical-hole review. Browser console clean.
-- Visually checked 1366×1024 and 1376×1032 iPad landscape, reduced-height 1366×900, 1600×1000 desktop
-  and 390×844 phone. Phone has no horizontal document overflow; controls wrap and map readouts move
-  outside the image. Saved the actual 1376×1032 demo screenshot and approved concept in
+- Visually checked 1366Ã—1024 and 1376Ã—1032 iPad landscape, reduced-height 1366Ã—900, 1600Ã—1000 desktop
+  and 390Ã—844 phone. Phone has no horizontal document overflow; controls wrap and map readouts move
+  outside the image. Saved the actual 1376Ã—1032 demo screenshot and approved concept in
   [design notes](designs/play-map-first/README.md). Physical iPad Safari/touch and LAN were not tested.
 - Updated design principles, navigation, decisions, course operation, README and backlog. Refreshed
   the existing production tab without creating shots or changing its session. No server restart
   required. Synthetic state-changing checks remained in the isolated database.
 
-## 2026-10-03 — Compact Play actions and club selection
+## 2026-10-03 â€” Compact Play actions and club selection
 
 - Moved Mulligan and Misread into the round header before End round, Play menu and Exit round;
   removed the Replay a shot card. Target/effect help and correction eligibility remain intact.
@@ -374,12 +387,12 @@
   bag's name; club changes and clearing retain that bag. Practice keeps its full bag selector.
 - Updated design principles, navigation, course instructions, backlog and empty-preview wording.
 - Verification: all 38 JavaScript tests passed. Isolated browser/SQLite service on port 8879 checked
-  setup → launch, repeated club changes, clear/reload, shot tags, header Mulligan, completed-hole
+  setup â†’ launch, repeated club changes, clear/reload, shot tags, header Mulligan, completed-hole
   Misread reopening, ended-round correction reopening, separate counts and expandable history.
-  Visual checks at 1366×1024 iPad landscape, 1600×1000 desktop and 390×844 phone found no page
+  Visual checks at 1366Ã—1024 iPad landscape, 1600Ã—1000 desktop and 390Ã—844 phone found no page
   overflow; club buttons and header actions wrap on phone. Production sessions/data were untouched.
 
-## 2026-10-03 — Boulder Beach course name
+## 2026-10-03 â€” Boulder Beach course name
 
 - Renamed the coastal course from Pebble Boulder to Boulder Beach in its package, generator,
   current documentation, library, setup, round heading, scorecard, attribution and session-list display.
@@ -390,7 +403,7 @@
   and browser library/setup both show Boulder Beach with the same 18 holes, 6,801 yards and par 72.
   No service restart, database writes, new session or geometry changes needed.
 
-## 2026-10-03 — Sheboygan Straits complete course
+## 2026-10-03 â€” Sheboygan Straits complete course
 
 - Reviewed current architecture, backlog, decisions, Vector design principles/navigation and the
   supplied official Straits hole gallery. Used official Blue pars/yardages: 7,142 yd / par 72.
@@ -398,7 +411,7 @@
   with the built-in image generation tool. Retained original guides, base prompt and provenance.
 - Traced the finished artwork into simplified scoring polygons; adjusted tee/pin/route registration,
   rejected reviewed rock/fescue fragments and stored asset hashes. Final package has 354 scoring sand
-  areas, 11–27 per hole. OpenCV/NumPy tracing runs only in a temporary design environment; the app
+  areas, 11â€“27 per hole. OpenCV/NumPy tracing runs only in a temporary design environment; the app
   keeps its existing dependencies and reads JSON/PNG. No source photography is bundled.
 - Added Sheboygan Straits to Play and optional per-hole strategy disclosures. Existing round,
   equipment, dispersion, putting, scorecard, correction and saved-review behavior is reused.
@@ -406,8 +419,8 @@
   **4/4 passed** (129 distinct Python cases now); **38 JavaScript tests passed**. The course tests
   play all eighteen holes, verify putting/score/persistence/delete-restore, paused/stale input,
   bunker recovery, water penalty and corrections after completion. All geometry and asset hashes pass.
-- Visual QA: all eighteen finished art/boundary overlays inspected; iPad Pro landscape 1366×1024,
-  desktop 1536×960 and phone 390×844 CSS viewports checked (not physical-device tests). Exercised
+- Visual QA: all eighteen finished art/boundary overlays inspected; iPad Pro landscape 1366Ã—1024,
+  desktop 1536Ã—960 and phone 390Ã—844 CSS viewports checked (not physical-device tests). Exercised
   selection/setup, tagged demo shot, hole completion, Next hole, Misread back to previous hole,
   active-session library guard/return, End, final-hole historical review/green zoom and Exit.
   No horizontal document overflow. QA used isolated Temp/straits-qa SQLite/input/service on 8879.
@@ -418,10 +431,10 @@
   elevation/bunker-face collision or green slope simulation. TraceLoft/TraceCapture separation kept.
 
 
-## 2026-10-03 — Independent application and direct Relay
+## 2026-10-03 â€” Independent application and direct Relay
 
 - Created a clean sibling repository without capture/OCR code, source calibration, glyphs or the
-  rēlā adapter. The private combined history remains in GolfData; TraceCapture is a separate sibling.
+  rÄ“lÄ adapter. The private combined history remains in GolfData; TraceCapture is a separate sibling.
 - Kept SQLite and existing domain behavior; added standard Open Connect TCP input on localhost:900,
   preserved raw vendor payloads, normalized ball/club fields, atomic shot/session save, stable optional
   receipt IDs and duplicate protection. Unknown units reject rather than impute measurements.
@@ -433,11 +446,11 @@
 - Added independent launch/setup/stop shortcuts. Normal restart preserves the unfinished session.
 - Verification so far: 105 inherited Python tests passed in a fresh environment without OCR packages;
   8 new protocol/storage tests and 34 JavaScript tests passed. TraceCapture has 43 passing tests.
-  Separate-process TraceCapture client → isolated TraceLoft TCP → SQLite succeeded; duplicate retry
+  Separate-process TraceCapture client â†’ isolated TraceLoft TCP â†’ SQLite succeeded; duplicate retry
   retained one shot. Real Infinite Tees at localhost:999 acknowledged a no-shot heartbeat directly
-  with Code 200 while rēlā was closed. No real shots were sent during verification.
+  with Code 200 while rÄ“lÄ was closed. No real shots were sent during verification.
 - Browser QA: auto-save destination, direct Infinite Tees acknowledgement, record-only mode,
-  Relay/Practice navigation and 1366×1024 / 390×844 layouts without page overflow. Physical iPad
+  Relay/Practice navigation and 1366Ã—1024 / 390Ã—844 layouts without page overflow. Physical iPad
   Safari, genuine putt/full swing forwarding and production handoff recorded below when completed.
 
 - Final handoff: verified backup at golfdata-20261003T123358-639bb4c6.sqlite3; preserved all 39
@@ -464,21 +477,21 @@
   acquisition suite: **43 passed**. Current public tree contains no fs_bridge/fs_ui_worker, cv2 or
   tesserocr importable module; document link targets and git whitespace checks passed.
 
-## 2026-10-03 — Black and blue TL browser icon
+## 2026-10-03 â€” Black and blue TL browser icon
 
 - Changed the browser icon to a black background, white T and Vector cobalt blue L; preserved
   its existing monogram geometry. Versioned the favicon URL so browsers request the new asset.
 - Updated the interface reference. Verified SVG parsing, palette, geometry and favicon link;
   inspected Chromium renders at 16, 32 and 64 pixels. No service or session state changed.
 
-## 2026-10-03 — Favicon cache follow-up
+## 2026-10-03 â€” Favicon cache follow-up
 
 - User still saw the green tab icon. Confirmed the live HTTP service serves the blue SVG and
   updated HTML with no-store headers. Added a distinct black/blue asset filename and pointed
   the favicon link to it to bypass retained browser favicon identity.
 - Verified the new live asset matches the approved SVG and the live HTML references it.
 
-## 2026-10-03 — Sim page backlog and GSPro club contract
+## 2026-10-03 â€” Sim page backlog and GSPro club contract
 
 - Logged the requested minimal Sim page: bag/club selection and shot logging, reusing storage
   and shot-time equipment tags. Navigation/session guards remain implementation work.
@@ -487,17 +500,17 @@
   Logged live verification and explicit mapping/precedence as follow-up, without claiming sync.
 - Documentation-only verification: checked backlog scope, source link and git whitespace.
 
-## 2026-10-03 — Relay improvement backlog
+## 2026-10-03 â€” Relay improvement backlog
 
-- Added six planned improvements from the rēlā comparison: delivery inspector, simulator club/mode
+- Added six planned improvements from the rÄ“lÄ comparison: delivery inspector, simulator club/mode
   feedback, readiness states, late club measurements, capability-aware controls and auditable estimates.
   Prioritized the inspector and feedback; connected feedback to the existing Sim page scope.
 - Preserved source separation, immutable measurements, manual selection precedence and the limits of
-  simulator acknowledgements. Core rēlā code is not covered by its MIT connector example license.
+  simulator acknowledgements. Core rÄ“lÄ code is not covered by its MIT connector example license.
 - Documentation-only verification: checked relative link targets, consistency with docs/RELAY.md
   and the existing Sim backlog, and git whitespace. No runtime, capture or session changes.
 
-## 2026-10-03 — Sim page mockup and Play outcome audit
+## 2026-10-03 â€” Sim page mockup and Play outcome audit
 
 - Generated a Vector iPad-landscape concept with large club targets and shot metrics, optional
   manual outcome tags and a detailed editable log. Saved image, generation prompt and behavior notes;
@@ -509,7 +522,7 @@
   still require touch sizing in implementation. No application code, routes, live data or services
   changed; no responsive/runtime test is claimed for a bitmap mockup.
 
-## 2026-10-03 — Defer Sim and consolidate outcome research
+## 2026-10-03 â€” Defer Sim and consolidate outcome research
 
 - Marked Sim explicitly on hold until reprioritized, including the mockup, manual outcome tagging,
   club/mode following and GSPro file investigation. Cross-referenced the deferred status from design
@@ -520,7 +533,7 @@
 - Documentation-only verification: relative links exist, research URLs match the prior investigation,
   deferred statuses agree and git whitespace checks pass. No code or runtime changes.
 
-## 2026-10-03 — Immersive 2D simulation backlog
+## 2026-10-03 â€” Immersive 2D simulation backlog
 
 - Added the requested browser-friendly playable courses with realistic physics and animated
   flight, bounce and roll to the existing 2D simulator entry. Recorded lightweight rendering,
@@ -530,7 +543,7 @@
 - Documentation verification: checked consistency with the current game architecture and whitespace.
   Concurrent course implementation files were left untouched.
 
-## 2026-10-03 — Ball physics research foundation
+## 2026-10-03 â€” Ball physics research foundation
 
 - Saved the user-approved research plan and initial literature log for flight, turf contact,
   ground travel, starting lies and simulator approaches. Recorded twelve academic/experimental
@@ -545,7 +558,7 @@
   focused Git whitespace. No model experiments, simulator injections, runtime or device tests were
   performed. Concurrent course code, artwork and documentation changes remain outside this commit.
 
-## 2026-10-03 — Pebble Boulder full coastal course
+## 2026-10-03 â€” Pebble Boulder full coastal course
 
 - Delivered 18 original coastal holes with registered continuous AI aerials, editable geometry
   references and prompt provenance. Verified January 2026 Blue yardages: 6,801 yards/par 72;
@@ -575,7 +588,7 @@
   screenshot in designs/pebble-boulder/qa-ipad-round.png.
 
 
-## 2026-10-03 — Mulligan and Misread corrections
+## 2026-10-03 â€” Mulligan and Misread corrections
 
 - Implemented explicit newest-first correction actions for Play, including single-hole completion,
   between-hole pause, an untouched next tee, manually ended rounds and completed hole 18 in review.
@@ -594,16 +607,16 @@
   18-hole completion/recompletion, persistence, ownership/deletion/abandon guards and disk rollback.
 - Isolated service/database on 8879: browser confirmed Misread after hole completion, Mulligan after
   advancing to the next tee, and Misread from final-round saved review reopening hole 18. Reviewed
-  1366×1024 and 1376×1032 iPad landscape, 1440×900 desktop and 390×844 phone; no horizontal page
+  1366Ã—1024 and 1376Ã—1032 iPad landscape, 1440Ã—900 desktop and 390Ã—844 phone; no horizontal page
   overflow and correction buttons at least 48px high. Screenshot in
   [design review](designs/game-corrections/ipad-replay-controls.png).
 - Updated design principles, navigation paths/guards, D50, course guide, database operations,
   README and backlog. Restarted the idle production service on 8765; state remained idle and the
   new correction API passed a validation-only route check. No production test shots were created.
 
-## 2026-10-03 — Physics research data and benchmark preparation
+## 2026-10-03 â€” Physics research data and benchmark preparation
 
-- Added research pass 2 and staged R1–R6 tasks: bounce grouping, isolated flight baseline,
+- Added research pass 2 and staged R1â€“R6 tasks: bounce grouping, isolated flight baseline,
   held-out bounce comparisons, putting/cup validation, lie coverage and browser budgets.
 - Retrieved Ferguson's 2023 thesis coefficients and validation details; inspected the bunker paper,
   Penner's putting model, Holmes' original cup experiment and pinned OpenFairway equations/tests.
@@ -618,7 +631,7 @@
   Source PDFs/CSVs and downloaded engine code remain outside the repository. Concurrent course work
   is excluded from this research commit.
 
-## 2026-10-03 — Range and Play ball animation
+## 2026-10-03 â€” Range and Play ball animation
 
 - Added source-anchored side/top Range flight replay and a white/cobalt ball and tracer on Play's
   registered course map. Use OpenGolfCoach's saved estimated hang time at its original duration;
@@ -636,14 +649,14 @@
   duplicate/batch arrivals, baselines, reduced motion and independent model persistence.
 - Isolated SQLite/service at port 8879: verified range arrival, Replay/Skip, top view, saved review,
   reload baseline, Play immediate scoring, hole-out/gimme completion, Misread reopen and Next hole.
-  No browser errors. Checked iPad 1366×1024 and 1376×1032, reduced-height 1366×900, desktop
-  1440×900 and 390×844 phone; no page overflow, 44px controls. Physical iPad Safari and realistic
+  No browser errors. Checked iPad 1366Ã—1024 and 1376Ã—1032, reduced-height 1366Ã—900, desktop
+  1440Ã—900 and 390Ã—844 phone; no page overflow, 44px controls. Physical iPad Safari and realistic
   bounce/ground physics remain unverified/not implemented. Screenshots in designs/shot-motion.
 - Updated README, design principles, D54, navigation controls, database operations and backlog.
 - Restarted the idle production service on 8765 to load Play prediction saving; it remained idle.
   Production test shots were not created. Stopped the isolated QA service and restored browser sizing.
 
-## 2026-10-03 — Carry landing terrain and rollout rules
+## 2026-10-03 â€” Carry landing terrain and rollout rules
 
 - Full shots now classify the estimated carry landing point before applying remaining rollout.
   Sand removes all roll, rough removes 75% by default and out of bounds removes 100%; rough/OB
@@ -661,8 +674,8 @@
   frozen historical outcomes, corrections and animation endpoints/timing.
 - Isolated SQLite/service on 8879: launched a demo round, entered carry 364.8 yd / total 420 yd,
   verified sand landing with zero rollout, animation/Skip, raw/game log evidence, reload and Misread
-  restoration. Checked iPad 1366×1024 and 1376×1032, reduced 1366×900, desktop 1440×900 and phone
-  390×844; no horizontal page overflow, 48px numeric controls and no browser errors. Setup screenshot
+  restoration. Checked iPad 1366Ã—1024 and 1376Ã—1032, reduced 1366Ã—900, desktop 1440Ã—900 and phone
+  390Ã—844; no horizontal page overflow, 48px numeric controls and no browser errors. Setup screenshot
   is in designs/landing-rollout. Physical Safari and live monitor geometry remain unverified.
 - Boundary overlay review exposed an existing Boulder Beach hole 1 art/scoring offset. Logged a
   separate P1 geometry registration audit; terrain rules correctly use saved boundaries. Continuous
@@ -672,7 +685,7 @@
   No production test shots were created. Stopped the isolated service, closed its tab and restored
   browser sizing.
 
-## 2026-10-03 — Finished-art boundaries across both courses
+## 2026-10-03 â€” Finished-art boundaries across both courses
 
 - Reviewed all 36 holes against unmodified final artwork. Boulder Beach v1 retained schematic
   guide geometry that drifted in AI rendering. Retraced tees, greens, fairways, rough/nature edges,
@@ -690,10 +703,10 @@
   cover all 72 current/legacy holes. Full-suite testing exposed two old demo helpers that assumed
   total travel despite default 93% carry; those endpoint tests now provide explicit carry=total.
   Separate landing-rule tests continue to verify sand/rough/OB rollout behavior.
-- Isolated SQLite/service on 8879: Boulder full-round setup → overview/green boundary overlays →
-  visible bunker landing at carry 366.2 / total 386.2 yd → sand/zero rollout → ended review → Play
-  menu; Straits Back 9 setup → hole 10 green → artwork/vector terrain toggles → ended review.
-  Checked 1366×1024/1376×1032 iPad, 1366×900 reduced height, 1440×900 desktop and 390×844 phone;
+- Isolated SQLite/service on 8879: Boulder full-round setup â†’ overview/green boundary overlays â†’
+  visible bunker landing at carry 366.2 / total 386.2 yd â†’ sand/zero rollout â†’ ended review â†’ Play
+  menu; Straits Back 9 setup â†’ hole 10 green â†’ artwork/vector terrain toggles â†’ ended review.
+  Checked 1366Ã—1024/1376Ã—1032 iPad, 1366Ã—900 reduced height, 1440Ã—900 desktop and 390Ã—844 phone;
   no horizontal overflow or browser errors. Physical Safari/live-monitor geometry remains unverified.
 - Updated design/operation/storage/navigation docs, decision D56 and completed the P1 registration
   backlog item. Gracefully restarted production on 8765; confirmed the new v2 catalog. Current demo
@@ -703,9 +716,9 @@
   saved shots. No production shots were generated or deleted. Stopped QA, closed its browser tab
   and reset viewport sizing. Full review evidence: designs/course-registration/README.md.
 
-## 2026-10-03 — Individual-hole boundary review pack
+## 2026-10-03 â€” Individual-hole boundary review pack
 
-- Added `--individual --output` to the design renderer: 36 original-resolution 1774×887 boundary
+- Added `--individual --output` to the design renderer: 36 original-resolution 1774Ã—887 boundary
   images, course/hole anchor links in an offline HTML gallery and a ZIP with the images, six sheets,
   two green details and manifest. Individual exports also show the map's artificial OB perimeter.
   Published the requested local pack in Downloads/TraceLoft-course-boundary-review (52.3 MB ZIP).
@@ -717,7 +730,7 @@
   usage, tracing/review speedups and asset-specific extraction limits. No app test rerun needed for
   this design-only export change.
 
-## 2026-10-03 — Boulder fairways 6, 16 and 18
+## 2026-10-03 â€” Boulder fairways 6, 16 and 18
 
 - User review found a missed fairway/green connection on 6 and false mowing-stripe notches on
   16/18. Replaced those three fairway perimeters with reviewed native-art control points and smooth
@@ -734,13 +747,13 @@
   adding the new landmark fixtures, eight registration/fictional-course checks passed. Both JS
   camera tests passed across all 90 current/legacy holes. v3 builder reproduced the released candidate
   identically. Isolated API completed a synthetic 18-hole round; browser reviewed 6/16/18 overlays
-  at 1366×1024 with no page overflow or console warnings/errors. Physical Safari remains unverified.
+  at 1366Ã—1024 with no page overflow or console warnings/errors. Physical Safari remains unverified.
 - Updated principles, guides, D57, navigation/catalog note and backlog. Gracefully restarted idle
   production recording on 8765; full current demo-range snapshot (40 existing shots, selected club,
   session/settings) matched exactly before/after. No production shots were generated or deleted.
   Confirmed catalog Straits v2 / Boulder v3, stopped QA, reset viewport and closed its review tab.
 
-## 2026-10-03 — Judges Course
+## 2026-10-03 â€” Judges Course
 
 - Built all 18 holes from the supplied illustrated maps and exact yardages/pars: 6,163 yd / par 72,
   Front 9 3,066/par 36, Back 9 3,097/par 36. Four later supplied photos guide the wooded parkland,
@@ -763,9 +776,9 @@
   frozen saved geometry, selected nines, supplied totals and independent cutout/water-carry landmarks.
   Builder reproduced final package identically; all 18 aerial endpoints returned HTTP 200.
 - Reviewed all 18 aerials and three finished boundary sheets. Isolated SQLite/service on 8879:
-  Play library → Back 9 setup → club selection → hole/green view → scoring outlines → ended review
-  → hole review → Play menu. Reviewed final hole 16 tee placement in a fresh QA round and saved iPad
-  screenshot. Checked 1366×1024/1376×1032 iPad, 1366×900, 1440×900 desktop and 390×844 phone;
+  Play library â†’ Back 9 setup â†’ club selection â†’ hole/green view â†’ scoring outlines â†’ ended review
+  â†’ hole review â†’ Play menu. Reviewed final hole 16 tee placement in a fresh QA round and saved iPad
+  screenshot. Checked 1366Ã—1024/1376Ã—1032 iPad, 1366Ã—900, 1440Ã—900 desktop and 390Ã—844 phone;
   no horizontal overflow or browser warnings/errors. Physical Safari/live-monitor acceptance remains
   unverified. Artwork/boundary review is an adaptation, not a surveyed course reconstruction.
 - Updated guides, principles, D58, navigation, backlog and shared review documentation. Reloaded
@@ -773,11 +786,11 @@
   including all 40 existing shots, selected equipment and settings. Confirmed all three course choices.
   No production shots were generated/deleted. Stopped QA, closed its tab and reset viewport sizing.
 
-## 2026-10-10 — Schema 4 SQL analyses and collection results
+## 2026-10-10 â€” Schema 4 SQL analyses and collection results
 
 Implemented SQL metric/context reads, tag any/all and config filters, immutable bag/wedge cohorts, per-metric coverage, gap results and Play profile publication/staleness. Verified 19 focused Python tests (SQL parity, tag counts, ownership, configuration changes, immutable cleanup cohorts/republication plus existing analysis/collection/preview/schema tests) and all 49 JavaScript tests. Isolated migrated-copy UI checked advanced Analyze controls and empty-user state. Production remains schema 2 until final cutover.
 
-## 2026-10-10 — Schema 5 staged recalculation and version history
+## 2026-10-10 â€” Schema 5 staged recalculation and version history
 
 - Added immutable batch inputs/results/lineage, hashed calculation specifications, incremental
   resumable outputs, current-versus-proposed coverage previews and guarded atomic publication.
@@ -786,11 +799,11 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
   export lineage and a readable current-metrics view; documented the implemented ERD.
 - Fixed empty collection fingerprint collisions and restored practice identity to SQL-backed club
   recommendations. Migrated-copy reconciliation matches all 47 session DTOs and hashes all 12 original
-  evidence tables; all eight real/demo × all/full/putting/game Analyze modes match legacy reports.
+  evidence tables; all eight real/demo Ã— all/full/putting/game Analyze modes match legacy reports.
   Foreign keys are clean. No production test shots or calculation publications were created.
 - Focused 32 Python tests and all 49 JavaScript tests passed. Isolated Vector UI reviewed calculation
-  staging/publication/history and selected bag-map publication at 1366×1024; Analyze and bag-map
-  controls/tables fit 390×844 without outer horizontal overflow. Physical iPad Safari remains unverified.
+  staging/publication/history and selected bag-map publication at 1366Ã—1024; Analyze and bag-map
+  controls/tables fit 390Ã—844 without outer horizontal overflow. Physical iPad Safari remains unverified.
   Final full suite: 170 Python tests passed in 275.569s; 49 JavaScript tests passed.
   Wedge review shows all 12 persisted cells and publication controls. Preview table is bounded and
   keyboard-scrollable; screenshot saved outside the repository. Documentation links and diff checks pass.
@@ -800,7 +813,7 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
 
 - Committed feature stages: a51f6ac (relational core), 8c4cfda (SQL/cohorts), 9d080c8
   (staged calculation/version workflow). Gracefully stopped production, acquired the service lease
-  and upgraded schema 2→3→4→5. Verified backups precede each transition: UTC 20261011T015002,
+  and upgraded schema 2â†’3â†’4â†’5. Verified backups precede each transition: UTC 20261011T015002,
   015005 and 015006 in `%USERPROFILE%/GolfData/data/backups`, with matching manifests.
 - Exact reconciliation: all 47 session DTOs, all 12 original evidence-table hashes, 2,429 source
   reports and 1,059 original attempt result pins unchanged. Integrity check returns ok; foreign
@@ -815,35 +828,35 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
   `%USERPROFILE%/GolfData/migration-final-377cff4c`. Generated QA data stayed isolated.
   Physical Safari/touch and new live launch-monitor ingestion remain unverified in this turn.
   Google Drive/off-device backup and remote authentication remain future work.
-## 2026-10-10 — Analyze redesign concepts
+## 2026-10-10 â€” Analyze redesign concepts
 
 - Proposed one shared-scope Analyze workspace with multi-metric Trends, linked Explore and named
   Compare cohorts. Documented independent units, shared dates, robust per-metric coverage, multi-club
   configurations, numerical filter semantics, transient selection versus cleanup and frozen/dynamic
   saved-view distinctions. No design preference was treated as implementation approval.
 - Created an interactive conversation preview with 216 deterministic synthetic shots. Reviewed
-  metric toggles/shared inspection, club selection, chart-axis changes, linked 10–15 yd offline
+  metric toggles/shared inspection, club selection, chart-axis changes, linked 10â€“15 yd offline
   filtering (26/216 matching), detail rows and updated baseline/recent boundaries. Browser reviewed
-  1366×1024/390×844 with no outer horizontal overflow or console warnings/errors; physical Safari
+  1366Ã—1024/390Ã—844 with no outer horizontal overflow or console warnings/errors; physical Safari
   remains unverified. Production app/service/database and routes were unchanged.
 - Added proposal links and pending backlog scope. Only documentation is committed; the conversation
   preview remains outside the repository. No production tests needed for this concept-only change.
 
-## 2026-10-10 — Collapsible Analyze selections and filters
+## 2026-10-10 â€” Collapsible Analyze selections and filters
 
 - Refined all three Analyze concepts with a native expandable Selections & filters drawer,
   collapsed by default. Active clubs, dates, metrics/axes and numeric constraints remain visible;
   collapsing changes layout only. Added the requirement to design principles and pending backlog.
 - Browser verified mouse and keyboard disclosure, adding descent/another club and retaining five
   charts after collapse, shared session inspection and selected-club legends. Explore retains its
-  10–15 yd offline selection (26/216 shots and six preview rows); Compare retains the four-session
-  boundary with its summary updated. Expanded/collapsed layouts fit 1366×1024 and 390×844 without
+  10â€“15 yd offline selection (26/216 shots and six preview rows); Compare retains the four-session
+  boundary with its summary updated. Expanded/collapsed layouts fit 1366Ã—1024 and 390Ã—844 without
   outer horizontal overflow. JavaScript syntax check passed; no browser warnings/errors observed.
 - Conversation preview remains outside the repository. Production app, database and routes were
   unchanged; implementation remains pending. Physical iPad Safari is unverified. Preview server
   stopped, QA tab closed and temporary viewport override reset.
 
-## 2026-10-10 — Analyze shared selection foundation
+## 2026-10-10 â€” Analyze shared selection foundation
 
 - Implemented read-only multi-club OR selection and inclusive numeric metric ranges (AND across
   dimensions) in the authoritative report query. Summaries, groups, sessions and CSV share exact
@@ -853,7 +866,7 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
 - Eleven focused Python checks passed, including SQL endpoint/CSV parity, context lineage,
   missingness, exclusions and invalid range rejection. UI integration and live cutover follow.
 
-## 2026-10-10 — Implemented Analyze workspace
+## 2026-10-10 â€” Implemented Analyze workspace
 
 - Replaced single-metric analysis with Trends / Explore / Compare, native collapsible selections,
   multiple metrics/clubs, stable bag/club colors, configuration/intent/version separation, robust
@@ -866,8 +879,8 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
   pairing, native deltas and stable colors. API tests cover selection/CSV/context lineage.
 - Isolated synthetic service review: five panels/two clubs, numeric AND filters (11/72 selected),
   histogram bin selection, shared capture-time inspection, Save/Load/Remove dynamic views,
-  comparison date-error recovery and scope/exports. Reviewed 1366×1024, 1376×1032, 1366×900 and
-  390×844, expanded/collapsed controls and internal table scrolling without outer overflow.
+  comparison date-error recovery and scope/exports. Reviewed 1366Ã—1024, 1376Ã—1032, 1366Ã—900 and
+  390Ã—844, expanded/collapsed controls and internal table scrolling without outer overflow.
   Fixed a queued disclosure-state issue and histogram count axes found during review.
 - Updated principles, navigation, design scope, operating guide, README, D63 and backlog. Physical
   iPad Safari/touch and LAN acceptance remain unverified. Live cutover verification follows.

@@ -18,8 +18,10 @@ Screen capture/OCR lives in the separate private TraceCapture app and never belo
 | HTTP/WebSocket API, request models | `web_app.py` |
 | Service authority: active session, mutations, live revision | `web_service.py` (`GolfService`) |
 | Shot input and simulator relay | `shot_input.py`, `open_connect.py` |
-| SQLite store, transactions, backup, export, legacy import | `storage.py`, `database_tools.py` |
-| Schema layers (migrations 1→5) | `shot_schema.py`, `domain_schema.py`, `analysis_schema.py`, `recalculation.py` |
+| SQLite store: writer transactions, snapshot reads, backup | `storage.py` |
+| Numbered schema upgrades (1→5) | `migrations.py` (`STEPS`) |
+| CSV/ZIP export; pre-SQLite import; offline CLI | `storage_export.py`, `legacy_import.py`, `database_tools.py` |
+| Schema layers (DDL, backfill, readers) | `shot_schema.py`, `domain_schema.py`, `analysis_schema.py`, `recalculation.py` |
 | Drill/game scorers | `putting.py`, `distance_ladder.py`, `driving_range.py`, `collection.py`, `golf_sim.py` |
 | Models and estimates | `putting_distance.py`, `flight_model.py` (OpenGolfCoach), `club_preview.py` |
 | Analysis | `analysis.py`, `analysis_schema.py`, `analytics_demo.py`, `tour_demo.py` |
@@ -93,8 +95,9 @@ verified upgrade. Helper tests do not verify the interface in a real browser.
   save before state changes. `ValueError` messages become HTTP 409 text shown to the golfer, so
   write them as user-facing guidance.
 - **Schema changes are migrations.** Bump `SCHEMA_VERSION`, take a verified backup, run inside
-  `BEGIN IMMEDIATE`, and reconcile evidence counts/manifests before `COMMIT` (see `storage.py`).
-  Never edit an earlier upgrade step.
+  `BEGIN IMMEDIATE`, and reconcile evidence counts/manifests before `COMMIT`. Append a step to
+  `migrations.STEPS`; `migrations._apply` provides the backup, transaction and report. Never edit
+  a released step.
 - **Deletion is recoverable.** Sessions are soft-deleted with Restore and Undo. Finish, abandon,
   exclusion and deletion are distinct. Backups, crops and training data sit outside the session
   lifecycle.
