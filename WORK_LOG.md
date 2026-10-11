@@ -676,3 +676,13 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
 - Conversation preview remains outside the repository. Production app, database and routes were
   unchanged; implementation remains pending. Physical iPad Safari is unverified. Preview server
   stopped, QA tab closed and temporary viewport override reset.
+
+## 2026-10-10 — Analyze shared selection foundation
+
+- Implemented read-only multi-club OR selection and inclusive numeric metric ranges (AND across
+  dimensions) in the authoritative report query. Summaries, groups, sessions and CSV share exact
+  membership. Missing values fail only predicates on their metric; invalid/nonfinite bounds reject.
+- Workspace context preserves pre-range, inclusion-scoped rows and their SQL lineage for faint
+  chart context. No source, inclusion, session or calculation selection is changed by filtering.
+- Eleven focused Python checks passed, including SQL endpoint/CSV parity, context lineage,
+  missingness, exclusions and invalid range rejection. UI integration and live cutover follow.

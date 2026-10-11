@@ -1,6 +1,7 @@
 """Read-only, source-value analysis over saved session attempts; no inferred measurements."""
 import csv
 import io
+import json
 import math
 from datetime import date
 from collections import defaultdict
@@ -52,6 +53,18 @@ def build_report(sessions, params):
     if f['date_from'] and f['date_to'] and f['date_from']>f['date_to']:
         raise ValueError('Start date must precede end date.')
     selected_ids=set(filter(None,f['sessions'].split(',')))
+    clubs=tuple(dict.fromkeys(filter(None,params.get('clubs',f['club']).split(','))))
+    if len(clubs)>100:raise ValueError('Choose at most 100 clubs.')
+    f['clubs']=','.join(clubs)
+    try:
+        ranges=json.loads(params.get('ranges','{}'))
+    except (ValueError,TypeError):raise ValueError('Choose valid numeric ranges.')
+    if not isinstance(ranges,dict) or any(k not in METRICS for k in ranges):raise ValueError('Choose valid numeric range metrics.')
+    for metric,bounds in ranges.items():
+        if not isinstance(bounds,dict) or not bounds or set(bounds)-{'min','max'}:raise ValueError('Choose valid numeric range bounds.')
+        if any(type(v) not in (int,float) or not math.isfinite(v) for v in bounds.values()):raise ValueError('Numeric bounds must be finite.')
+        if bounds.get('min',-math.inf)>bounds.get('max',math.inf):raise ValueError('Minimum must not exceed maximum.')
+    f['ranges']=json.dumps(ranges,sort_keys=True,separators=(',',':'))
     available=[s for s in sessions if bool(s.get('demo'))==(f['mode']=='demo')]
     options=dict(bags={},clubs={},swings=set(),sessions=[])
     rows=[];removed=0
@@ -67,7 +80,7 @@ def build_report(sessions, params):
             day=s['started'][:10]
             if f['date_from'] and day<f['date_from'] or f['date_to'] and day>f['date_to']:continue
             if selected_ids and s['id'] not in selected_ids:continue
-            if f['bag'] and eq.get('bag_id')!=f['bag'] or f['club'] and eq.get('club_id')!=f['club']:continue
+            if f['bag'] and eq.get('bag_id')!=f['bag'] or clubs and eq.get('club_id') not in clubs:continue
             if f['swing'] and (shot.get('swing_label') or '__unspecified')!=f['swing']:continue
             if shot.get('removed'):removed+=1;continue
             rows.append(dict(session_id=s['id'],session_started=s['started'],drill=s['drill'],
@@ -75,6 +88,8 @@ def build_report(sessions, params):
                 bag_id=eq.get('bag_id',''),bag_name=eq.get('bag_name','No bag'),club_id=eq.get('club_id',''),
                 club_label=eq.get('club_label') or 'Untagged',swing_label=shot.get('swing_label') or '',
                 excluded=bool(shot.get('excluded')),simulated=bool(s.get('demo')),values={m:value(shot,m) for m in METRICS}))
+    context=[r for r in rows if f['inclusion']=='all' or not r['excluded']]
+    rows=[r for r in rows if all(r['values'][metric] is not None and bounds.get('min',-math.inf)<=r['values'][metric]<=bounds.get('max',math.inf) for metric,bounds in ranges.items())]
     chosen=[r for r in rows if f['inclusion']=='all' or not r['excluded']]
     groups=defaultdict(list);by_session=defaultdict(list)
     for r in chosen:
@@ -93,11 +108,13 @@ def build_report(sessions, params):
             metrics=summary(rs),excluded=sum(r['excluded'] for r in baseline),eligible=len(baseline)))
     trend.sort(key=lambda s:(s['started'],s['id']))
     options['swings']=sorted(options['swings'])
-    return dict(filters=f,metrics={k:dict(label=v[0],unit=v[1]) for k,v in METRICS.items()},options=options,
+    result=dict(filters=f,metrics={k:dict(label=v[0],unit=v[1]) for k,v in METRICS.items()},options=options,
         selected=summary(chosen),all_recorded=summary(rows),count=len(chosen),eligible=len(rows),removed=removed,
         excluded=sum(r['excluded'] for r in rows),groups=group_rows,trend=trend,rows=chosen,
         counting='Session attempts; exclusions are session-scoped. A shot reused in multiple sessions can appear once per session.',
         method='Source values; median and type-7 IQR. Missing values omitted per metric; no automatic outlier removal.')
+    if params.get('workspace')=='1':result.update(context_rows=context,context_count=len(context))
+    return result
 
 
 def report_csv(report):

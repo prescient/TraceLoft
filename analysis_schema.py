@@ -150,7 +150,7 @@ def report(c,params,user_id=None):
     r=build_report(sessions_for_analysis(c,user_id,basis,names,match,params.get('configuration','')),params)
     r['filters'].update(basis=basis,tags=', '.join(names),tag_match=match,configuration=params.get('configuration',''))
     r['options']['tags']=[r[0] for r in c.execute('SELECT name FROM tags WHERE user_id=? ORDER BY name',(user_id or active_user(c),))]
-    picked={(row['session_id'],row['key']) for row in r['rows']}
+    picked={(row['session_id'],row['key']) for row in r['rows']+r.get('context_rows',[])}
     r['lineage']=[{k:row[k] for k in ('session_id','legacy_key','shot_id','report_id','configuration_id','context_id','flight_result_id','flight_model_version','putting_result_id','putting_model_version','features_result_id')} for row in read_rows(c,user_id) if (row['session_id'],row['legacy_key']) in picked]
     r['options']['configurations']={r['configuration_id']:f"{r['club_label']} · config {r['configuration_id'][:6]}" for r in c.execute('SELECT DISTINCT configuration_id,club_label FROM v_session_equipment WHERE user_id=? AND configuration_id IS NOT NULL',(user_id or active_user(c),))}
     if basis=='flight':r['method']='Selected analytical flight/putting/source-feature results; launch/club fields are source inputs. Median/type-7 IQR. Missing model outputs stay unavailable; saved scores/reviews stay pinned.'

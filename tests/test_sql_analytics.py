@@ -62,5 +62,18 @@ class SQLAnalyticsTests(unittest.TestCase):
         game=dict(demo=True,equipment_selection=dict(bag_id=self.bag['id'],club_id=self.club['id']))
         self.assertEqual(len(preview_sessions(self.store.connection,game)[0][0]['shots']),1)
 
+    def test_workspace_numeric_selection_and_context_lineage(self):
+        import json
+        params=dict(mode='demo',workspace='1',clubs=self.club['id'],ranges=json.dumps({'carry':{'min':10000}}))
+        r=self.client.get('/api/analysis',params=params)
+        self.assertEqual(r.status_code,200,r.text);report=r.json()
+        self.assertEqual(report['count'],0);self.assertEqual(report['context_count'],5)
+        self.assertEqual(len(report['lineage']),5)
+        exported=self.client.get('/api/analysis',params={**params,'format':'csv'})
+        self.assertEqual(len(exported.text.strip().splitlines()),1)
+        bad=self.client.get('/api/analysis',params={'ranges':'{"carry":{"min":2,"max":1}}'})
+        self.assertEqual(bad.status_code,409)
+        self.assertIn('Minimum must not exceed maximum',bad.json()['detail'])
+
 
 if __name__=='__main__':unittest.main()
