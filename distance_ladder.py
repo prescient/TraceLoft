@@ -90,7 +90,7 @@ class DistanceLadderSession(PuttingSession):
                 self.data['ended'] = timestamp()
             else:
                 self.data['target'] = targets[(self.data['completed_shots'] // self.data['range_shots']) % len(targets)]
-        self.save()
+        self.save(append=True)
         return True
 
     def summary(self):

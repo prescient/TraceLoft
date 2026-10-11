@@ -155,6 +155,8 @@ class Store:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
         self.depth = 0
+        self._attempt_cache = {}
+        self._attempt_updates = {}
         self.connection = sqlite3.connect(self.path, timeout=5, check_same_thread=False,
                                           isolation_level=None)
         self.connection.row_factory = sqlite3.Row
@@ -494,6 +496,7 @@ class Store:
             try:
                 if outer:
                     self.connection.execute('BEGIN IMMEDIATE')
+                    self._attempt_updates = {}
                 self.depth += 1
                 try:
                     yield self.connection
@@ -501,9 +504,14 @@ class Store:
                     self.depth -= 1
                 if outer:
                     self.connection.execute('COMMIT')
+                    self._attempt_cache.update(self._attempt_updates)
+                    while len(self._attempt_cache) > 8:
+                        del self._attempt_cache[next(iter(self._attempt_cache))]
+                    self._attempt_updates = {}
             except BaseException as exc:
                 if outer and self.connection.in_transaction:
                     self.connection.execute('ROLLBACK')
+                    self._attempt_updates = {}
                 if isinstance(exc, sqlite3.Error):
                     raise OSError(f'SQLite save failed: {exc}') from exc
                 raise
@@ -612,7 +620,14 @@ class Store:
             return [read_session(self.connection,r[0]) for r in self.connection.execute(
                 'SELECT id FROM sessions WHERE (deleted_at IS NOT NULL)=? ORDER BY started DESC', (int(deleted),)).fetchall()]
 
-    def save_session(self, data, imported=False, deleted=False):
+    def append_attempt(self, data):
+        """Commit one new attempt and its resulting session state atomically.
+
+        Scorers own the append-only historical prefix. Corrections use save_session.
+        """
+        return self.save_session(data, append=True)
+
+    def save_session(self, data, imported=False, deleted=False, append=False):
         with self.transaction():
             sid = data['id']
             old = self.connection.execute('SELECT * FROM sessions WHERE id=?', (sid,)).fetchone()
@@ -622,10 +637,40 @@ class Store:
                 if old['payload_json'] != encoded(data) or bool(old['deleted_at']) != deleted:
                     raise ValueError(f'Conflicting legacy copies of session {sid}.')
                 return
+            links = self.connection.execute(
+                'SELECT ordinal,legacy_key FROM session_attempts WHERE session_id=? ORDER BY ordinal',
+                (sid,)).fetchall()
+            if len(data['shots']) < len(links) or any(
+                    data['shots'][row['ordinal'] - 1]['key'] != row['legacy_key'] for row in links):
+                raise ValueError('Recorded attempts cannot be removed or reordered; use audited cleanup.')
+            cache = self._attempt_updates.get(sid, self._attempt_cache.get(sid))
+            revision = old['revision'] if old else 0
+            if not cache or cache[0] != revision:
+                cache = (revision, None)
+            if append:
+                if not old or len(data['shots']) != len(links) + 1:
+                    raise ValueError('Append requires exactly one new attempt on an existing session.')
+                ordinal = len(data['shots'])
+                changed = {ordinal}
+                fingerprints = dict(cache[1] or {})
+                fingerprints[ordinal] = digest(encoded(data['shots'][-1]).encode())
+            else:
+                from domain_schema import read_session
+                previous = cache[1]
+                if old and (previous is None or len(previous) != len(links)):
+                    previous = {i: digest(encoded(shot).encode()) for i, shot in
+                                enumerate(read_session(self.connection, sid)['shots'], 1)}
+                previous = previous or {}
+                fingerprints = {i: digest(encoded(shot).encode()) for i, shot in
+                                enumerate(data['shots'], 1)}
+                changed = {i for i, value in fingerprints.items() if previous.get(i) != value}
             self.connection.execute('INSERT INTO sessions VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET '
                 'started=excluded.started, ended=excluded.ended, drill=excluded.drill, revision=sessions.revision+1',
-                (sid, data['started'], data.get('ended'), data['drill'], now() if deleted else None, 1, encoded(data)))
+                (sid, data['started'], data.get('ended'), data['drill'], now() if deleted else None, 1,
+                 old['payload_json'] if old else encoded(data)))
             for ordinal, shot in enumerate(data['shots'], 1):
+                if ordinal not in changed:
+                    continue
                 previous = self.connection.execute('SELECT * FROM session_attempts WHERE session_id=? AND legacy_key=?',
                                                    (sid,shot['key'])).fetchone()
                 if previous:
@@ -679,10 +724,11 @@ class Store:
                 source_features(self.connection,shot_id)
                 save_attempt_results(self.connection,data,shot,ordinal,legacy=imported)
             from domain_schema import write_session
-            write_session(self.connection,data,backfill=imported)
+            write_session(self.connection,data,backfill=imported,changed_attempts=changed)
             from analysis_schema import save_collection
             save_collection(self.connection,data)
-            self._audit(sid, 'import_session' if imported else 'save_session', {'shots':len(data['shots'])})
+            self._audit(sid, 'import_session' if imported else 'save_session', {'shots':len(data['shots']), 'changed_attempts':sorted(changed)})
+            self._attempt_updates[sid] = (revision + 1, fingerprints)
 
     def set_deleted(self, session_id, deleted):
         with self.transaction():

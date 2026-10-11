@@ -36,3 +36,10 @@ Desktop/video are already in the backlog; none require mixing TraceCapture into 
 
 Implementation progress, measurements and limits are recorded in [WORK_LOG](../WORK_LOG.md).
 This document is a work plan, not a claim that all six stages have shipped.
+
+Stages 1–2 are implemented: staging reconstructs a session once per batch; scorers append only the
+new attempt, and state/correction saves synchronize changed typed leaves. The append path validates
+historical identities and relies on scorer-owned immutable history; corrections use the general
+save path. Cache entries publish after the outer transaction commits. Prefix validation, collection
+aggregation and general correction hashing still grow with session size; writes to unchanged
+historical attempt fields do not.

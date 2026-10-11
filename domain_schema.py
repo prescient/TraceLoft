@@ -242,16 +242,33 @@ def context(c,sid,ordinal,shot,user_id,scope,eq):
               (sid,ordinal,scope,cid))
 
 
-def write_session(c,data,user_id=None,backfill=False):
+def sync_fields(c, table, scope, rows):
+    """Write only changed typed leaves, preserving artifact and container shapes."""
+    columns = ('session_id',) if table == 'session_fields' else ('session_id', 'ordinal')
+    where = ' AND '.join(column + '=?' for column in columns)
+    existing = {row['path']: tuple(row[key] for key in
+                ('path', 'kind', 'text_value', 'real_value', 'integer_value'))
+                for row in c.execute(f'SELECT * FROM {table} WHERE {where}', scope)}
+    incoming = {row[0]: tuple(row) for row in rows}
+    c.executemany(f'DELETE FROM {table} WHERE {where} AND path=?',
+                  [(*scope, path) for path in existing.keys() - incoming.keys()])
+    placeholders = ','.join('?' for _ in range(len(columns) + 5))
+    keys = ','.join((*columns, 'path'))
+    c.executemany(f'INSERT INTO {table} VALUES({placeholders}) ON CONFLICT({keys}) '
+                  'DO UPDATE SET kind=excluded.kind,text_value=excluded.text_value,'
+                  'real_value=excluded.real_value,integer_value=excluded.integer_value',
+                  [(*scope, *row) for path, row in incoming.items() if existing.get(path) != row])
+
+
+def write_session(c,data,user_id=None,backfill=False,changed_attempts=None):
     sid=data['id']
     old=c.execute('SELECT user_id FROM session_owners WHERE session_id=?',(sid,)).fetchone()
     owner=old[0] if old else user_id or active_user(c)
     if data.get('user_id',owner)!=owner:raise ValueError('A session cannot change golfer.')
     c.execute('INSERT OR IGNORE INTO session_owners VALUES(?,?,?)',(sid,owner,'single_player_history' if backfill else 'selected_at_start'))
     config={k:v for k,v in data.items() if k not in ('shots','collection_plan','user_id')}
-    c.execute('DELETE FROM session_fields WHERE session_id=?',(sid,))
-    c.executemany('INSERT INTO session_fields VALUES(?,?,?,?,?,?)',
-                  [(sid,*r) for r in flatten(config,artifacts=('/course','/round/holes','/distance_model'))])
+    sync_fields(c, 'session_fields', (sid,),
+                flatten(config, artifacts=('/course','/round/holes','/distance_model')))
     if 'collection_plan' in data:
         oldplan=c.execute('SELECT plan_id FROM session_plan_selection WHERE session_id=?',(sid,)).fetchone()
         fingerprint=identity('plan:'+sid+':'+encoded(data['collection_plan']))
@@ -262,6 +279,8 @@ def write_session(c,data,user_id=None,backfill=False):
             c.executemany('INSERT OR IGNORE INTO session_plan_items VALUES(?,?,?,?,?,?,?)',[(fingerprint,pos,k,*scalar(v)) for k,v in eq.items()])
         c.execute('INSERT OR IGNORE INTO session_plan_selection VALUES(?,?)',(sid,fingerprint))
     for ordinal,shot in enumerate(data['shots'],1):
+        if changed_attempts is not None and ordinal not in changed_attempts:
+            continue
         link=c.execute('SELECT shot_id FROM session_attempts WHERE session_id=? AND ordinal=?',(sid,ordinal)).fetchone()[0]
         prior=c.execute('SELECT user_id FROM shot_owners WHERE shot_id=?',(link,)).fetchone()
         if prior and prior[0]!=owner:raise ValueError('Shot and session belong to different golfers.')
@@ -273,8 +292,7 @@ def write_session(c,data,user_id=None,backfill=False):
         fields={k:v for k,v in shot.items() if k not in EQUIPMENT_FIELDS and k!='flight'}
         # Numeric reads hydrate from source columns; these typed leaves retain missing/invalid
         # original representations and the precise provider key set, never a model fallback.
-        c.execute('DELETE FROM attempt_fields WHERE session_id=? AND ordinal=?',(sid,ordinal))
-        c.executemany('INSERT INTO attempt_fields VALUES(?,?,?,?,?,?,?)',[(sid,ordinal,*r) for r in flatten(fields)])
+        sync_fields(c, 'attempt_fields', (sid, ordinal), flatten(fields))
 
 
 def read_session(c,sid):

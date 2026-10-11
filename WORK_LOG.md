@@ -1,5 +1,20 @@
 # TraceLoft work log
 
+## 2026-10-10 — Incremental attempt persistence
+
+- Scorers now append the new attempt and resulting state in the existing receipt transaction.
+  Typed session fields synchronize only changed leaves; corrections synchronize only changed
+  attempts. A bounded revision-aware digest cache publishes only after the outer commit, so failed
+  receipts/retries cannot skip writes. Immutable original payloads and outcome pins remain intact.
+- Isolated SQLite trigger probe: recording attempt 100 inserts only attempt 100's fields, with zero
+  field writes to attempts 1–99. Changing a target writes no attempt fields; excluding attempt 2
+  updates only its inclusion and reason leaves. Cold reads, container-shape changes, rollback/retry
+  and rejection of removed/reordered attempts are covered by five new storage regressions.
+- Full project-venv suite: 180 Python tests passed; 55 JavaScript tests passed. Initial global-Python
+  discovery lacked FastAPI, so validation was rerun in the documented project environment. No
+  production database edits or restart. Remaining costs include prefix validation/digest checks on
+  general corrections, collection aggregation, summary calculation and prediction during ingestion.
+
 ## 2026-10-10 — Architecture review and recalculation cache
 
 - Reviewed the supplied findings against storage/domain persistence, recalculation and live state.

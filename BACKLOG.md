@@ -7,6 +7,8 @@
   paginated detail; frozen numbered migrations and repeatable controller/whole-app checks.
 - Work in that order with focused commits, isolated synthetic probes and preserved original data,
   scoring, recovery and the TraceCapture boundary. See [plan](docs/ARCHITECTURE_IMPROVEMENTS.md).
+- Completed: lazy recalculation cache and incremental attempt/typed-state writes. Revision-based
+  live state is next; registry/query/migration work remains planned.
 - Future extensions: server-shared dynamic analysis views, provider contracts and operational
   receipt/save/calculation/backup diagnostics. Desktop/video remain future product features below.
 

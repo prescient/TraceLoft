@@ -66,7 +66,7 @@ class DrivingRangeSession(PuttingSession):
                   excluded=False, removed=False, simulated=self.data['demo'], **equipment)
         shot['flight'] = copy.deepcopy(event.get('_demo_flight')) if event.get('_demo_flight') else predict(vals,self.data['handedness'])
         self.data['shots'].append(shot)
-        self.save()
+        self.save(append=True)
         return True
 
     def summary(self):

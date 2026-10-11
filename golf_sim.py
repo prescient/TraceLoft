@@ -250,7 +250,9 @@ class GolfSimSession(PuttingSession):
         if outcome['applied'] and g['holed'] and 'round' in self.data:
             self.data['round']['results'].append(dict(hole_id=course['id'],hole_number=course['hole_number'],
                 par=course['par'],game=copy.deepcopy(g)))
-        self.data['shots'].append(shot);self.save();return True
+        self.data['shots'].append(shot)
+        self.save(append=True)
+        return True
 
     def summary(self):
         g=self.data['game'];shots=self.data['shots'];remaining=distance(g['position'],self.data['course']['pin'])

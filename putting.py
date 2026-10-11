@@ -108,9 +108,12 @@ class PuttingSession:
     def path(self):
         return self.folder / (self.data["id"] + ".json")
 
-    def save(self):
+    def save(self, append=False):
         if self.store is not None:
-            self.store.save_session(self.data)
+            if append:
+                self.store.append_attempt(self.data)
+            else:
+                self.store.save_session(self.data)
             return
         self.folder.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_suffix(".tmp")
@@ -160,7 +163,7 @@ class PuttingSession:
         elif self.data['drill'] == 'Putting ladder':
             self.data['target_distance_ft'] = self.data['ladder_targets_ft'][len(self.data['shots']) % len(self.data['ladder_targets_ft'])]
             self.data['target'] = required_speed_mph(self.data['target_distance_ft'], self.data['stimp'], self.data['distance_model']['id'])
-        self.save()
+        self.save(append=True)
         return True
 
     def toggle_excluded(self, key):
