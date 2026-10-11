@@ -1,5 +1,12 @@
 # TraceLoft work log
 
+## 2026-10-10 — Stable expansion during live updates
+
+- Follow-up review replaced positional detail expansion with stable section identities. When the
+  first shot adds provenance details, an open cleanup-history section keeps its state rather than
+  transferring it to the new section. Three interaction-state regressions passed, including the
+  new insertion/count-change case. No data or navigation changes.
+
 ## 2026-10-10 — Revision notifications and browser continuity
 
 - Added server epoch/revision stamps and protocol-2 WebSocket change notices. Idle checks do not

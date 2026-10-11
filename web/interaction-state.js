@@ -12,7 +12,9 @@ export function preserveInteraction(root, repaint) {
     .map(el=>({key:identity(el),value:el.value})).filter(item=>item.key);
   const caret = focusedIndex >= 0 && typeof active.selectionStart === 'number' ?
     [active.selectionStart,active.selectionEnd,active.selectionDirection] : null;
-  const details = [...root.querySelectorAll('details')].map(el=>el.open);
+  const detailKey = (el,i) => el.id || el.querySelector('summary')?.textContent.trim()
+    .replace(/\(\d+\)/g,'(count)').replace(/\bShot\s+\d+/g,'Shot') || `position:${i}`;
+  const details = new Map([...root.querySelectorAll('details')].map((el,i)=>[detailKey(el,i),el.open]));
   const scroll = [...root.querySelectorAll('.table-wrap')].map(el=>[el.scrollLeft,el.scrollTop]);
   const win = root.ownerDocument.defaultView;
   const position = win ? [win.scrollX,win.scrollY] : null;
@@ -22,7 +24,7 @@ export function preserveInteraction(root, repaint) {
     const next = nextControls.find(el=>identity(el) === draft.key);
     if (next && !next.disabled) next.value = draft.value;
   }
-  root.querySelectorAll('details').forEach((el,i)=>{if(i<details.length)el.open=details[i];});
+  root.querySelectorAll('details').forEach((el,i)=>{const key=detailKey(el,i);if(details.has(key))el.open=details.get(key);});
   root.querySelectorAll('.table-wrap').forEach((el,i)=>{if(scroll[i])[el.scrollLeft,el.scrollTop]=scroll[i];});
   const focused = key ? nextControls.find(el=>identity(el) === key) :
     focusedIndex >= 0 ? nextControls[focusedIndex] : null;
