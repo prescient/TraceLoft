@@ -596,10 +596,19 @@ def create_app(service=None):
             await ws.close(code=1008)
             return
         await ws.accept()
+        previous = None
         try:
             while True:
-                await ws.send_json(service.snapshot())
-                await asyncio.sleep(.3)
+                revision = service.live_revision()
+                if revision != previous:
+                    message = dict(type='state_changed', **revision) if ws.query_params.get('protocol') == '2' else service.snapshot()
+                    await ws.send_json(message)
+                    previous = revision
+                # Receiving also releases idle sockets promptly when a tab closes.
+                try:
+                    await asyncio.wait_for(ws.receive_text(), timeout=.3)
+                except asyncio.TimeoutError:
+                    pass
         except (WebSocketDisconnect, RuntimeError):
             pass
 

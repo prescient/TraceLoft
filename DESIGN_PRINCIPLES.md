@@ -180,6 +180,11 @@ must remain distinct; dynamic browser-saved views must not be presented as froze
 - Preserve the user's local workflow: localhost access without pairing; LAN access is an explicit
   launcher option. Keep GSPro sending explicit and off by default on service startup.
 - Persist confirmed results and report failed saves. Keep finish, abandon, exclusion and deletion distinct.
+- New-shot updates must preserve unfinished local edits, caret/focus, expanded sections, selected
+  shots and scroll position within the same session. Changing golfer/session or completing a drill
+  establishes a new context. Ignore stale responses; reconnect from an authoritative snapshot.
+- Idle browsers must not repeatedly receive full session history. Announce state revisions and
+  fetch current state on changes/recovery; keep ownership and recording feedback visible.
 - Use recoverable session deletion with Undo/Restore. Restoring results does not resume a finished drill.
 - Keep logs, crops, calibration and training backups separate from session deletion and UI changes.
 - Keep the screen-captured receiver unobstructed and at its calibrated size during live use and verification.

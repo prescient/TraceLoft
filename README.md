@@ -109,6 +109,11 @@ approaches for future browser simulation. Research findings are distinct from im
 
 Run `.venv\Scripts\python -m unittest discover -s tests` and `node --test tests/*.mjs`.
 Use a separate database and input/HTTP ports for state-changing checks.
+Live browsers use `/ws?protocol=2` revision notifications and fetch `/api/state` on changes/recovery.
+Idle connections send no repeated snapshots. Older clients/servers remain compatible during an
+upgrade. Same-session repaints retain unfinished edits/focus; source data and scoring stay server-owned.
+State fetches still include full history; bounded/delta detail reads are planned in the
+[architecture improvement plan](docs/ARCHITECTURE_IMPROVEMENTS.md).
 The initial input profile accepts Yards/mph; unsupported units are rejected. Unknown vendor fields
 are preserved as raw evidence rather than guessed into canonical metrics. A successful local save
 is distinct from simulator delivery. Direct Infinite Tees heartbeat acknowledgement has been tested;

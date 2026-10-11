@@ -1,4 +1,5 @@
 import {resetShotMotion,shotMotion,observeShotMotion,motionControls,mountShotMotion,motionChart,chartProjection} from './shot-motion.js';
+import {preserveInteraction} from './interaction-state.js';
 import {decorateCollection} from './collection.js';
 import {escape as esc} from './charts.js';
 import {equipmentControls,bindEquipment} from './equipment.js';
@@ -102,7 +103,7 @@ export function renderRange(app,data,state,isReview,sessionNotice,context) {
   const bagOptions=[...new Map(shots.map(s=>{const e=equipment(s);return [e.bag_id||'',e.bag_name||'No bag'];})).entries()].filter(([id])=>id);
   const clubOptions=[...new Map(shots.filter(s=>!v.bag||equipment(s).bag_id===v.bag).map(s=>{const e=equipment(s);return [e.club_id||'',`${e.club_label||'Untagged'} · ${e.bag_name||'No bag'}`];})).entries()].filter(([id])=>id);
   const undo=[...data.cleanup_history].reverse().find(b=>b.action!=='undo'&&!b.undone);
-  const redraw=()=>renderRange(app,data,state,isReview,sessionNotice,context);
+  const redraw=()=>preserveInteraction(app,()=>renderRange(app,data,state,isReview,sessionNotice,context));
   const plotShots=scatterCohort(shots,v),colors=clubColors(shots);
   const drawScatter=size=>scatter(plotShots,v,data.range_target,data.range_width,data.range_depth,colors,size);
   const chart=drawScatter();

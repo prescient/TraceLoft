@@ -43,3 +43,12 @@ historical identities and relies on scorer-owned immutable history; corrections 
 save path. Cache entries publish after the outer transaction commits. Prefix validation, collection
 aggregation and general correction hashing still grow with session size; writes to unchanged
 historical attempt fields do not.
+
+Stage 3's notification/controller foundation is implemented. Idle polling examines bounded service
+status and a committed database-change counter, never trajectories or summaries. Protocol 2 sends
+small revision notices and the browser coalesces state fetches, ignores stale/disposed requests and
+reconnects. Runner/animation repaints retain draft text, caret/focus, expansion and scroll; existing
+range selections remain in their view model. Old clients receive changed-only snapshots; new clients
+also support an older server during an upgrade. Full-history state fetches on changes still exist:
+incremental shot deltas, lazy trajectories and bounded detail remain follow-up work, along with
+feature mount/update/dispose rather than whole-runner repainting.

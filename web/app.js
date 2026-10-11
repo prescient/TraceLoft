@@ -12,6 +12,8 @@ import {bindEquipment, refreshSetupEquipment} from './equipment.js';
 import {recordingWarnings} from './recording.js';
 import {renderRangeSetup,renderRange} from './driving-range.js';
 import {bindGolferPicker} from './golfers.js';
+import {createLiveStateController, isStaleState} from './live-state.js';
+import {preserveInteraction} from './interaction-state.js';
 
 const app = document.querySelector('#app'), connection = document.querySelector('#connection');
 let state=null, drills=[], view='choose', selectedDrill=null, review=null, selectedShot=null, socket=null, renderKey='', online=false;
@@ -19,6 +21,8 @@ let sessionList=[], sessionListRequest=0, sessionMode='all';
 let abandonedSession=null;
 let navigationRequest=0;
 let courses=[];
+let runnerContext=null;
+let reviewRequest=0;
 
 function notice(message, undo=null) {
   const box=document.querySelector('#notice');
@@ -101,6 +105,7 @@ function navigation() {
   connection.querySelector('span:last-child').textContent=!online?'Reconnecting':state?.capture.running?'Source ready':'Waiting for source';
 }
 function update(next) {
+  if (isStaleState(state, next)) return;
   const previousSession=JSON.stringify([state?.practice?.id,state?.practice?.ended]);
   const sessionsChanged=state?.sessions_revision!==next.sessions_revision;
   const golferChanged=state?.golfer_id!==next.golfer_id;
@@ -116,26 +121,33 @@ function update(next) {
   else if (view==='runner') {
     if(review&&sessionsChanged)refreshReview();
     const key=JSON.stringify([review??state.practice,review?.summary??state.summary,state.equipment?.revision,(review?.practice??state.practice)?.session_kind==='golf_sim'?state.sessions_revision:null,state.practice_error,state.capture.running,state.capture.stopping]);
-    if (key!==renderKey) { renderKey=key;renderRunner(); }
+    if (key!==renderKey) { renderKey=key;renderRunner(true); }
     const feedback=app.querySelector('#recording-feedback');
     if(feedback){const html=recordingWarnings(state.capture,shotWord(review?.practice??state.practice));if(feedback.innerHTML!==html)feedback.innerHTML=html;}
   }
 }
 async function refreshReview() {
   const id=review.practice.id;
+  const ticket=++reviewRequest;
   try {
     const next=await api(`/api/sessions/${id}`);
-    if(view==='runner'&&review?.practice.id===id){review=next;renderRunner();}
+    if(ticket===reviewRequest&&view==='runner'&&review?.practice.id===id){review=next;renderRunner(true);}
   }catch(e){
-    if(view==='runner'&&review?.practice.id===id&&e.status===404){review=null;setView('sessions');notice('This session was deleted on another device.');}
+    if(ticket===reviewRequest&&view==='runner'&&review?.practice.id===id&&e.status===404){review=null;setView('sessions');notice('This session was deleted on another device.');}
   }
 }
 function connect() {
-  const current=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws`);
+  const current=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws?protocol=2`);
   socket=current;
+  const live=createLiveStateController({fetchState:()=>api('/api/state'),apply:next=>{if(socket===current)update(next);},onError:()=>current.close()});
   current.onopen=()=>{if(socket===current){online=true;navigation();}};
-  current.onmessage=event=>{if(socket===current)update(JSON.parse(event.data));};
-  current.onclose=()=>{if(socket!==current)return;online=false;if(view!=='offline'){navigation();setTimeout(()=>{if(socket===current&&view!=='offline')connect();},1800);}};
+  current.onmessage=event=>{
+    if(socket!==current)return;
+    const message=JSON.parse(event.data);
+    if(message.type==='state_changed')live.notify(message);
+    else if(message.capture)update(message); // Already-open older servers during a rolling restart.
+  };
+  current.onclose=()=>{live.dispose();if(socket!==current)return;online=false;if(view!=='offline'){navigation();setTimeout(()=>{if(socket===current&&view!=='offline')connect();},1800);}};
 }
 
 async function boot() {
@@ -238,12 +250,19 @@ async function exitSession() {
   }
   review=null;setView(data?.session_kind==='golf_sim'?'play':'choose');
 }
-function renderRunner() {
+function renderRunner(preserveEdits=false) {
+  const data=review?.practice??state.practice;
+  const context=JSON.stringify([state.golfer_id,data?.id,data?.ended,!!review]);
+  if(preserveEdits&&runnerContext===context) preserveInteraction(app,renderRunnerContent);
+  else renderRunnerContent();
+  runnerContext=context;
+}
+function renderRunnerContent() {
   const data=review?.practice??state.practice, summary=review?.summary??state.summary;
   if(!data){setView('choose');return;}
   renderKey=JSON.stringify([review??state.practice,review?.summary??state.summary,state.equipment?.revision,(review?.practice??state.practice)?.session_kind==='golf_sim'?state.sessions_revision:null,state.practice_error,state.capture.running,state.capture.stopping]);
   if(data.session_kind==='golf_sim') {
-    const redraw=()=>{if(view==='runner'&&(review?.practice??state.practice)?.id===data.id)renderRunner();};
+    const redraw=()=>{if(view==='runner'&&(review?.practice??state.practice)?.id===data.id)renderRunner(true);};
     const change=async(path,params)=>{update(await api(path,params));redraw();};
     renderGame(app,data,summary,state,!!review,sessionNotice,{
       equipment:equipmentContext,notice,redraw,current:()=>state.practice?.equipment_selection,
@@ -258,7 +277,7 @@ function renderRunner() {
     });return;
   }
   if(data.session_kind==='driving_range') {
-    const refreshRange=()=>{if(view==='runner'&&(review?.practice??state.practice)?.id===data.id)renderRunner();};
+    const refreshRange=()=>{if(view==='runner'&&(review?.practice??state.practice)?.id===data.id)renderRunner(true);};
     renderRange(app,data,state,!!review,sessionNotice,{
       collectionAnalysis:()=>api(`/api/collection/${data.id}/analysis`),
       publishProfile:()=>api(`/api/collection/${data.id}/profile`,{}),

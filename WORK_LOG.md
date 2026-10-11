@@ -1,5 +1,26 @@
 # TraceLoft work log
 
+## 2026-10-10 — Revision notifications and browser continuity
+
+- Added server epoch/revision stamps and protocol-2 WebSocket change notices. Idle checks do not
+  reconstruct history, calculate summary or inspect trajectories. Store locking prevents announcing
+  another thread's in-flight database writes. Idle sockets detect disconnection; legacy clients get
+  changed-only snapshots, and new clients accept older servers during an upgrade.
+- Browser controller coalesces burst requests and discards superseded revisions, old-epoch/closed
+  socket responses. API action snapshots cannot replace newer state; review refresh requests have
+  sequence guards. Same-session runner and ball-animation repaints preserve dirty inputs, focus,
+  caret, expanded details and scroll. External modal focus stays outside the runner.
+- 40 affected Python tests and all 62 JavaScript tests passed. Four new backend tests cover cheap
+  idle detection, database/stamp parity, idle protocol behavior and legacy compatibility; seven new
+  JavaScript tests cover races/reconnect disposal and interaction-state restoration.
+- Isolated browser QA (port 8778, separate synthetic database): arrival of shots 12/13 updated latest
+  feedback while retaining draft text/caret/focus/scroll and an open target modal. Saving its target
+  succeeded. Reviewed 1366×1024 and 1376×1032 iPad Pro landscape plus 390×844 phone; no page overflow,
+  exits remain available. Found and fixed animation-finish repaint losing drafts during this review.
+- Limit: changes still fetch full state and can repaint the runner; shot deltas/lazy trajectories and
+  feature update/dispose remain explicit follow-ups. User's production 40-shot range was inspected
+  read-only; no production shot changes were made for testing.
+
 ## 2026-10-10 — Incremental attempt persistence
 
 - Scorers now append the new attempt and resulting state in the existing receipt transaction.

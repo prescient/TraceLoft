@@ -7,6 +7,7 @@ import re
 import subprocess
 import contextlib
 import sqlite3
+import uuid
 from collections import deque
 from pathlib import Path
 
@@ -78,6 +79,9 @@ class GolfService:
         self.last_retry = 0
         self.access = dict(lan=False, addresses=[], port=8765)
         self.sessions_revision = 0
+        self._live_epoch = uuid.uuid4().hex
+        self._live_revision = 0
+        self._live_fingerprint = None
         self.equipment = self.store.equipment_catalog() if self.store else default_catalog()
         self.publish_context()
 
@@ -101,8 +105,34 @@ class GolfService:
         path = self.session_path(session_id)
         return restore_model(PuttingSession.load(path.parent / '.trash' / path.name if deleted else path))
 
+    def live_revision(self):
+        """Cheap change detection: never walk session attempts or trajectories.
+
+        Database changes include background calculation publication. The store lock
+        prevents announcing an uncommitted transaction from another thread.
+        """
+        with self.store.lock if self.store else contextlib.nullcontext():
+            data = self.practice.data if self.practice else None
+            fingerprint = json.dumps(dict(
+                database=self.store.connection.total_changes if self.store else None,
+                sessions=self.sessions_revision,
+                practice=(data['id'], data.get('ended'), len(data['shots'])) if data else None,
+                equipment=self.equipment.get('revision'), capture=self.capture,
+                settings=self.settings, access=self.access, input_port=self.input.port,
+                input=self.input.state, relay=self.input.relay.state, error=self.save_error,
+                history=(len(self.history), id(self.history[0]) if self.history else None),
+                logs=(len(self.logs), tuple(self.logs)), read=id(self.latest_read)), sort_keys=True)
+            if fingerprint != self._live_fingerprint:
+                self._live_fingerprint = fingerprint
+                self._live_revision += 1
+            return dict(epoch=self._live_epoch, revision=self._live_revision)
+
     def snapshot(self):
-        return copy.deepcopy(dict(capture=self.capture, settings=self.settings, profiles={}, displays=[], input_port=self.input.port, relay=self.input.relay.state, input=self.input.state,
+        with self.store.lock if self.store else contextlib.nullcontext():
+            return self._snapshot()
+
+    def _snapshot(self):
+        return copy.deepcopy(dict(live=self.live_revision(), capture=self.capture, settings=self.settings, profiles={}, displays=[], input_port=self.input.port, relay=self.input.relay.state, input=self.input.state,
              practice=self.practice.data if self.practice else None, summary=self.practice.summary() if self.practice else None,
              practice_error=self.save_error, history=list(self.history), logs=list(self.logs), read=self.latest_read,
              access=self.access, sessions_revision=self.sessions_revision, equipment=self.equipment,
