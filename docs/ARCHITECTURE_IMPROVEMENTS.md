@@ -54,6 +54,15 @@ also support an older server during an upgrade. Full-history state fetches on ch
 incremental shot deltas, lazy trajectories and bounded detail remain follow-up work, along with
 feature mount/update/dispose rather than whole-runner repainting.
 
+Event-loop isolation (2026-10-11): revision checks use `PRAGMA data_version` on a separate
+read-only connection and never take the writer lock. State requests read golfer rows the same way.
+Analysis, export, backups, calculation previews/history, collection analysis, the Sessions list and
+Play preview/recommendations read a private WAL snapshot (`Store.reading()`) on worker threads.
+Calculation staging plans from a snapshot and re-plans under the lock only if a commit intervened.
+Post-session backups run on a thread joined at shutdown. `read_session` and `hydrate_session` use
+a fixed number of queries per session instead of several per attempt. A write transaction on another
+thread still delays event-loop *writes* (shot intake) until it commits, so keep writes short.
+
 Stage 6's repeatable verification command is available as `python verify.py`, with automatic project
 venv selection, both suites, nonzero failure exit and external logs/report including commit and dirty
 tree state. This supplements controller/backend regressions and manual browser/device checks;

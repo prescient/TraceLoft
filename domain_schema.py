@@ -455,20 +455,24 @@ def read_session(c, sid):
         ):
             cells.setdefault(row['position'], {})[row['field']] = decode(row)
         data['collection_plan'] = list(cells.values())
+    # Three queries per session regardless of attempt count (previously two per attempt).
+    # unflatten() assembles by sorted path, so grouping rows by ordinal preserves the DTO.
+    fields, contexts = {}, {}
+    for row in c.execute('SELECT * FROM attempt_fields WHERE session_id=?', (sid,)):
+        fields.setdefault(row['ordinal'], []).append(row)
+    for row in c.execute(
+        'SELECT p.ordinal selected_ordinal, c.* FROM context_selection p JOIN shot_contexts c '
+        'USING(context_id) WHERE p.session_id=? ORDER BY p.ordinal, p.scope',
+        (sid,),
+    ):
+        contexts.setdefault(row['selected_ordinal'], []).append(row)
     data['shots'] = []
     for link in c.execute(
         'SELECT ordinal FROM session_attempts WHERE session_id=? ORDER BY ordinal', (sid,)
     ).fetchall():
         ordinal = link[0]
-        shot = unflatten(
-            c.execute(
-                'SELECT * FROM attempt_fields WHERE session_id=? AND ordinal=?', (sid, ordinal)
-            ).fetchall()
-        )
-        for row in c.execute(
-            'SELECT c.* FROM context_selection p JOIN shot_contexts c USING(context_id) WHERE p.session_id=? AND p.ordinal=?',
-            (sid, ordinal),
-        ):
+        shot = unflatten(fields.get(ordinal, []))
+        for row in contexts.get(ordinal, []):
             eq = {
                 k: row[k] for i, k in enumerate(EQUIPMENT_FIELDS) if row['present_mask'] & (1 << i)
             }

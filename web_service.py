@@ -142,6 +142,7 @@ class GolfService:
         )
         self.history, self.logs = deque(maxlen=50), deque(maxlen=100)
         self.latest_read = None
+        self._records = 0
         self.pending = deque()
         self.save_error = ""
         self.last_retry = 0
@@ -211,43 +212,48 @@ class GolfService:
                 session.data = previous
             raise
 
+    def remember_record(self, event, read=False):
+        """Show a received record in live history; the counter makes the change detectable."""
+        self.history.appendleft(event)
+        if read:
+            self.latest_read = event
+        self._records += 1
+
     def live_revision(self):
         """Cheap change detection: never walk session attempts or trajectories.
 
-        Database changes include background calculation publication. The store lock
-        prevents announcing an uncommitted transaction from another thread.
+        Never takes the writer lock: a background export, backup or calculation must not
+        stall the event loop. Database changes (including background publication) are
+        detected through committed_version(), which ignores uncommitted work in progress.
         """
-        with self.store.lock:
-            data = self.practice.data if self.practice else None
-            fingerprint = json.dumps(
-                dict(
-                    database=self.store.connection.total_changes,
-                    sessions=self.sessions_revision,
-                    practice=(data['id'], data.get('ended'), len(data['shots'])) if data else None,
-                    equipment=self.equipment.get('revision'),
-                    capture=self.capture,
-                    settings=self.settings,
-                    access=self.access,
-                    input_port=self.input.port,
-                    input=self.input.state,
-                    relay=self.input.relay.state,
-                    error=self.save_error,
-                    history=(len(self.history), id(self.history[0]) if self.history else None),
-                    logs=(len(self.logs), tuple(self.logs)),
-                    read=id(self.latest_read),
-                ),
-                sort_keys=True,
-            )
-            if fingerprint != self._live_fingerprint:
-                self._live_fingerprint = fingerprint
-                self._live_revision += 1
-            return dict(epoch=self._live_epoch, revision=self._live_revision)
+        data = self.practice.data if self.practice else None
+        fingerprint = json.dumps(
+            dict(
+                database=self.store.committed_version(),
+                sessions=self.sessions_revision,
+                practice=(data['id'], data.get('ended'), len(data['shots'])) if data else None,
+                equipment=self.equipment.get('revision'),
+                capture=self.capture,
+                settings=self.settings,
+                access=self.access,
+                input_port=self.input.port,
+                input=self.input.state,
+                relay=self.input.relay.state,
+                error=self.save_error,
+                records=self._records,
+                logs=(len(self.logs), tuple(self.logs)),
+            ),
+            sort_keys=True,
+        )
+        if fingerprint != self._live_fingerprint:
+            self._live_fingerprint = fingerprint
+            self._live_revision += 1
+        return dict(epoch=self._live_epoch, revision=self._live_revision)
 
     def snapshot(self):
-        with self.store.lock:
-            return self._snapshot()
-
-    def _snapshot(self):
+        # In-memory state belongs to the event loop; golfer rows come from a committed read,
+        # so a long background transaction cannot block a state request.
+        golfers, golfer_id = self.store.golfers()
         return copy.deepcopy(
             dict(
                 live=self.live_revision(),
@@ -265,8 +271,8 @@ class GolfService:
                 access=self.access,
                 sessions_revision=self.sessions_revision,
                 equipment=self.equipment,
-                golfers=self.store.users(),
-                golfer_id=self.store.active_user(),
+                golfers=golfers,
+                golfer_id=golfer_id,
                 storage=dict(engine='sqlite', path=str(self.store.path), backup='local_only'),
             )
         )
@@ -288,7 +294,7 @@ class GolfService:
                         self.practice.data.get('equipment_selection')
                     ),
                 )
-            self.history.appendleft(event)
+            self.remember_record(event)
             self.pending.append(event)
             self.flush_practice()
         elif kind in ("error", "log"):
@@ -310,15 +316,12 @@ class GolfService:
                         target = self.load_session(sid)
                     except FileNotFoundError:
                         target = None
-            previous = copy.deepcopy(target.data) if target else None
             try:
-                with self.store.transaction():
+                with self._changing(target):
                     receipt_id, fresh = self.store.ingest(event)
                     practice_event = dict(event, receipt_id=receipt_id)
                     added = target.add(practice_event) if fresh and target else False
             except (OSError, ValueError) as exc:
-                if target:
-                    target.data = previous
                 self.save_error = f"Practice save failed; waiting to retry: {exc}"
                 return
             self.pending.popleft()
@@ -347,10 +350,24 @@ class GolfService:
             self.save_error = f'Receipt recovery failed: {exc}'
 
     def backup_after_session(self):
+        """Copy and verify the database without stalling shot intake.
+
+        Inside the running service the copy runs on a worker thread; it reads its own
+        snapshot connection, so it needs no shared state. Without a loop (scripts/tests)
+        it runs inline. Store.close() waits for outstanding copies.
+        """
         try:
-            self.store.backup()
-        except (OSError, sqlite3.Error) as exc:
-            self.capture['error'] = f'Session saved; local backup failed: {exc}'
+            asyncio.get_running_loop()
+        except RuntimeError:
+            try:
+                self.store.backup()
+            except (OSError, sqlite3.Error) as exc:
+                self._backup_failed(exc)
+            return
+        self.store.backup_in_background(self._backup_failed)
+
+    def _backup_failed(self, exc):
+        self.capture['error'] = f'Session saved; local backup failed: {exc}'
 
     async def run(self):
         self.publish_context()
@@ -367,6 +384,7 @@ class GolfService:
     async def shutdown(self):
         await self.input.close()
         self.flush_practice()
+        await asyncio.to_thread(self.store.wait_for_background)
         try:
             self.publish_context()
             with self.store.transaction():
@@ -605,45 +623,69 @@ class GolfService:
         self.publish_context()
         self.sessions_revision += 1
 
-    def game_preview(self, session_id):
-        from club_preview import build_preview
-        from analysis_schema import preview_sessions
-
+    def _round(self, session_id):
         saved = self._session(session_id)
         if not isinstance(saved, GolfSimSession):
             raise ValueError('Choose a golf round.')
-        with self.store.lock:
-            sessions, warnings = preview_sessions(self.store.connection, saved.data)
-        result = build_preview(sessions, saved.data)
+        return saved
+
+    def game_preview(self, session_id):
+        return self.preview_round(self.preview_inputs(session_id))
+
+    def preview_inputs(self, session_id):
+        """Copy the round on the event loop so preview_round() can run on a worker thread."""
+        return copy.deepcopy(self._round(session_id).data)
+
+    def preview_round(self, data):
+        """Historical dispersion for a copied round, read from a committed snapshot."""
+        from club_preview import build_preview
+        from analysis_schema import preview_sessions
+
+        with self.store.reading() as connection:
+            sessions, warnings = preview_sessions(connection, data)
+        result = build_preview(sessions, data)
         result['warnings'] = warnings
         return result
 
     def game_recommendations(self, session_id):
-        from analysis import build_report
-        from analysis_schema import preview_sessions
+        inputs = self.recommendation_inputs(session_id)
+        return self.recommend_clubs(*inputs) if inputs else []
 
-        saved = self._session(session_id)
-        if not isinstance(saved, GolfSimSession):
-            raise ValueError('Choose a golf round.')
+    def recommendation_inputs(self, session_id):
+        """Copies for recommend_clubs(), or None when no full-swing suggestion applies."""
+        saved = self._round(session_id)
         bag = (saved.data.get('equipment_selection') or {}).get('bag_id')
         if not bag or saved.data['game']['lie'] == 'green':
-            return []
-        collections = []
-        with self.store.lock:
-            current = next((b for b in self.equipment['bags'] if b['id'] == bag), None)
-            for club in (current or {}).get('clubs', []):
-                game = {**saved.data, 'equipment_selection': dict(bag_id=bag, club_id=club['id'])}
-                collections.extend(preview_sessions(self.store.connection, game)[0])
-        report = build_report(
-            collections,
-            dict(mode='demo' if saved.data['demo'] else 'real', bag=bag, metric='total'),
-        )
+            return None
         factor = (
             1 - saved.data['game_settings'].get(saved.data['game']['lie'] + '_percent', 0) / 100
         )
         if factor <= 0:
-            return []
-        needed = saved.summary()['remaining_yd'] / factor
+            return None
+        return (
+            copy.deepcopy(saved.data),
+            saved.summary()['remaining_yd'],
+            copy.deepcopy(self.equipment),
+        )
+
+    def recommend_clubs(self, data, remaining_yd, equipment):
+        """Closest clubs by historical median total; safe on a worker thread."""
+        from analysis import build_report
+        from analysis_schema import preview_sessions
+
+        bag = data['equipment_selection']['bag_id']
+        collections = []
+        with self.store.reading() as connection:
+            current = next((b for b in equipment['bags'] if b['id'] == bag), None)
+            for club in (current or {}).get('clubs', []):
+                game = {**data, 'equipment_selection': dict(bag_id=bag, club_id=club['id'])}
+                collections.extend(preview_sessions(connection, game)[0])
+        report = build_report(
+            collections,
+            dict(mode='demo' if data['demo'] else 'real', bag=bag, metric='total'),
+        )
+        factor = 1 - data['game_settings'].get(data['game']['lie'] + '_percent', 0) / 100
+        needed = remaining_yd / factor
         available = [g for g in report['groups'] if g['metrics']['total']['count'] >= 5]
         available.sort(key=lambda g: abs(g['metrics']['total']['median'] - needed))
         return [
@@ -774,11 +816,26 @@ class GolfService:
         self.sessions_revision += 1
 
     def sessions(self, deleted=False):
+        """Session list for the selected golfer, read from one committed snapshot.
+
+        Safe to run on a worker thread: it touches no in-memory service state, reads each
+        session once (other golfers' sessions are filtered in SQL) and holds no writer lock.
+        """
+        from domain_schema import active_user, read_session
+
         result = []
-        for data in self.store.list_sessions(deleted):
-            if self.store.session_owner(data['id']) != self.store.active_user():
-                continue
-            session = self.load_session(data['id'], deleted)
+        with self.store.reading() as connection:
+            ids = [
+                row[0]
+                for row in connection.execute(
+                    'SELECT s.id FROM sessions s JOIN session_owners o ON o.session_id=s.id '
+                    'WHERE o.user_id=? AND (s.deleted_at IS NOT NULL)=? ORDER BY s.started DESC',
+                    (active_user(connection), int(deleted)),
+                )
+            ]
+            loaded = [read_session(connection, session_id) for session_id in ids]
+        for data in loaded:
+            session = restore_model(PuttingSession.from_data(self.store, data))
             result.append(
                 dict(
                     id=data['id'],

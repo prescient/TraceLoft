@@ -1,5 +1,39 @@
 # TraceLoft work log
 
+## 2026-10-11 — Event loop no longer waits on background database work
+
+- Problem: exports, backups and calculation staging ran on worker threads while holding the
+  single writer lock (staging for its whole selection). The event loop took that same lock for
+  every live-revision check (about 3/s per tab), every state request and every shot. One long export
+  could therefore freeze shot intake, WebSocket updates and all requests.
+- Fix:
+  - `Store.reading()` gives a private read-only WAL snapshot connection. Inside the caller's
+    own write transaction it yields the writer connection, so uncommitted rows stay visible.
+  - Analysis, export, backups, calculation previews/history/batches, collection analysis, the
+    Sessions list and Play preview/recommendations now read from snapshots on worker threads.
+    The Play endpoints copy round data on the loop first.
+  - Live revisions use `PRAGMA data_version` on a separate connection
+    (`Store.committed_version()`), and state requests read golfer rows the same way; neither
+    takes the lock. Record counters replace the `id()`-based history fingerprint.
+  - Calculation staging plans from a snapshot and re-plans under the lock only if a commit
+    happened meanwhile.
+  - Post-session backups (previously a full copy plus integrity check on the event loop,
+    including from shot intake) run on a thread that `Store.close()` waits for.
+  - The Open Connect duplicate check now reads the shared connection under its lock.
+- Sessions list: other golfers' sessions are filtered in SQL, and each session is read once
+  instead of twice. `read_session`/`hydrate_session` now use a fixed number of queries per
+  session instead of two to four per attempt.
+- Remaining: a write transaction on another thread still delays event-loop writes until it
+  commits; keep writes short.
+- Tests: `tests/test_concurrency.py` (reads, state, export, backup and listing complete while
+  another thread holds an open write; uncommitted work is not announced; read-your-writes inside
+  a transaction; the post-session backup leaves the loop free; query count is independent of
+  attempt count; the Sessions list filters other golfers and reads each session once), plus
+  staging snapshot/re-plan tests.
+- Verified: `python verify.py` passed **199 Python** and **63 JavaScript** tests and lint.
+  The first run exposed a Windows temp-cleanup race with the background backup; the store now
+  joins background copies on close.
+
 ## 2026-10-11 — Atomic service mutations and legacy-path removal
 
 - Fixed: `change_practice` restored in-memory state only for `OSError`. A `ValueError` (or any

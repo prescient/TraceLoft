@@ -335,9 +335,11 @@ class ShotInput:
         event['wire_digest'] = digest(encoded(packet).encode())
         async with self.accept_lock:
             store = self.service.store
-            old = store.connection.execute(
-                'SELECT raw_json FROM ingest_events WHERE id=?', (event['receipt_id'],)
-            ).fetchone()
+            # The writer connection is shared with worker threads; read it only under its lock.
+            with store.lock:
+                old = store.connection.execute(
+                    'SELECT raw_json FROM ingest_events WHERE id=?', (event['receipt_id'],)
+                ).fetchone()
             if old:
                 if json.loads(old[0]).get('wire_digest') != event['wire_digest']:
                     raise ValueError('Receipt identity conflicts with different data.')
@@ -363,8 +365,7 @@ class ShotInput:
                 if target:
                     target.data = previous
                 raise
-            self.service.history.appendleft(event)
-            self.service.latest_read = event
+            self.service.remember_record(event, read=True)
             self.service.sessions_revision += 1
             self.service.publish_context()
             self.service.save_error = ''

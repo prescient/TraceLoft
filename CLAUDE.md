@@ -156,9 +156,15 @@ DESIGN_PRINCIPLES.md. Read the relevant section before changing those features.
   course names are user input.
 - Request bodies are Pydantic models with `extra="forbid"` and explicit bounds. New endpoints follow
   the same pattern and the same-origin and local-host middleware in `web_app.py`.
-- Blocking SQLite or CPU work called from an endpoint runs in `asyncio.to_thread` and takes
-  `store.lock`/`store.transaction()`. Remember the event loop also takes that lock, so keep
-  lock-held work short.
+- The event loop owns shot intake and must never wait on long database work:
+  - Writes go through `store.transaction()` on the single writer connection. Keep them short.
+  - Read-only work (reports, exports, listings, previews) uses `with store.reading() as c:`.
+    That is a private snapshot connection that never takes `store.lock`. Run heavy reads
+    with `asyncio.to_thread`. Copy any in-memory session data on the loop first; worker
+    threads must not touch `service.practice`.
+  - Change detection uses `store.committed_version()`, never the lock or `total_changes`.
+  - Backups read their own connection. Post-session backups run on a thread that
+    `shutdown()` joins.
 - Adding a drill currently touches `DRILLS`, `PracticeParams` and `create_practice` (web_service/
   web_app), the field-set constants, `restore_model` (distance_ladder.py), `publish_context`,
   the web router and practice categories, plus NAVIGATION.md. A feature registry is planned

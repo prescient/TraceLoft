@@ -601,17 +601,23 @@ def hydrate_session(connection, data):
         WHERE a.session_id=? ORDER BY a.ordinal''',
         (data['id'],),
     ).fetchall()
+    # One query for every attempt's pinned results (at most one per family per attempt).
+    derived = {}
+    for result in connection.execute(
+        '''SELECT p.ordinal pinned_ordinal, t.points_json pinned_trajectory, d.*
+        FROM attempt_derived_results p
+        JOIN shot_derived_metrics d ON d.result_id=p.result_id
+        LEFT JOIN shot_trajectories t ON t.result_id=d.result_id
+        WHERE p.session_id=? ORDER BY p.ordinal, p.model_family''',
+        (data['id'],),
+    ):
+        derived.setdefault(result['pinned_ordinal'], []).append(result)
     for row in rows:
         attempt = data['shots'][row['ordinal'] - 1]
         for field, (column, _, _) in SOURCE_FIELDS.items():
             if field in attempt['vals'] and row[column] is not None:
                 attempt['vals'][field] = row[column]
-        for result in connection.execute(
-            '''SELECT d.* FROM attempt_derived_results p
-            JOIN shot_derived_metrics d ON d.result_id=p.result_id
-            WHERE p.session_id=? AND p.ordinal=?''',
-            (data['id'], row['ordinal']),
-        ):
+        for result in derived.get(row['ordinal'], []):
             if result['model_family'] == 'putting':
                 for column in (
                     'estimated_distance_ft',
@@ -642,12 +648,8 @@ def hydrate_session(connection, data):
                             forward=result[prefix + '_forward_yd'],
                             right=result[prefix + '_right_yd'],
                         )
-                trajectory = connection.execute(
-                    'SELECT points_json FROM shot_trajectories WHERE result_id=?',
-                    (result['result_id'],),
-                ).fetchone()
-                if trajectory:
-                    flight['trajectory'] = json.loads(trajectory[0])
+                if result['pinned_trajectory'] is not None:
+                    flight['trajectory'] = json.loads(result['pinned_trajectory'])
                 attempt['flight'] = flight
     return data
 

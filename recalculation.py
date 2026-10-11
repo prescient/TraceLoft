@@ -130,89 +130,106 @@ def specification(family, putting_model):
 def stage(store, family, filters, putting_model='saved'):
     version, code_hash, params = specification(family, putting_model)
     bid = uuid.uuid4().hex
+    # Plan from a committed snapshot without the writer lock, which the event loop needs for
+    # shot intake. If anything committed meanwhile, re-plan inside the write transaction so
+    # the frozen inputs always match the database at the moment the batch is recorded.
+    before = store.committed_version()
+    with store.reading() as snapshot_connection:
+        uid, inputs = plan_inputs(snapshot_connection, family, filters, putting_model)
     with store.transaction():
         c = store.connection
-        uid = active_user(c)
-        selected = report(c, filters, uid)['rows']
-        keys = {(r['session_id'], r['key']) for r in selected}
-        rows = [r for r in read_rows(c, uid) if (r['session_id'], r['legacy_key']) in keys]
-        if family == 'putting':
-            rows = [
-                r
-                for r in rows
-                if r['practice_type'] == 'putting'
-                or c.execute(
-                    "SELECT 1 FROM attempt_derived_results WHERE session_id=? AND ordinal=? AND model_family='putting'",
-                    (r['session_id'], r['ordinal']),
-                ).fetchone()
-            ]
-        if not rows:
-            raise ValueError('No matching shots for this calculation family.')
+        if store.committed_version() != before:
+            uid, inputs = plan_inputs(c, family, filters, putting_model)
         params['filters'] = filters
         c.execute(
             'INSERT INTO recalculation_batches VALUES(?,?,?,?,?,?,?,?)',
             (bid, uid, family, version, code_hash, encoded(params), timestamp(), 'staging'),
         )
-        seen = set()
-        sessions = {}
-        for r in rows:
-            pin = c.execute(
-                'SELECT context_id FROM attempt_derived_results WHERE session_id=? AND ordinal=? AND model_family=?',
-                (r['session_id'], r['ordinal'], family),
-            ).fetchone()
-            context = (
-                'shot'
-                if family == 'source_features'
-                else pin[0]
-                if pin
-                else identity('attempt:' + r['session_id'] + ':' + str(r['ordinal']))
-            )
-            key = (r['shot_id'], context)
-            if key in seen:
-                continue
-            seen.add(key)
-            if r['session_id'] not in sessions:
-                sessions[r['session_id']] = read_session(c, r['session_id'])
-            data = sessions[r['session_id']]
-            shot = data['shots'][r['ordinal'] - 1]
-            stimp = shot.get('stimp_ft', data.get('stimp'))
-            target = shot.get('target_distance_ft')
-            model = (
-                shot.get('distance_model_id', data.get('distance_model', {}).get('id'))
-                if putting_model == 'saved'
-                else putting_model
-            )
-            # Each result names its exact attempt report; source features use the selected physical-shot report.
-            source = (
-                c.execute(
-                    'SELECT report_id FROM shot_primary_source WHERE shot_id=?', (r['shot_id'],)
-                ).fetchone()
-                if family == 'source_features'
-                else None
-            )
-            if family == 'source_features' and not source:
-                raise ValueError('A physical shot has no unambiguous source report.')
+        for item in inputs:
             c.execute(
                 'INSERT INTO recalculation_inputs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                (
-                    bid,
-                    len(seen),
-                    r['shot_id'],
-                    source[0] if source else r['report_id'],
-                    context,
-                    r['session_id'],
-                    r['ordinal'],
-                    r['context_id'],
-                    r['excluded'],
-                    r['removed'],
-                    data.get('handedness', 'right_handed'),
-                    stimp,
-                    target,
-                    model,
-                ),
+                (bid, *item),
             )
-        store.audit(bid, 'stage_recalculation', dict(family=family, count=len(seen)))
+        store.audit(bid, 'stage_recalculation', dict(family=family, count=len(inputs)))
     return resume(store, bid)
+
+
+def plan_inputs(c, family, filters, putting_model):
+    """Read-only selection of frozen calculation inputs; returns (user_id, input rows)."""
+    uid = active_user(c)
+    selected = report(c, filters, uid)['rows']
+    keys = {(r['session_id'], r['key']) for r in selected}
+    rows = [r for r in read_rows(c, uid) if (r['session_id'], r['legacy_key']) in keys]
+    if family == 'putting':
+        rows = [
+            r
+            for r in rows
+            if r['practice_type'] == 'putting'
+            or c.execute(
+                "SELECT 1 FROM attempt_derived_results WHERE session_id=? AND ordinal=? AND model_family='putting'",
+                (r['session_id'], r['ordinal']),
+            ).fetchone()
+        ]
+    if not rows:
+        raise ValueError('No matching shots for this calculation family.')
+    seen = set()
+    sessions = {}
+    inputs = []
+    for r in rows:
+        pin = c.execute(
+            'SELECT context_id FROM attempt_derived_results WHERE session_id=? AND ordinal=? AND model_family=?',
+            (r['session_id'], r['ordinal'], family),
+        ).fetchone()
+        context = (
+            'shot'
+            if family == 'source_features'
+            else pin[0]
+            if pin
+            else identity('attempt:' + r['session_id'] + ':' + str(r['ordinal']))
+        )
+        key = (r['shot_id'], context)
+        if key in seen:
+            continue
+        seen.add(key)
+        if r['session_id'] not in sessions:
+            sessions[r['session_id']] = read_session(c, r['session_id'])
+        data = sessions[r['session_id']]
+        shot = data['shots'][r['ordinal'] - 1]
+        stimp = shot.get('stimp_ft', data.get('stimp'))
+        target = shot.get('target_distance_ft')
+        model = (
+            shot.get('distance_model_id', data.get('distance_model', {}).get('id'))
+            if putting_model == 'saved'
+            else putting_model
+        )
+        # Each result names its exact attempt report; source features use the selected physical-shot report.
+        source = (
+            c.execute(
+                'SELECT report_id FROM shot_primary_source WHERE shot_id=?', (r['shot_id'],)
+            ).fetchone()
+            if family == 'source_features'
+            else None
+        )
+        if family == 'source_features' and not source:
+            raise ValueError('A physical shot has no unambiguous source report.')
+        inputs.append(
+            (
+                len(seen),
+                r['shot_id'],
+                source[0] if source else r['report_id'],
+                context,
+                r['session_id'],
+                r['ordinal'],
+                r['context_id'],
+                r['excluded'],
+                r['removed'],
+                data.get('handedness', 'right_handed'),
+                stimp,
+                target,
+                model,
+            )
+        )
+    return uid, inputs
 
 
 def calculate(source, item, family):

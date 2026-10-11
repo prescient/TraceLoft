@@ -168,10 +168,15 @@ class PuttingSession:
 
     @classmethod
     def from_store(cls, store, session_id, deleted=False):
+        return cls.from_data(store, store.load_session(session_id, deleted=deleted))
+
+    @classmethod
+    def from_data(cls, store, data):
+        """Wrap already-loaded session data; restore_model() selects the scorer class."""
         session = cls.__new__(cls)
         session.store = store
         session.folder = store.path.parent
-        session.data = store.load_session(session_id, deleted=deleted)
+        session.data = data
         return session
 
     @property

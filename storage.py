@@ -158,6 +158,10 @@ class Store:
         self.depth = 0
         self._attempt_cache = {}
         self._attempt_updates = {}
+        self._monitor = None
+        self._monitor_lock = threading.Lock()
+        self._writer_thread = None
+        self._background = []
         self.connection = sqlite3.connect(
             self.path, timeout=5, check_same_thread=False, isolation_level=None
         )
@@ -413,8 +417,8 @@ class Store:
     def analysis(self, params):
         from analysis_schema import report
 
-        with self.lock:
-            return report(self.connection, params)
+        with self.reading() as connection:
+            return report(connection, params)
 
     def _upgrade_calculations(self, backup=True):
         from recalculation import DDL
@@ -471,38 +475,44 @@ class Store:
     def calculation_snapshot(self, batch_id):
         from recalculation import snapshot
 
-        with self.lock:
-            return snapshot(self.connection, batch_id)
+        with self.reading() as connection:
+            return snapshot(connection, batch_id)
 
     def calculation_history(self, shot_id):
         from recalculation import history
 
-        with self.lock:
-            return history(self.connection, shot_id)
+        with self.reading() as connection:
+            return history(connection, shot_id)
 
     def calculation_batches(self):
-        with self.lock:
+        from domain_schema import active_user
+
+        with self.reading() as connection:
             return [
                 dict(r)
-                for r in self.connection.execute(
+                for r in connection.execute(
                     'SELECT * FROM recalculation_batches WHERE user_id=? ORDER BY created_at DESC LIMIT 100',
-                    (self.active_user(),),
+                    (active_user(connection),),
                 )
             ]
 
     def calculation_history_csv(self):
         from recalculation import csv_history
 
-        with self.lock:
-            return csv_history(self.connection)
+        with self.reading() as connection:
+            return csv_history(connection)
 
     def collection_analysis(self, session_id):
         from analysis_schema import collection_snapshot
+        from domain_schema import active_user
 
-        with self.lock:
-            if self.session_owner(session_id) != self.active_user():
+        with self.reading() as connection:
+            owner = connection.execute(
+                'SELECT user_id FROM session_owners WHERE session_id=?', (session_id,)
+            ).fetchone()
+            if (owner[0] if owner else None) != active_user(connection):
                 raise ValueError('Switch golfer to view this collection.')
-            return collection_snapshot(self.connection, session_id)
+            return collection_snapshot(connection, session_id)
 
     def select_equipment_profile(self, session_id):
         from analysis_schema import select_profile
@@ -526,6 +536,20 @@ class Store:
                     'SELECT * FROM users WHERE archived_at IS NULL ORDER BY created_at,user_id'
                 )
             ]
+
+    def golfers(self):
+        """Committed golfer list and selection, read without waiting for the writer lock."""
+        from domain_schema import active_user
+
+        with self._monitor_lock:
+            monitor = self._monitor_connection()
+            users = [
+                dict(r)
+                for r in monitor.execute(
+                    'SELECT * FROM users WHERE archived_at IS NULL ORDER BY created_at,user_id'
+                )
+            ]
+            return users, active_user(monitor)
 
     def create_user(self, name, handedness='right_handed'):
         from equipment import text, default_catalog
@@ -736,11 +760,14 @@ class Store:
                 if outer:
                     self.connection.execute('BEGIN IMMEDIATE')
                     self._attempt_updates = {}
+                    self._writer_thread = threading.get_ident()
                 self.depth += 1
                 try:
                     yield self.connection
                 finally:
                     self.depth -= 1
+                    if outer:
+                        self._writer_thread = None
                 if outer:
                     self.connection.execute('COMMIT')
                     self._attempt_cache.update(self._attempt_updates)
@@ -755,9 +782,92 @@ class Store:
                     raise OSError(f'SQLite save failed: {exc}') from exc
                 raise
 
+    def backup_in_background(self, on_error):
+        """Copy and verify on a worker thread; close() waits for outstanding copies."""
+
+        def run():
+            try:
+                self.backup()
+            except (OSError, sqlite3.Error) as exc:
+                on_error(exc)
+
+        thread = threading.Thread(target=run, name='traceloft-backup')
+        with self._monitor_lock:
+            self._background = [t for t in self._background if t.is_alive()] + [thread]
+        thread.start()
+        return thread
+
+    def wait_for_background(self):
+        with self._monitor_lock:
+            threads = list(self._background)
+        for thread in threads:
+            thread.join()
+
     def close(self):
+        self.wait_for_background()
         with self.lock:
+            with self._monitor_lock:
+                if self._monitor:
+                    self._monitor.close()
+                    self._monitor = None
             self.connection.close()
+
+    def _read_connection(self):
+        connection = sqlite3.connect(
+            self.path.as_uri() + '?mode=ro',
+            uri=True,
+            timeout=5,
+            check_same_thread=False,
+            isolation_level=None,
+        )
+        connection.row_factory = sqlite3.Row
+        connection.execute('PRAGMA busy_timeout=5000')
+        return connection
+
+    def _monitor_connection(self):
+        if self._monitor is None:
+            self._monitor = self._read_connection()
+        return self._monitor
+
+    @contextlib.contextmanager
+    def reading(self):
+        """A private read-only connection pinned to one committed snapshot.
+
+        WAL readers never wait for the writer, so long reports, exports and backups
+        do not hold `self.lock`, which the event loop needs for shot intake. Inside the
+        caller's own write transaction it yields the writer connection instead, so the
+        caller still sees its uncommitted changes.
+        """
+        if self.writing_here():
+            yield self.connection
+            return
+        connection = self._read_connection()
+        try:
+            connection.execute('BEGIN')
+            # A deferred transaction fixes its snapshot at the first read.
+            connection.execute('SELECT count(*) FROM metadata').fetchone()
+            yield connection
+        finally:
+            if connection.in_transaction:
+                connection.execute('ROLLBACK')
+            connection.close()
+
+    def writing_here(self):
+        """True inside a write transaction opened by the calling thread.
+
+        A snapshot reader cannot see that transaction's uncommitted rows, so callers
+        that need them must read through `self.connection` instead.
+        """
+        return self.depth > 0 and self._writer_thread == threading.get_ident()
+
+    def committed_version(self):
+        """A value that changes after every commit, read without the writer lock.
+
+        `PRAGMA data_version` on a separate connection changes whenever another
+        connection commits, so uncommitted work in progress is never announced.
+        """
+        with self._monitor_lock:
+            return self._monitor_connection().execute('PRAGMA data_version').fetchone()[0]
 
     def count(self, table):
         if table not in (
@@ -1199,9 +1309,11 @@ class Store:
             + uuid.uuid4().hex[:8]
             + '.sqlite3'
         )
-        with self.lock:
+        # A separate read connection copies one committed snapshot in a single backup step,
+        # so the writer lock (and with it shot intake) is never held for the copy/verification.
+        with contextlib.closing(self._read_connection()) as source:
             with contextlib.closing(sqlite3.connect(target)) as destination:
-                self.connection.backup(destination)
+                source.backup(destination)
                 destination.execute('PRAGMA journal_mode=DELETE')
                 if (
                     destination.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'
@@ -1212,10 +1324,11 @@ class Store:
                     t: destination.execute(f'SELECT count(*) FROM {t}').fetchone()[0]
                     for t in ('shots', 'ingest_events', 'sessions', 'session_attempts')
                 }
+                schema = destination.execute('PRAGMA user_version').fetchone()[0]
         atomic_json(
             target.with_suffix('.manifest.json'),
             dict(
-                schema=self.connection.execute('PRAGMA user_version').fetchone()[0],
+                schema=schema,
                 created=now(),
                 sha256=digest(target.read_bytes()),
                 counts=counts,
@@ -1227,8 +1340,8 @@ class Store:
 
     def export(self):
         """One committed snapshot, separate observation rows, blank unavailable cells."""
-        with self.transaction():
-            metric_cursor = self.connection.execute('''SELECT o.shot_id, s.occurred_at, s.time_basis, s.reported_club,
+        with self.reading() as connection:
+            metric_cursor = connection.execute('''SELECT o.shot_id, s.occurred_at, s.time_basis, s.reported_club,
                 o.id observation_id,o.provenance,o.mapping_id,o.event_id,c.source_id,e.acceptance,
                 e.source_time,e.received_at,e.time_basis observation_time_basis,
                 v.metric_key,v.definition_version,v.real_value,v.text_value,v.bool_value,v.integer_value,
@@ -1240,7 +1353,7 @@ class Store:
                 ORDER BY o.shot_id,o.id,v.metric_key''')
             metric_fields = [d[0] for d in metric_cursor.description]
             metrics = [dict(r) for r in metric_cursor]
-            attempt_cursor = self.connection.execute(
+            attempt_cursor = connection.execute(
                 'SELECT a.*,s.deleted_at FROM session_attempts a JOIN sessions s ON s.id=a.session_id ORDER BY a.session_id,a.ordinal'
             )
             attempt_fields = [d[0] for d in attempt_cursor.description]
@@ -1281,8 +1394,8 @@ class Store:
             from domain_schema import read_session
 
             contexts = {
-                r[0]: read_session(self.connection, r[0])
-                for r in self.connection.execute('SELECT id FROM sessions').fetchall()
+                r[0]: read_session(connection, r[0])
+                for r in connection.execute('SELECT id FROM sessions').fetchall()
             }
             for attempt in attempts:
                 outcome = contexts[attempt['session_id']]['shots'][attempt['ordinal'] - 1]
@@ -1295,7 +1408,7 @@ class Store:
                 attempt['distance_source_revision'] = context.get('distance_model', {}).get(
                     'source_revision'
                 )
-            shot_cursor = self.connection.execute('SELECT * FROM shots ORDER BY occurred_at,id')
+            shot_cursor = connection.execute('SELECT * FROM shots ORDER BY occurred_at,id')
             shot_fields = (
                 [d[0] for d in shot_cursor.description]
                 + ['simulated']
@@ -1307,7 +1420,7 @@ class Store:
             shots = [dict(r) for r in shot_cursor]
             simulated_events = {
                 r['id']
-                for r in self.connection.execute('SELECT id,raw_json FROM ingest_events')
+                for r in connection.execute('SELECT id,raw_json FROM ingest_events')
                 if json.loads(r['raw_json']).get('simulated')
             }
             for shot in shots:
@@ -1315,7 +1428,7 @@ class Store:
             from shot_schema import SOURCE_FIELDS
 
             reports = {
-                r['shot_id']: r for r in self.connection.execute('SELECT * FROM v_shots_source')
+                r['shot_id']: r for r in connection.execute('SELECT * FROM v_shots_source')
             }
             for shot in shots:
                 # One explicit report supplies the row; never blend values from competing reports.
@@ -1374,7 +1487,7 @@ class Store:
                 'calculation_publications',
                 'calculation_publication_items',
             ):
-                cursor = self.connection.execute(f'SELECT * FROM {table} ORDER BY rowid')
+                cursor = connection.execute(f'SELECT * FROM {table} ORDER BY rowid')
                 files[table + '.csv'] = [dict(r) for r in cursor]
                 field_sets[table + '.csv'] = [d[0] for d in cursor.description]
             for view, name in (
@@ -1386,7 +1499,7 @@ class Store:
                 ('v_bag_map_results', 'bag_map_results.csv'),
                 ('v_wedge_matrix_results', 'wedge_matrix_results.csv'),
             ):
-                cursor = self.connection.execute(f'SELECT * FROM {view}')
+                cursor = connection.execute(f'SELECT * FROM {view}')
                 files[name] = [dict(r) for r in cursor]
                 field_sets[name] = [d[0] for d in cursor.description]
             output = io.BytesIO()
@@ -1432,7 +1545,7 @@ class Store:
                     encoded(
                         [
                             json.loads(r[0])
-                            for r in self.connection.execute(
+                            for r in connection.execute(
                                 'SELECT definition_json FROM metric_definitions ORDER BY key,version'
                             )
                         ]
@@ -1443,7 +1556,7 @@ class Store:
                     encoded(
                         [
                             json.loads(r[0])
-                            for r in self.connection.execute(
+                            for r in connection.execute(
                                 'SELECT payload FROM mapping_versions ORDER BY id'
                             )
                         ]

@@ -312,7 +312,7 @@ def create_app(service=None):
 
     @app.get('/api/calculations')
     async def calculation_batches():
-        return service.store.calculation_batches()
+        return await asyncio.to_thread(service.store.calculation_batches)
 
     @app.post('/api/calculations')
     async def stage_calculation(params: CalculationParams):
@@ -332,7 +332,7 @@ def create_app(service=None):
 
     @app.get('/api/calculations/{batch_id}')
     async def calculation_preview(batch_id: str):
-        return service.store.calculation_snapshot(batch_id)
+        return await asyncio.to_thread(service.store.calculation_snapshot, batch_id)
 
     @app.post('/api/calculations/{batch_id}/resume')
     async def calculation_resume(batch_id: str):
@@ -354,7 +354,7 @@ def create_app(service=None):
 
     @app.get('/api/shots/{shot_id}/calculations')
     async def shot_calculation_history(shot_id: str):
-        return service.store.calculation_history(shot_id)
+        return await asyncio.to_thread(service.store.calculation_history, shot_id)
 
     forwarding_lock = asyncio.Lock()
 
@@ -520,11 +520,13 @@ def create_app(service=None):
 
     @app.get('/api/game/{session_id}/preview')
     async def game_preview(session_id: str):
-        return service.game_preview(session_id)
+        # Copy the round on the event loop; read history on a worker thread.
+        return await asyncio.to_thread(service.preview_round, service.preview_inputs(session_id))
 
     @app.get('/api/game/{session_id}/recommendations')
     async def game_recommendations(session_id: str):
-        return service.game_recommendations(session_id)
+        inputs = service.recommendation_inputs(session_id)
+        return await asyncio.to_thread(service.recommend_clubs, *inputs) if inputs else []
 
     @app.post('/api/range/{session_id}/cleanup')
     async def range_cleanup(session_id: str, params: RangeCleanupParams):
@@ -556,7 +558,7 @@ def create_app(service=None):
 
     @app.get('/api/collection/{session_id}/analysis')
     async def collection_analysis(session_id: str):
-        return service.store.collection_analysis(session_id)
+        return await asyncio.to_thread(service.store.collection_analysis, session_id)
 
     @app.post('/api/collection/{session_id}/profile')
     async def collection_profile(session_id: str):
@@ -609,7 +611,7 @@ def create_app(service=None):
 
     @app.get("/api/sessions")
     async def sessions(deleted: bool = False):
-        return service.sessions(deleted=deleted)
+        return await asyncio.to_thread(service.sessions, deleted)
 
     @app.delete("/api/sessions/{session_id}")
     async def delete_session(session_id: str):

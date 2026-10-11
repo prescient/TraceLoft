@@ -23,6 +23,29 @@ class RecalculationTests(unittest.TestCase):
         self.assertEqual(reads.call_count, 1)
         self.assertEqual(reads.call_args.args[1], self.sid)
 
+    def test_staging_plans_from_a_snapshot_without_the_writer_connection(self):
+        import recalculation
+
+        with patch('recalculation.plan_inputs', wraps=recalculation.plan_inputs) as plans:
+            batch = self.stage()
+        self.assertEqual(plans.call_count, 1)
+        self.assertIsNot(plans.call_args.args[0], self.store.connection)
+        self.assertEqual(batch['expected'], 5)
+
+    def test_staging_replans_under_the_lock_after_a_concurrent_commit(self):
+        import itertools
+        import recalculation
+
+        versions = itertools.count()  # every read reports a new commit
+        with (
+            patch.object(self.store, 'committed_version', side_effect=lambda: next(versions)),
+            patch('recalculation.plan_inputs', wraps=recalculation.plan_inputs) as plans,
+        ):
+            batch = self.stage()
+        self.assertEqual(plans.call_count, 2)
+        self.assertIs(plans.call_args_list[1].args[0], self.store.connection)
+        self.assertEqual(batch['expected'], 5)
+
     def test_preview_publish_history_and_historical_pins(self):
         original = self.store.load_session(self.sid)
         evidence = evidence_manifest(self.store.connection)
