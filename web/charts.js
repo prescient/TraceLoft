@@ -4,6 +4,39 @@ export function escape(value) {
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
   );
 }
+
+// Markup that is already safe. Produced by html`` or explicitly trusted with raw().
+class SafeHtml {
+  constructor(markup) {
+    this.markup = markup;
+  }
+  toString() {
+    return this.markup;
+  }
+}
+
+/** Trust a markup string written by the app itself (never user, file or network text). */
+export const raw = markup => new SafeHtml(String(markup ?? ''));
+
+function interpolate(value) {
+  if (value instanceof SafeHtml) return value.markup;
+  if (Array.isArray(value)) return value.map(interpolate).join('');
+  if (value === null || value === undefined || value === false) return '';
+  return escape(value);
+}
+
+/**
+ * Escape-by-default template tag for innerHTML. Every interpolated value is escaped unless
+ * it is itself html`` output or raw(); arrays are joined; null/undefined/false render nothing.
+ * The result converts to a string, so `element.innerHTML = html`...`` works directly.
+ */
+export function html(strings, ...values) {
+  let markup = strings[0];
+  values.forEach((value, index) => {
+    markup += interpolate(value) + strings[index + 1];
+  });
+  return new SafeHtml(markup);
+}
 export const direction = value => `${Math.abs(value).toFixed(1)}°${value < 0 ? ' L' : value > 0 ? ' R' : ''}`;
 export const error = value => `${value >= 0 ? '+' : ''}${value.toFixed(1)}`;
 

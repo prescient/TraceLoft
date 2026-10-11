@@ -5,7 +5,7 @@ import { renderCourseImport } from './course-import.js';
 import { renderAnalyze } from './analyze.js';
 import { renderCollectionSetup } from './collection.js';
 import { categorizedDrills, categoryMarkup, bindCategories } from './practice-categories.js';
-import { escape as esc, direction, error, trend, gauge, progress } from './charts.js';
+import { escape as esc, html, direction, error, trend, gauge, progress } from './charts.js';
 import { parseRoute, routeFor } from './navigation.js';
 import { renderDistanceSetup, distanceRunner } from './distance-ladder.js';
 import { bindEquipment, refreshSetupEquipment } from './equipment.js';
@@ -38,7 +38,8 @@ let reviewRequest = 0;
 function notice(message, undo = null) {
   const box = document.querySelector('#notice');
   box.hidden = false;
-  box.innerHTML = `<span>${esc(message)}</span>${undo ? '<button class="btn small" data-undo>Undo</button>' : ''}<button class="dismiss" aria-label="Dismiss message">×</button>`;
+  const undoButton = undo && html`<button class="btn small" data-undo>Undo</button>`;
+  box.innerHTML = html`<span>${message}</span>${undoButton}<button class="dismiss" aria-label="Dismiss message">×</button>`;
   box.querySelector('.dismiss').onclick = () => (box.hidden = true);
   if (undo)
     box.querySelector('[data-undo]').onclick = async event => {
@@ -58,7 +59,7 @@ function confirmAction(title, message, label) {
     dialog.className = 'confirm-dialog';
     dialog.setAttribute('aria-labelledby', 'confirm-title');
     dialog.setAttribute('aria-describedby', 'confirm-description');
-    dialog.innerHTML = `<form method="dialog"><h2 id="confirm-title">${esc(title)}</h2><p id="confirm-description">${esc(message)}</p><div class="confirm-actions"><button class="btn quiet" value="cancel" autofocus>Cancel</button><button class="btn danger" value="confirm">${esc(label)}</button></div></form>`;
+    dialog.innerHTML = html`<form method="dialog"><h2 id="confirm-title">${title}</h2><p id="confirm-description">${message}</p><div class="confirm-actions"><button class="btn quiet" value="cancel" autofocus>Cancel</button><button class="btn danger" value="confirm">${label}</button></div></form>`;
     dialog.addEventListener(
       'close',
       () => {
@@ -109,8 +110,9 @@ async function api(path, body, method) {
   }
   return data;
 }
+// `extra` is trusted attribute markup written by this module; the label is always escaped.
 const button = (text, action, kind = '', extra = '') =>
-  `<button class="btn ${kind}" data-action="${action}" ${extra}>${text}</button>`;
+  `<button class="btn ${kind}" data-action="${action}" ${extra}>${esc(text)}</button>`;
 const date = value => new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 const shotWord = data => (data?.practice_type === 'full_swing' ? 'shots' : 'putts');
 const equipmentContext = {

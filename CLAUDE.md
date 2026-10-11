@@ -155,9 +155,12 @@ DESIGN_PRINCIPLES.md. Read the relevant section before changing those features.
   change. Keep formatting-only changes in their own commit and add its hash to
   `.git-blame-ignore-revs`. Prettier leaves HTML template literals as written, so keep new
   templates readable by hand.
-- UI is built from template strings assigned to `innerHTML`. Escape every interpolated value
-  with `esc()`/`escape()` from `web/charts.js`, or use `textContent`. Golfer, bag, club, tag and
-  course names are user input.
+- UI is built from template strings assigned to `innerHTML`. Golfer, bag, club, tag and course
+  names are user input. Write new or edited templates with the `html` tag from `web/charts.js`:
+  it escapes every interpolation unless the value is nested `html` output or explicitly
+  `raw()`. Older templates escape by hand with `esc()`/`escape()`, so keep doing that when you
+  touch them, or convert them to `html`. Use `textContent` for plain text. `.prettierrc.json`
+  disables embedded formatting so prettier never rewrites the markup inside `html` templates.
 - Request bodies are Pydantic models with `extra="forbid"` and explicit bounds. New endpoints follow
   the same pattern and the same-origin and local-host middleware in `web_app.py`.
 - The event loop owns shot intake and must never wait on long database work:

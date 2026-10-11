@@ -1,5 +1,20 @@
 # TraceLoft work log
 
+## 2026-10-11 — Escape-by-default HTML templates
+
+- Added an `html` template tag and `raw()` to `web/charts.js`. Interpolations are escaped unless
+  they are nested `html` output or explicitly trusted; arrays join; null/undefined/false render
+  nothing. The result converts to a string for `innerHTML`.
+- Converted the shared notice and confirmation dialogs. `button()` now escapes its label (all
+  callers pass literal text).
+- Audit of the other ~70 `innerHTML` templates: the user-text sinks spot-checked (golfer, bag,
+  club, cohort and course names) already used `esc()` or `textContent`. The remaining templates
+  convert as they are edited.
+- Prettier formats `html`-tagged templates as embedded HTML, which would change rendered
+  whitespace. `.prettierrc.json` now sets `embeddedLanguageFormatting: off`; the two converted
+  templates were restored to their exact markup.
+- Added `tests/test_html.mjs` (escaping, nesting/raw, arrays/empty values, string conversion).
+
 ## 2026-10-11 — Drill registry (architecture stage 4, server side)
 
 - Added `drills.py`. It holds the catalog (previously `web_service.DRILLS`), one creation factory
