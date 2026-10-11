@@ -40,6 +40,10 @@ Optional `TraceLoft` extension:
 - Context freezes practice_session_id, equipment_selection, range_context, collection_context and
   game_context. The latest Context is returned in every Code 200 under TraceLoft.Context.
 - Recovered=true stores evidence without advancing a live drill or forwarding.
+- SpinUnavailable=true (literal true only) declares a shot the device measured without spin, such as
+  Foresight putts read by TraceCapture's Premier memory source. BallData then needs no spin pair and
+  must carry no spin field. The shot is stored with spin null, never zero. The relay forwards it with
+  TotalSpin, SpinAxis, BackSpin and SideSpin all 0, because simulators require spin.
 
 Ordinary Open Connect senders need none of these extensions. Same-connection duplicate shot numbers
 with identical packets are acknowledged once; conflicting data is rejected. Standard Open Connect

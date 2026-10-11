@@ -27,6 +27,13 @@ CLUB = {
     'VerticalFaceImpact': 'impact_vertical',
     'HorizontalFaceImpact': 'impact_horizontal',
 }
+SPIN_KEYS = ('TotalSpin', 'SpinAxis', 'BackSpin', 'SideSpin')
+
+
+def spin_unavailable(packet):
+    """Whether a private-extension sender declared that this shot has no spin measurement."""
+    extension = packet.get('TraceLoft')
+    return isinstance(extension, dict) and extension.get('SpinUnavailable') is True
 
 
 def reject_constant(value):
@@ -131,7 +138,11 @@ def validate_packet(packet):
         numeric(ball, key, low, high)
     total_pair = ball.get('TotalSpin') is not None and ball.get('SpinAxis') is not None
     component_pair = ball.get('BackSpin') is not None and ball.get('SideSpin') is not None
-    if not total_pair and not component_pair:
+    if spin_unavailable(packet):
+        # The device measured no spin (e.g. Foresight putts): stored as null, never as zero.
+        if any(ball.get(key) is not None for key in SPIN_KEYS):
+            raise ValueError('A shot without spin must not carry spin values.')
+    elif not total_pair and not component_pair:
         raise ValueError('Send TotalSpin + SpinAxis or BackSpin + SideSpin.')
     vals = {field: ball[key] for key, field in BALL.items() if ball.get(key) is not None}
     if options['ContainsClubData']:
@@ -169,6 +180,9 @@ def simulator_packet(packet, number):
         result['BallData'] = {
             key: packet['BallData'][key] for key in BALL if packet['BallData'].get(key) is not None
         }
+        if spin_unavailable(packet):
+            # Simulators require spin; a shot measured without spin plays as zero spin.
+            result['BallData'].update(dict.fromkeys(SPIN_KEYS, 0))
     if options['ContainsClubData']:
         result['ClubData'] = {
             key: packet['ClubData'][key]

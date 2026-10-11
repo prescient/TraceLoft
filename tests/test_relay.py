@@ -9,7 +9,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from open_connect import Frames, heartbeat, validate_packet, wire
+from open_connect import Frames, heartbeat, simulator_packet, validate_packet, wire
 from web_service import GolfService
 from web_app import create_app
 from fastapi.testclient import TestClient
@@ -63,6 +63,31 @@ class ProtocolTests(unittest.TestCase):
         p['BallData'].pop('SpinAxis')
         p['BallData'].update(BackSpin=0, SideSpin=0)
         self.assertEqual(validate_packet(p)['back_spin'], 0)
+
+    def test_declared_spin_unavailable_shot_needs_no_spin_and_plays_as_zero(self):
+        p = shot()
+        for key in ('TotalSpin', 'SpinAxis'):
+            p['BallData'].pop(key)
+        with self.assertRaises(ValueError):
+            validate_packet(p)  # undeclared missing spin stays an error
+        p['TraceLoft'] = dict(SpinUnavailable=True)
+        vals = validate_packet(p)
+        self.assertNotIn('total_spin', vals)
+        outgoing = simulator_packet(p, 7)['BallData']
+        self.assertEqual(
+            [outgoing[k] for k in ('TotalSpin', 'SpinAxis', 'BackSpin', 'SideSpin')], [0] * 4
+        )
+        self.assertNotIn('TraceLoft', simulator_packet(p, 7))
+        p['BallData']['BackSpin'] = 0
+        with self.assertRaises(ValueError):
+            validate_packet(p)  # a declared spinless shot must not also carry spin
+        p['BallData'].pop('BackSpin')
+        p['TraceLoft']['SpinUnavailable'] = 'yes'
+        with self.assertRaises(ValueError):
+            validate_packet(p)  # only literal true counts
+        self.assertEqual(
+            simulator_packet(shot(), 1)['BallData']['TotalSpin'], 0
+        )  # measured zero kept
 
     def test_http_settings_shutdown_and_restart_preserve_session(self):
         with tempfile.TemporaryDirectory() as root:
@@ -198,6 +223,31 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.service.practice.data['shots']), 0)
         self.assertTrue((await self.service.input.accept_packet(p, 'second'))['duplicate'])
         self.assertEqual(self.service.store.count('shots'), 1)
+
+    async def test_spinless_memory_putt_is_stored_with_null_spin(self):
+        p = shot()
+        p['BallData'] = dict(Speed=4.3, HLA=-1.2, VLA=0.0)
+        spin = dict.fromkeys(('back_spin', 'side_spin', 'total_spin', 'spin_axis'))
+        p['TraceLoft'] = dict(
+            ReceiptId='putt1',
+            ProducerId='capture',
+            StreamId='premier-20261011-130000',
+            CapturedAt=datetime.now(timezone.utc).isoformat(),
+            SpinUnavailable=True,
+            Metrics=dict(ball_speed=4.3, launch_dir=-1.2, launch_ang=0.0, club_speed=4.6, **spin),
+            Source=dict(acquisition='premier_memory'),
+        )
+        r, w = await self.client()
+        response = await self.exchange(r, w, p)
+        self.assertEqual(response['Code'], 200, response)
+        event = json.loads(
+            self.service.store.connection.execute('SELECT raw_json FROM ingest_events').fetchone()[
+                0
+            ]
+        )
+        self.assertEqual({k: event['vals'][k] for k in spin}, spin)  # null, never zero
+        self.assertEqual(event['vals']['club_speed'], 4.6)
+        self.assertTrue(event['raw_packet']['TraceLoft']['SpinUnavailable'])
 
     async def test_single_source_ownership(self):
         r, w = await self.client()

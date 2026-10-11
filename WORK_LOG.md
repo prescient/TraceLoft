@@ -1,5 +1,21 @@
 # TraceLoft work log
 
+## 2026-10-11 — Shots measured without spin (Premier memory putts)
+
+- TraceCapture's new Premier memory source reads Foresight putts, which the LPi measures without spin
+  (`SpinIsValid = 0`). Until now every ball packet needed a spin pair.
+- `open_connect.validate_packet` now accepts BallData without spin when the private extension
+  declares `TraceLoft.SpinUnavailable: true`. Only a literal `true` counts, and such a packet must
+  carry no spin field. Spin is stored as null, never zero (missing is not zero).
+- `simulator_packet` forwards such shots with TotalSpin, SpinAxis, BackSpin and SideSpin set to 0,
+  the user's choice for simulators (2026-10-11). Measured spin is forwarded unchanged.
+- Tests (`tests/test_relay.py`):
+  - a protocol test for validation, the forwarded zero spin and the rejected variants;
+  - an end-to-end test that sends a TraceCapture-style putt over TCP, checks it is stored with four
+    null spin metrics plus club speed, and checks the flag is preserved in `raw_packet`.
+- Verified with isolated tests only. The real service was not restarted. The live check comes from the
+  user's putting session after a restart.
+
 ## 2026-10-11 — Browser feature registry and runner lifecycle
 
 - Added `web/features.js`, the browser half of the drill registry. Five features (golf,
