@@ -12,94 +12,16 @@ from pathlib import Path
 
 from shot_input import ShotInput
 from putting import PuttingSession
-from distance_ladder import DistanceLadderSession, RANGE_FIELDS, restore_model
+import drills
 from legacy_import import import_legacy
 from storage import Store, database_path
 from database_tools import ServiceLease, preserve_legacy
 from equipment import edit_catalog, selection
-from driving_range import DrivingRangeSession, DRIVING_FIELDS, demo_event
+from driving_range import demo_event
 
-from collection import CollectionSession, COLLECTION_FIELDS
-from golf_sim import GolfSimSession, GAME_FIELDS, simulated_event
+from golf_sim import GolfSimSession, simulated_event
 
 ROOT = Path(__file__).resolve().parent
-DRILLS = [
-    dict(
-        id='golf-sim',
-        title='Meadow One · 2D golf',
-        description='Play an original par four with estimated lies and putting.',
-        drill='2D golf',
-        category='PLAY',
-        random_pace=False,
-    ),
-    dict(
-        id='wedge-matrix',
-        title='Wedge matrix',
-        description='Map each wedge at your own swing lengths and find a shot for every yardage.',
-        drill='Wedge matrix',
-        category='WEDGES',
-        random_pace=False,
-    ),
-    dict(
-        id='bag-mapping',
-        title='Bag mapping / gapping',
-        description='Collect per-club samples and discover distance gaps and overlaps.',
-        drill='Bag mapping',
-        category='FULL SWING',
-        random_pace=False,
-    ),
-    dict(
-        id='driving-range',
-        title='Driving range',
-        description='Free practice, shot dispersion, flight estimates and a workspace to review your shots.',
-        drill='Driving range',
-        category='FULL SWING',
-        random_pace=False,
-    ),
-    dict(
-        id='distance-ladder',
-        title='Distance ladder',
-        description='Build carry or total-distance control with wedges, irons and custom yardages.',
-        drill='Distance ladder',
-        category='FULL SWING',
-        random_pace=False,
-    ),
-    dict(
-        id="pace",
-        title="Pace consistency",
-        description="Repeat a speed target and build a consistent stroke.",
-        drill="Pace consistency",
-        random_pace=False,
-    ),
-    dict(
-        id="line",
-        title="Start line",
-        description="Train your launch direction inside a chosen window.",
-        drill="Start line",
-        random_pace=False,
-    ),
-    dict(
-        id="combined",
-        title="Pace + start line",
-        description="Combine pace and direction in one scored session.",
-        drill="Pace + start line",
-        random_pace=False,
-    ),
-    dict(
-        id="random",
-        title="Random pace",
-        description="A fresh target after every putt. Stay adaptable.",
-        drill="Pace + start line",
-        random_pace=True,
-    ),
-    dict(
-        id="ladder",
-        title="Putting ladder",
-        description="Climb distance targets on a flat virtual green. Train estimated short/long control.",
-        drill="Putting ladder",
-        random_pace=False,
-    ),
-]
 
 
 class GolfService:
@@ -183,7 +105,7 @@ class GolfService:
     def load_session(self, session_id, deleted=False):
         if self.store.session_owner(session_id) not in (None, self.store.active_user()):
             raise FileNotFoundError('Switch golfer to open this session.')
-        return restore_model(PuttingSession.from_store(self.store, session_id, deleted))
+        return drills.restore(PuttingSession.from_store(self.store, session_id, deleted))
 
     def _session(self, session_id):
         """The active session object when it matches, otherwise the saved copy."""
@@ -407,71 +329,7 @@ class GolfService:
     def create_practice(self, params):
         if self.practice and not self.practice.data["ended"]:
             raise ValueError("Finish or abandon the active session before launching another drill.")
-        if params['drill'] == '2D golf':
-            from course_import import load
-
-            selected = selection(
-                self.equipment, params.get('range_bag_id', ''), params.get('range_club_id', '')
-            )
-            self.practice = GolfSimSession(
-                self.root / 'practice_sessions',
-                store=self.store,
-                equipment_selection=selected,
-                course=load(self.store, params.get('game_course_id', 'pebble-boulder-blue-v3')),
-                **{k: v for k, v in params.items() if k in GAME_FIELDS or k in ('demo', 'stimp')},
-            )
-        elif params['drill'] in ('Bag mapping', 'Wedge matrix'):
-            self.practice = CollectionSession(
-                self.root / 'practice_sessions',
-                self.equipment,
-                params.get('range_bag_id', ''),
-                params.get('collection_clubs', []),
-                samples=params.get('collection_samples', 5),
-                metric=params.get('range_metric', 'carry'),
-                demo=params.get('demo', False),
-                handedness=params.get('handedness', 'right_handed'),
-                store=self.store,
-                swing_labels=params.get('swing_labels')
-                if params['drill'] == 'Wedge matrix'
-                else None,
-            )
-        elif params['drill'] == 'Driving range':
-            selected = selection(
-                self.equipment, params.get('range_bag_id', ''), params.get('range_club_id', '')
-            )
-            self.practice = DrivingRangeSession(
-                self.root / 'practice_sessions',
-                store=self.store,
-                equipment_selection=selected,
-                **{k: v for k, v in params.items() if k in DRIVING_FIELDS},
-            )
-        elif params['drill'] == 'Distance ladder':
-            selected = selection(
-                self.equipment, params.get('range_bag_id', ''), params.get('range_club_id', '')
-            )
-            self.practice = DistanceLadderSession(
-                self.root / 'practice_sessions',
-                store=self.store,
-                equipment_selection=selected,
-                **{
-                    k: v
-                    for k, v in params.items()
-                    if k in RANGE_FIELDS and k not in ('range_bag_id', 'range_club_id')
-                },
-            )
-        else:
-            self.practice = PuttingSession(
-                self.root / 'practice_sessions',
-                store=self.store,
-                **{
-                    k: v
-                    for k, v in params.items()
-                    if k not in RANGE_FIELDS
-                    and k not in DRIVING_FIELDS
-                    and k not in COLLECTION_FIELDS
-                    and k not in GAME_FIELDS
-                },
-            )
+        self.practice = drills.create(self, params)
         self.publish_context()
         self.sessions_revision += 1
         return self.practice.data
@@ -836,7 +694,7 @@ class GolfService:
             ]
             loaded = [read_session(connection, session_id) for session_id in ids]
         for data in loaded:
-            session = restore_model(PuttingSession.from_data(self.store, data))
+            session = drills.restore(PuttingSession.from_data(self.store, data))
             result.append(
                 dict(
                     id=data['id'],

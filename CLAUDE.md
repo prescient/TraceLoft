@@ -22,6 +22,7 @@ Screen capture/OCR lives in the separate private TraceCapture app and never belo
 | Numbered schema upgrades (1→5) | `migrations.py` (`STEPS`) |
 | CSV/ZIP export; pre-SQLite import; offline CLI | `storage_export.py`, `legacy_import.py`, `database_tools.py` |
 | Schema layers (DDL, backfill, readers) | `shot_schema.py`, `domain_schema.py`, `analysis_schema.py`, `recalculation.py` |
+| Drill registry (catalog, creation, restore) | `drills.py` |
 | Drill/game scorers | `putting.py`, `distance_ladder.py`, `driving_range.py`, `collection.py`, `golf_sim.py` |
 | Models and estimates | `putting_distance.py`, `flight_model.py` (OpenGolfCoach), `club_preview.py` |
 | Analysis | `analysis.py`, `analysis_schema.py`, `analytics_demo.py`, `tour_demo.py` |
@@ -168,10 +169,11 @@ DESIGN_PRINCIPLES.md. Read the relevant section before changing those features.
   - Change detection uses `store.committed_version()`, never the lock or `total_changes`.
   - Backups read their own connection. Post-session backups run on a thread that
     `shutdown()` joins.
-- Adding a drill currently touches `DRILLS`, `PracticeParams` and `create_practice` (web_service/
-  web_app), the field-set constants, `restore_model` (distance_ladder.py), `publish_context`,
-  the web router and practice categories, plus NAVIGATION.md. A feature registry is planned
-  (architecture plan, stage 4).
+- Drills are registered in `drills.py`: catalog entry, creation factory, and scorer
+  restoration via `session_kind()`. Its docstring lists the steps to add one. A drill's `id`
+  and `drill` name are persisted identifiers, so never rename them; titles and descriptions
+  are copy. Request fields still live in `web_app.PracticeParams`. Browser setup/runner modules
+  and NAVIGATION.md need matching updates.
 - New behavior needs tests: `tests/test_*.py` (unittest, temp-dir `GolfService`) for the service
   and storage, and `tests/test_*.mjs` (`node --test`) for browser helpers and controllers.
 

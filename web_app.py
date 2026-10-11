@@ -16,9 +16,10 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+import drills as drill_registry
 from analysis import report_csv
 from putting_distance import DEFAULT_MODEL_ID
-from web_service import ROOT, DRILLS, GolfService
+from web_service import ROOT, GolfService
 
 
 class PracticeParams(BaseModel):
@@ -382,7 +383,7 @@ def create_app(service=None):
 
     @app.get("/api/drills")
     async def drills():
-        return DRILLS
+        return drill_registry.catalog()
 
     @app.get('/api/range-notices')
     async def range_notices():

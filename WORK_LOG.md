@@ -1,5 +1,19 @@
 # TraceLoft work log
 
+## 2026-10-11 — Drill registry (architecture stage 4, server side)
+
+- Added `drills.py`. It holds the catalog (previously `web_service.DRILLS`), one creation factory
+  per scorer (previously an if/elif chain on drill names in `create_practice`) and `restore()`
+  driven by `session_kind()` (previously `distance_ladder.restore_model`).
+- Documented that drill `id` and `drill` names are persisted identifiers, not copy.
+- The `/api/drills` DTO is identical to the old literal (checked against git history), and scorer
+  selection uses the same persisted fields, so no data migration is needed.
+- Not done: typed per-drill request models and the browser feature lifecycle.
+- Added `tests/test_drills.py`: a stable catalog DTO and identifiers; `session_kind` and restore
+  for every scorer class; every catalog drill launching through the API and reopening with the
+  same scorer and data; unknown drill names still rejected.
+- Verified: `python verify.py` passed **207 Python** and **63 JavaScript** tests and lint.
+
 ## 2026-10-11 — Storage module split and table-driven migrations
 
 - Moved the four schema upgrades out of `Store` into `migrations.py`: a `STEPS` table and one

@@ -54,6 +54,12 @@ also support an older server during an upgrade. Full-history state fetches on ch
 incremental shot deltas, lazy trajectories and bounded detail remain follow-up work, along with
 feature mount/update/dispose rather than whole-runner repainting.
 
+Stage 4, server side (2026-10-11): `drills.py` centralizes catalog identity, creation factories
+and scorer restoration (`session_kind()` derives the scorer from existing persisted fields, so no
+migration). Drill ids, persisted drill names and the `/api/drills` DTO are unchanged. Typed
+per-drill request models and the browser mount/update/dispose lifecycle remain pending;
+`PracticeParams` is still one flat validated model.
+
 Event-loop isolation (2026-10-11): revision checks use `PRAGMA data_version` on a separate
 read-only connection and never take the writer lock. State requests read golfer rows the same way.
 Analysis, export, backups, calculation previews/history, collection analysis, the Sessions list and

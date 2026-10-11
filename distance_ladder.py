@@ -184,26 +184,3 @@ class DistanceLadderSession(PuttingSession):
                 long=sum(e > 1e-9 for e in errors),
             ),
         )
-
-
-def restore_model(session):
-    """Choose the persisted drill's scorer without changing its data or lifecycle."""
-    if session.data.get('session_kind') == 'golf_sim':
-        from golf_sim import GolfSimSession
-
-        restored = GolfSimSession.__new__(GolfSimSession)
-        restored.folder, restored.store, restored.data = session.folder, session.store, session.data
-        return restored
-    if session.data.get('session_kind') == 'driving_range':
-        from driving_range import DrivingRangeSession
-        from collection import CollectionSession
-
-        cls = CollectionSession if session.data.get('collection_kind') else DrivingRangeSession
-        restored = cls.__new__(cls)
-        restored.folder, restored.store, restored.data = session.folder, session.store, session.data
-        return restored
-    if session.data.get('practice_type') == 'full_swing':
-        restored = DistanceLadderSession.__new__(DistanceLadderSession)
-        restored.folder, restored.store, restored.data = session.folder, session.store, session.data
-        return restored
-    return session
