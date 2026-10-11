@@ -254,8 +254,13 @@ function cleanupDialog(data, keys, action, catalog, apply, notice) {
   };
 }
 
-export function renderRange(app, data, state, isReview, sessionNotice, context) {
+export function disposeRange() {
   scatterResize?.disconnect();
+  scatterResize = null;
+}
+
+export function renderRange(app, data, state, isReview, sessionNotice, context) {
+  disposeRange();
   if (!views.has(data.id))
     views.set(data.id, {
       metric: 'carry',

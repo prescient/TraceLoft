@@ -1,5 +1,51 @@
 # TraceLoft work log
 
+## 2026-10-11 — Browser feature registry and runner lifecycle
+
+- Added `web/features.js`, the browser half of the drill registry. Five features (golf,
+  collection, range, distance ladder, putting) declare:
+  - their setup ids and the sessions they `runs`;
+  - capabilities: navigation section, prompt unit, Sessions-list result, and whether the runner
+    depends on the sessions revision;
+  - `setup()` and a runner `mount()` returning `{ update(view), dispose() }`.
+- `app.js` dispatches setup, runner, navigation highlight, exit/abandon prompts and
+  destinations, the Sessions-list outcome and the render key through features. It no longer
+  branches on drill ids, drill names or session kinds. Runner callbacks (golf aim/simulate/
+  correct, range cleanup/target, equipment) moved into the features and use a host bound to
+  the mounted session (`runnerHost()`).
+- The putting setup and runner moved from `app.js` to `web/putting.js` unchanged.
+- Lifecycle: a runner mounts when it opens or when its session, golfer or live/review mode
+  changes. It is disposed on navigation and before a remount. Disposal disconnects the course
+  camera and range scatter ResizeObservers and cancels the replay frame without resetting the
+  replay clock. Before, observers lingered until their next callback. Per-session view choices
+  (range filters, golf panels/zoom) still persist by design. `update()` still repaints the whole
+  runner inside `preserveInteraction`; incremental updates are not implemented.
+- Tests (`tests/test_features.mjs`):
+  - every catalog id in `drills.py` has exactly one setup feature, and every setup id parses as
+    a route;
+  - session routing, with putting as the fallback;
+  - capability values and the golf/putting result lines;
+  - a putting runner mounts, updates for live and review, and disposes;
+  - golf disposal disconnects the camera observer.
+- DOM comparison in the isolated instance (separate database, input 9901, HTTP 8799, 1366×1024).
+  The old code and the new code each ran three passes from the same restored database snapshot:
+  - Pass 1 (40 screens with the range session active): identical.
+  - Pass 2 (10 mutation states): only the random demo shot's values differed.
+  - Pass 3 (39 screens with no active session, so every setup screen renders): only data
+    created in pass 2 differed (start times, demo values, new session id prefixes, Analyze config
+    order). The golf Sessions line from the new `result` capability matched.
+- Manual checks in the same instance:
+  - golf: Play highlighted; abandon/exit prompts say "round" and "Play"; abandon returns to
+    Play with the notice; the camera ResizeObserver disconnects on leaving the runner and a new
+    one is made on return;
+  - `#setup/pace` launched through the moved setup form with the entered repetitions;
+  - two synthetic putts sent to port 9901 appeared live; row selection and exclusion worked;
+  - abandon returned to Practice with "Start a new drill"; the saved review shows Sessions
+    highlighted and "Exit review" returns to Sessions;
+  - no script exceptions in the console.
+- Navigation routes and guards are unchanged, so NAVIGATION.md needed no update.
+- Verified: `python verify.py` passed **217 Python** and **76 JavaScript** tests and lint.
+
 ## 2026-10-11 — Every UI template escapes by default
 
 - Converted the remaining `innerHTML` templates in all `web/*.js` modules to the `html` tag and

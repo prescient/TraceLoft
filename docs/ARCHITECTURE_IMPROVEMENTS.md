@@ -60,6 +60,15 @@ migration). Drill ids, persisted drill names and the `/api/drills` DTO are uncha
 now has a typed request model (`drill_params.py`); `PracticeParams` is derived as their union,
 with a JSON schema identical to the previous hand-written model.
 
+Stage 4, browser side (2026-10-11): `web/features.js` maps catalog ids to setup screens and
+sessions to runners. It declares each feature's navigation section, prompt unit, Sessions-list
+result and sessions-revision dependency, so `app.js` no longer branches on drills or session
+kinds. Runners follow mount → update → dispose. Mounting happens on open and on a session,
+golfer or review change; disposal releases ResizeObservers and animation frames. Routes, DTOs
+and rendered markup are unchanged. `update()` still repaints the whole runner (inside
+`preserveInteraction`). Incremental per-feature updates can now be built on this lifecycle;
+they are not implemented.
+
 Event-loop isolation (2026-10-11): revision checks use `PRAGMA data_version` on a separate
 read-only connection and never take the writer lock. State requests read golfer rows the same way.
 Analysis, export, backups, calculation previews/history, collection analysis, the Sessions list and

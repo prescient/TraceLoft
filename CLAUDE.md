@@ -27,7 +27,7 @@ Screen capture/OCR lives in the separate private TraceCapture app and never belo
 | Models and estimates | `putting_distance.py`, `flight_model.py` (OpenGolfCoach), `club_preview.py` |
 | Analysis | `analysis.py`, `analysis_schema.py`, `analytics_demo.py`, `tour_demo.py` |
 | Courses | `course_import.py`, `course_workbench.py`, `course_geometry.py`, `bundled_courses.py`, `courses/` |
-| Web UI (ES modules, no build step) | `web/app.js` (router/shell), one module per feature, `web/studio.css` |
+| Web UI (ES modules, no build step) | `web/app.js` (router/shell), `web/features.js` (browser drill registry), one module per feature, `web/studio.css` |
 
 Key documents: [README](README.md), [NAVIGATION](NAVIGATION.md), [DECISIONS](DECISIONS.md),
 [BACKLOG](BACKLOG.md), [WORK_LOG](WORK_LOG.md), [shot database](docs/SHOT_DATABASE.md),
@@ -189,8 +189,15 @@ DESIGN_PRINCIPLES.md. Read the relevant section before changing those features.
   and `drill` name are persisted identifiers, so never rename them; titles and descriptions
   are copy. Each scorer declares its typed request model in `drill_params.py`. The API body
   `PracticeParams` is derived as their union (unknown keys rejected), and fields shared by
-  several scorers live in one mixin. Browser setup/runner modules and NAVIGATION.md need
-  matching updates.
+  several scorers live in one mixin.
+- The browser half of the registry is `web/features.js`. Each feature lists its setup ids
+  and the sessions it `runs`, and declares capabilities: navigation `section`, prompt
+  `unit`, Sessions-list `result`, and `sessionsRevision`. It provides `setup()` and a runner
+  `mount()` returning `{ update(view), dispose() }`. `app.js` dispatches through it and must
+  not branch on drill names or session kinds. Release observers and animation frames in
+  `dispose()`; view choices a feature remembers per session may outlive it. A new drill also
+  needs a setup route in `web/navigation.js` and NAVIGATION.md. `tests/test_features.mjs`
+  checks that every catalog id has a feature.
 - New behavior needs tests: `tests/test_*.py` (unittest, temp-dir `GolfService`) for the service
   and storage, and `tests/test_*.mjs` (`node --test`) for browser helpers and controllers.
 

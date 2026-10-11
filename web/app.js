@@ -1,16 +1,14 @@
 import { resetShotMotion } from './shot-motion.js';
 import { courseLabel } from './round-ui.js';
-import { renderPlay, renderGameSetup, renderGame } from './golf-sim.js';
+import { renderPlay } from './golf-sim.js';
 import { renderCourseImport } from './course-import.js';
 import { renderAnalyze } from './analyze.js';
-import { renderCollectionSetup } from './collection.js';
 import { categorizedDrills, categoryMarkup, bindCategories } from './practice-categories.js';
-import { html, direction, error, trend, gauge, progress } from './charts.js';
+import { html } from './charts.js';
 import { parseRoute, routeFor } from './navigation.js';
-import { renderDistanceSetup, distanceRunner } from './distance-ladder.js';
-import { bindEquipment, refreshSetupEquipment } from './equipment.js';
+import { refreshSetupEquipment } from './equipment.js';
 import { recordingWarnings } from './recording.js';
-import { renderRangeSetup, renderRange } from './driving-range.js';
+import { featureForDrill, featureForSession } from './features.js';
 import { bindGolferPicker } from './golfers.js';
 import { createLiveStateController, isStaleState } from './live-state.js';
 import { preserveInteraction } from './interaction-state.js';
@@ -32,7 +30,7 @@ let sessionList = [],
 let abandonedSession = null;
 let navigationRequest = 0;
 let courses = [];
-let runnerContext = null;
+let runner = null; // { context, feature, handle } for the mounted runner; see features.js.
 let reviewRequest = 0;
 
 function notice(message, undo = null) {
@@ -123,6 +121,7 @@ const equipmentContext = {
 
 function setView(next, { replace = false } = {}) {
   resetShotMotion();
+  closeRunner();
   navigationRequest++;
   const route = routeFor(next, { practice: state?.practice, review, drill: selectedDrill });
   if (location.hash !== route) history[replace ? 'replaceState' : 'pushState'](null, '', route);
@@ -182,10 +181,11 @@ function navigation() {
         ? view
         : view === 'runner' && review
           ? 'sessions'
-          : (view === 'runner' && state.practice?.session_kind === 'golf_sim') ||
-              (view === 'setup' && selectedDrill?.id === 'golf-sim')
-            ? 'play'
-            : 'practice';
+          : view === 'runner' && state.practice
+            ? featureForSession(state.practice).section
+            : view === 'setup'
+              ? (featureForDrill(selectedDrill?.id)?.section ?? 'practice')
+              : 'practice';
   document.querySelectorAll('[data-nav]').forEach(b => {
     const active = b.dataset.nav === section;
     b.classList.toggle('active', active);
@@ -232,15 +232,7 @@ function update(next) {
   else if (view === 'setup' && equipmentChanged) refreshSetupEquipment(app, equipmentContext);
   else if (view === 'runner') {
     if (review && sessionsChanged) refreshReview();
-    const key = JSON.stringify([
-      review ?? state.practice,
-      review?.summary ?? state.summary,
-      state.equipment?.revision,
-      (review?.practice ?? state.practice)?.session_kind === 'golf_sim' ? state.sessions_revision : null,
-      state.practice_error,
-      state.capture.running,
-      state.capture.stopping
-    ]);
+    const key = runnerKey();
     if (key !== renderKey) {
       renderKey = key;
       renderRunner(true);
@@ -356,169 +348,18 @@ function renderChoose() {
   bindCategories(app);
 }
 function renderSetup() {
-  const d = selectedDrill,
-    old = d.parameters ?? {};
-  if (d.id === 'golf-sim') {
-    renderGameSetup(
-      app,
-      old,
-      async params => {
-        state = await api('/api/practice', params);
-        review = null;
-        abandonedSession = null;
-        setView('runner');
-      },
-      notice,
-      equipmentContext,
-      courses
-    );
-    return;
-  }
-  if (['bag-mapping', 'wedge-matrix'].includes(d.id)) {
-    renderCollectionSetup(
-      app,
-      old,
-      async params => {
-        state = await api('/api/practice', params);
-        review = null;
-        abandonedSession = null;
-        setView('runner');
-      },
-      notice,
-      equipmentContext,
-      d.id === 'wedge-matrix'
-    );
-    return;
-  }
-  if (d.id === 'driving-range') {
-    renderRangeSetup(
-      app,
-      old,
-      async params => {
-        state = await api('/api/practice', params);
-        review = null;
-        abandonedSession = null;
-        setView('runner');
-      },
-      notice,
-      equipmentContext
-    );
-    return;
-  }
-  if (['distance-ladder', 'iron-ladder', 'wedge-ladder'].includes(d.id)) {
-    renderDistanceSetup(
-      app,
-      old,
-      async params => {
-        state = await api('/api/practice', params);
-        review = null;
-        abandonedSession = null;
-        setView('runner');
-      },
-      notice,
-      equipmentContext
-    );
-    return;
-  }
-  const ladder = d.id === 'ladder';
-  app.innerHTML = html`<div class="page-head"><div><h1>${d.title}</h1><p class="subtitle">Set your parameters, then launch your practice session.</p></div>${button('← Practice', 'home', 'quiet')}</div><section class="card setup-card"><h2>Session targets</h2><form id="setup-form"><div class="form-grid">
-    <label class="field">Pace targets<select name="random_pace"><option value="false" ${!old.random_pace && !d.random_pace ? 'selected' : ''}>Fixed target</option><option value="true" ${(old.random_pace ?? d.random_pace) ? 'selected' : ''}>Random pace</option></select></label>
-    <label class="field">Number of putts<input name="repetitions" type="number" min="1" max="1000" value="${old.repetitions ?? 10}" required></label>
-    <label class="field" data-param="fixed">Target speed (mph)<input name="target" type="number" step="0.1" min="1" max="15" value="${old.target ?? 4}" required></label>
-    <label class="field" data-param="pace">Speed tolerance (± mph)<input name="speed_tolerance" type="number" step="0.1" min="0" value="${old.speed_tolerance ?? 0.3}" required></label>
-    <label class="field" data-param="random">Random minimum (mph)<input name="minimum" type="number" step="0.1" min="1" max="15" value="${old.minimum ?? 3}" required></label>
-    <label class="field" data-param="random">Random maximum (mph)<input name="maximum" type="number" step="0.1" min="1" max="15" value="${old.maximum ?? 6}" required></label>
-    <label class="field" data-param="line">Start-line tolerance (± degrees)<input name="angle_tolerance" type="number" step="0.1" min="0" value="${old.angle_tolerance ?? 1}" required></label>
-    <label class="field">Green speed · Stimp (ft)<input name="stimp" type="number" step="0.1" min="3" max="20" value="${old.stimp ?? 10}" required></label>
-    <label class="field">Distance model<select name="distance_model"><option value="stimp-constant-deceleration-v1" ${!old.distance_model || old.distance_model.id === 'stimp-constant-deceleration-v1' ? 'selected' : ''}>Stimp constant braking · baseline</option><option value="fuse-flat-braking-v1" ${old.distance_model?.id === 'fuse-flat-braking-v1' ? 'selected' : ''}>Fuse speed-dependent braking · comparison</option></select></label>
-    <label class="field" data-param="mode">Score target as<select name="target_mode"><option value="speed" ${old.target_mode !== 'distance' ? 'selected' : ''}>Measured speed (mph)</option><option value="distance" ${old.target_mode === 'distance' ? 'selected' : ''}>Estimated distance (ft)</option></select></label>
-    <label class="field" data-param="distance">Target distance (ft)<input name="target_distance" type="number" step="0.1" min="0.5" max="300" value="${old.target_distance_ft ?? 10}" required></label>
-    <label class="field" data-param="distance-tolerance">Distance tolerance (± ft)<input name="distance_tolerance" type="number" step="0.1" min="0" max="100" value="${old.distance_tolerance ?? 2}" required></label>
-    <label class="field" data-param="ladder">Shortest distance (ft)<input name="ladder_start" type="number" step="0.5" min="0.5" max="300" value="${old.ladder_start ?? 5}" required></label>
-    <label class="field" data-param="ladder">Longest distance (ft)<input name="ladder_end" type="number" step="0.5" min="0.5" max="300" value="${old.ladder_end ?? 25}" required></label>
-    <label class="field" data-param="ladder">Step between rungs (ft)<input name="ladder_step" type="number" step="0.5" min="0.5" max="300" value="${old.ladder_step ?? 5}" required></label>
-    <label class="field" data-param="ladder">Rounds through ladder<input name="ladder_rounds" type="number" min="1" max="100" value="${old.ladder_rounds ?? 2}" required></label>
-    <label class="field" data-param="ladder">Ladder direction<select name="ladder_direction"><option value="ascending" ${old.ladder_direction !== 'descending' ? 'selected' : ''}>Ascending · short to long</option><option value="descending" ${old.ladder_direction === 'descending' ? 'selected' : ''}>Descending · long to short</option></select></label>
-    </div><p class="model-note">Estimated distance uses your selected flat-green model. Constant braking is the physics baseline; Fuse is a simulation comparison. Stimp is entered, not measured. Launch speed is treated as rolling speed; slope, skid and cup effects are omitted. Uncalibrated for your mat and GSPro.</p><p id="ladder-preview" class="form-hint" role="status"></p><div class="form-foot"><p class="form-hint">${ladder ? 'One putt per rung, advancing after every confirmed putt, including misses. Repeat for each round. Start line is measured, not scored.' : 'Fixed drills can score measured speed or estimated distance. Random pace varies speed; each putt keeps its own target and estimate.'}</p><button type="submit" class="btn primary">Launch drill →</button></div></form></section>`;
-  const form = app.querySelector('form');
-  function parameters() {
-    const line = d.drill === 'Start line',
-      pace = d.drill === 'Pace consistency',
-      random = form.elements.random_pace.value === 'true';
-    const distance = ladder || (!line && !random && form.elements.target_mode.value === 'distance');
-    form.elements.random_pace.disabled = line || ladder;
-    form.elements.random_pace.closest('label').hidden = line || ladder;
-    form.elements.repetitions.disabled = ladder;
-    form.elements.repetitions.closest('label').hidden = ladder;
-    app.querySelectorAll('[data-param]').forEach(label => {
-      const kind = label.dataset.param,
-        show =
-          kind === 'ladder'
-            ? ladder
-            : kind === 'mode'
-              ? !line && !random && !ladder
-              : kind === 'distance-tolerance'
-                ? distance
-                : kind === 'distance'
-                  ? distance && !ladder
-                  : kind === 'line'
-                    ? !pace && !ladder
-                    : !line &&
-                      !ladder &&
-                      !distance &&
-                      (kind === 'pace' || (kind === 'random' && random) || (kind === 'fixed' && !random));
-      label.hidden = !show;
-      label.querySelector('input,select').disabled = !show;
-    });
-    if (ladder) {
-      const count =
-        (Number(form.elements.ladder_end.value) - Number(form.elements.ladder_start.value)) /
-          Number(form.elements.ladder_step.value) +
-        1;
-      app.querySelector('#ladder-preview').textContent =
-        Number.isInteger(count) && count > 1
-          ? `${count} rungs × ${form.elements.ladder_rounds.value} rounds = ${count * Number(form.elements.ladder_rounds.value)} putts.`
-          : 'Choose a step that divides the distance range evenly.';
-    }
-  }
-  form.oninput = parameters;
-  form.onchange = parameters;
-  parameters();
-  form.onsubmit = async event => {
-    event.preventDefault();
-    const data = new FormData(form),
-      num = (key, fallback) => (data.has(key) ? Number(data.get(key)) : fallback);
-    const params = {
-      drill: d.drill,
-      target: num('target', 4),
-      speed_tolerance: num('speed_tolerance', 0),
-      angle_tolerance: num('angle_tolerance', 1),
-      repetitions: num('repetitions', 10),
-      random_pace: d.drill !== 'Start line' && data.get('random_pace') === 'true',
-      minimum: num('minimum', 3),
-      maximum: num('maximum', 6)
-    };
-    Object.assign(params, {
-      distance_model: data.get('distance_model'),
-      stimp: num('stimp', 10),
-      target_mode: ladder ? 'distance' : (data.get('target_mode') ?? 'speed'),
-      target_distance: num('target_distance', 10),
-      distance_tolerance: num('distance_tolerance', 2),
-      ladder_start: num('ladder_start', 5),
-      ladder_end: num('ladder_end', 25),
-      ladder_step: num('ladder_step', 5),
-      ladder_rounds: num('ladder_rounds', 2),
-      ladder_direction: data.get('ladder_direction') ?? 'ascending'
-    });
-    try {
-      state = await api('/api/practice', params);
-      review = null;
-      abandonedSession = null;
-      setView('runner');
-    } catch (e) {
-      notice(e.message);
-    }
-  };
+  featureForDrill(selectedDrill.id).setup(app, selectedDrill, {
+    launch,
+    notice,
+    equipment: equipmentContext,
+    courses
+  });
+}
+async function launch(params) {
+  state = await api('/api/practice', params);
+  review = null;
+  abandonedSession = null;
+  setView('runner');
 }
 
 function sessionNotice(data, isReview = false) {
@@ -526,8 +367,13 @@ function sessionNotice(data, isReview = false) {
   const detail = data.ended
     ? `No more ${shotWord(data)} will be saved to this session.`
     : 'You are reviewing saved results. Return to Practice for the active drill.';
-  return html`<section class="session-ended" role="alert" aria-label="${title}"><span class="ended-icon" aria-hidden="true">!</span><div><h2>${title}</h2><p>${detail}</p><span>${data.abandoned ? `Recorded ${shotWord(data)} are saved.` : `${data.shots.length} recorded ${shotWord(data)} saved.`}${isReview ? ' Exit review to return to your sessions.' : data.session_kind === 'golf_sim' ? ' Start a new round to record more.' : ' Start a new drill to record more.'}</span></div></section>`;
+  return html`<section class="session-ended" role="alert" aria-label="${title}"><span class="ended-icon" aria-hidden="true">!</span><div><h2>${title}</h2><p>${detail}</p><span>${data.abandoned ? `Recorded ${shotWord(data)} are saved.` : `${data.shots.length} recorded ${shotWord(data)} saved.`}${isReview ? ' Exit review to return to your sessions.' : ` Start a new ${featureForSession(data).unit} to record more.`}</span></div></section>`;
 }
+// Where a session's runner returns when it closes: its feature's navigation section.
+const home = data =>
+  data && featureForSession(data).section === 'play'
+    ? { view: 'play', label: 'Play' }
+    : { view: 'choose', label: 'Practice' };
 async function exitSession() {
   if (review) {
     review = null;
@@ -539,7 +385,7 @@ async function exitSession() {
     if (
       !(await confirmAction(
         'End session and exit?',
-        `Save your recorded ${shotWord(data)} and return to ${data.session_kind === 'golf_sim' ? 'Play' : 'Practice'}? This session will stop accepting ${shotWord(data)}. Relay keeps listening.`,
+        `Save your recorded ${shotWord(data)} and return to ${home(data).label}? This session will stop accepting ${shotWord(data)}. Relay keeps listening.`,
         'End session & exit'
       ))
     )
@@ -547,173 +393,78 @@ async function exitSession() {
     state = await api(`/api/practice/${data.id}/finish`, {});
   }
   review = null;
-  setView(data?.session_kind === 'golf_sim' ? 'play' : 'choose');
+  setView(home(data).view);
 }
-function renderRunner(preserveEdits = false) {
+function runnerKey() {
   const data = review?.practice ?? state.practice;
-  const context = JSON.stringify([state.golfer_id, data?.id, data?.ended, !!review]);
-  if (preserveEdits && runnerContext === context) preserveInteraction(app, renderRunnerContent);
-  else renderRunnerContent();
-  runnerContext = context;
-}
-function renderRunnerContent() {
-  const data = review?.practice ?? state.practice,
-    summary = review?.summary ?? state.summary;
-  if (!data) {
-    setView('choose');
-    return;
-  }
-  renderKey = JSON.stringify([
+  return JSON.stringify([
     review ?? state.practice,
     review?.summary ?? state.summary,
     state.equipment?.revision,
-    (review?.practice ?? state.practice)?.session_kind === 'golf_sim' ? state.sessions_revision : null,
+    data && featureForSession(data).sessionsRevision ? state.sessions_revision : null,
     state.practice_error,
     state.capture.running,
     state.capture.stopping
   ]);
-  if (data.session_kind === 'golf_sim') {
-    const redraw = () => {
-      if (view === 'runner' && (review?.practice ?? state.practice)?.id === data.id) renderRunner(true);
-    };
-    const change = async (path, params) => {
-      update(await api(path, params));
-      redraw();
-    };
-    renderGame(app, data, summary, state, !!review, sessionNotice, {
-      equipment: equipmentContext,
-      notice,
-      redraw,
-      current: () => state.practice?.equipment_selection,
-      select: selection => change(`/api/practice/${data.id}/equipment`, selection),
-      aim: params => change(`/api/game/${data.id}/aim`, params),
-      simulate: params => change(`/api/game/${data.id}/simulate`, params),
-      next: params => change(`/api/game/${data.id}/next`, params),
-      correct: async params => {
-        const next = await api(`/api/game/${data.id}/correct`, params);
-        review = null;
-        update(next);
-        setView('runner', { replace: true });
-      },
-      preview: () => api(`/api/game/${data.id}/preview`),
-      recommendations: () => api(`/api/game/${data.id}/recommendations`),
-      exclude: async key => {
-        if (review) review = await api(`/api/sessions/${data.id}/exclude`, { key });
-        else update(await api(`/api/practice/${data.id}/exclude`, { key }));
-        redraw();
-      }
+}
+function closeRunner() {
+  runner?.handle.dispose();
+  runner = null;
+}
+function renderRunner(preserveEdits = false) {
+  const data = review?.practice ?? state.practice;
+  if (!data) {
+    setView('choose');
+    return;
+  }
+  renderKey = runnerKey();
+  const feature = featureForSession(data),
+    context = JSON.stringify([state.golfer_id, data.id, data.ended, !!review]);
+  if (runner?.context !== context || runner.feature !== feature) {
+    closeRunner();
+    runner = { context, feature, handle: feature.mount(app, runnerHost(data.id)) };
+    preserveEdits = false;
+  }
+  const show = () =>
+    runner.handle.update({
+      data,
+      summary: review?.summary ?? state.summary,
+      state,
+      review: !!review,
+      selectedShot
     });
-    return;
-  }
-  if (data.session_kind === 'driving_range') {
-    const refreshRange = () => {
-      if (view === 'runner' && (review?.practice ?? state.practice)?.id === data.id) renderRunner(true);
-    };
-    renderRange(app, data, state, !!review, sessionNotice, {
-      collectionAnalysis: () => api(`/api/collection/${data.id}/analysis`),
-      publishProfile: () => api(`/api/collection/${data.id}/profile`, {}),
-      cell: async params => {
-        update(await api(`/api/collection/${data.id}/cell`, params));
-        refreshRange();
-      },
-      equipment: equipmentContext,
-      notice,
-      current: () => state.practice?.equipment_selection,
-      redraw: refreshRange,
-      select: async selection => {
-        update(await api(`/api/practice/${data.id}/equipment`, selection));
-        refreshRange();
-      },
-      simulate: async count => {
-        update(await api(`/api/range/${data.id}/simulate`, { count }));
-        refreshRange();
-      },
-      target: async params => {
-        update(await api(`/api/range/${data.id}/target`, params));
-        refreshRange();
-      },
-      cleanup: async params => {
-        const result = await api(`/api/range/${data.id}/cleanup`, params);
-        if (view === 'runner' && review?.practice.id === data.id) {
-          review = result;
-        } else if (state.practice?.id === data.id) {
-          state.practice = result.practice;
-          state.summary = result.summary;
-        }
-        refreshRange();
+  if (preserveEdits) preserveInteraction(app, show);
+  else show();
+}
+// What a mounted runner may do, bound to its session (see features.js).
+function runnerHost(id) {
+  const showing = () => view === 'runner' && (review?.practice ?? state.practice)?.id === id;
+  return {
+    api,
+    notice,
+    equipment: equipmentContext,
+    sessionNotice,
+    apply: update,
+    redraw: () => {
+      if (showing()) renderRunner(true);
+    },
+    rerender: () => renderRunner(),
+    selection: () => state.practice?.equipment_selection,
+    // A cleanup/exclusion response ({practice, summary}) for this session, saved or live.
+    replaceSession: saved => {
+      if (view === 'runner' && review?.practice.id === id) review = saved;
+      else if (state.practice?.id === id) {
+        state.practice = saved.practice;
+        state.summary = saved.summary;
       }
-    });
-    return;
-  }
-  if (data.practice_type === 'full_swing') {
-    app.innerHTML = distanceRunner(data, summary, state, !!review, selectedShot, sessionNotice);
-    bindEquipment(
-      app,
-      equipmentContext,
-      async selection => {
-        update(await api(`/api/practice/${data.id}/equipment`, selection));
-        renderRunner();
-      },
-      () => state.practice?.equipment_selection
-    );
-    return;
-  }
-  const shots = data.shots,
-    latest = shots.at(-1),
-    own = !review,
-    active = own && !data.ended,
-    recording = state.capture.running && state.capture.mode === 'run';
-  const speed = latest?.vals.ball_speed,
-    hla = latest?.vals.launch_dir,
-    paceError = latest ? speed - (latest.target ?? data.target) : null;
-  const excluded = latest?.excluded,
-    good = latest?.success && !excluded;
-  const resultClass = excluded ? 'excluded' : !latest ? 'waiting' : good ? '' : 'miss';
-  const modeled = !!data.distance_model,
-    distance = data.target_mode === 'distance',
-    ladder = data.drill === 'Putting ladder';
-  const distanceError = latest?.distance_error_ft,
-    travel = latest?.estimated_distance_ft;
-  const ladderPosition = active ? shots.length : Math.max(0, shots.length - 1);
-  const rung = ladder ? (ladderPosition % data.ladder_targets_ft.length) + 1 : null;
-  const displayedDistance =
-    ladder && !active ? (latest?.target_distance_ft ?? data.target_distance_ft) : data.target_distance_ft;
-  const displayedSpeed = ladder && !active ? (latest?.target ?? data.target) : data.target;
-  const targetLine = distance
-    ? `${displayedDistance.toFixed(1)} ft ± ${data.distance_tolerance} ft`
-    : data.drill === 'Start line'
-      ? `Start line 0° ± ${data.angle_tolerance}°`
-      : `${data.target.toFixed(1)} mph ± ${data.speed_tolerance}`;
-  const status = excluded ? 'Excluded' : !latest ? 'Waiting' : good ? 'In window' : 'Outside window';
-  const logRows = shots
-    .map((s, i) => ({ s, i }))
-    .reverse()
-    .map(
-      ({ s, i }) =>
-        html`<tr data-key="${s.key}" tabindex="0" aria-label="Select putt ${i + 1}" class="${i === shots.length - 1 ? 'latest-row' : ''} ${s.excluded ? 'excluded' : ''} ${selectedShot === s.key ? 'selected' : ''}"><td>${i + 1}</td><td>${s.vals.ball_speed.toFixed(1)}</td><td>${(s.target ?? data.target).toFixed(1)}</td><td>${error(s.vals.ball_speed - (s.target ?? data.target))} mph</td><td>${direction(s.vals.launch_dir)}</td>${modeled ? html`<td>${s.estimated_distance_ft?.toFixed(1) ?? '—'}</td><td>${s.target_distance_ft?.toFixed(1) ?? '—'}</td><td>${s.distance_error_ft == null ? '—' : error(s.distance_error_ft)}</td>` : ''}<td class="${s.excluded ? '' : s.success ? 'success-text' : 'miss-text'}">${s.excluded ? 'Excluded' : s.success ? '● In window' : '● Outside window'}</td></tr>`
-    );
-  const statistics = ['pace_error', 'launch_dir', 'launch_ang']
-    .map(
-      (f, i) =>
-        `${['Pace error', 'Start line', 'Vertical launch'][i]} ${summary[f].mean === null ? '—' : `${summary[f].mean.toFixed(2)} ± ${summary[f].sd.toFixed(2)}`} ${i ? '°' : 'mph'}`
-    )
-    .join(' · ');
-  app.innerHTML = html`<div class="page-head"><div><h1>${review ? 'Session review' : 'Putting practice'}</h1><p class="subtitle">${data.drill} <span class="chip ${data.random_pace ? 'accent' : ''}">${ladder ? (data.ladder_direction === 'descending' ? 'Descending ladder' : 'Ascending ladder') : data.random_pace ? 'Random pace' : distance ? 'Distance target' : 'Speed target'}</span>${data.abandoned ? ' · Abandoned' : review ? ' · Saved session' : data.ended ? ' · Complete' : ''}</p></div><div class="head-actions">${active ? [button('Relay', 'relay', 'quiet'), button('End session', 'finish', 'danger')] : ''}${review ? button('Practice selector', 'home', 'quiet') : ''}${button(review ? 'Exit review' : 'Exit session', 'exit-session', active ? 'quiet' : 'primary')}${!active ? button('⚙ Edit targets', 'edit', 'quiet') : ''}</div></div>
-    ${!active ? sessionNotice(data, !!review) : ''}
-    ${state.practice_error && own ? html`<div class="session-error" role="alert">${state.practice_error}</div>` : ''}
-    ${active ? html`<div id="recording-feedback">${recordingWarnings(state.capture, 'putts')}</div>` : ''}
-    <div class="heroes"><section class="card"><div class="eyebrow">LATEST PUTT</div><div class="latest-metrics ${modeled ? 'with-distance' : ''}">
-      <div class="metric"><div class="metric-label">Ball speed</div><div class="metric-value">${latest ? speed.toFixed(1) : '—'}</div><div class="metric-unit">mph</div></div>
-      <div class="metric"><div class="metric-label">${distance ? 'Distance error' : 'Pace error'}</div><div class="metric-value">${latest ? error(distance ? distanceError : paceError) : '—'}</div><div class="metric-unit">${distance ? 'ft · estimated' : 'mph'}${distance && latest ? (distanceError < -1e-9 ? ' · short' : distanceError > 1e-9 ? ' · long' : ' · on target') : ''}${data.drill === 'Start line' ? ' · not scored' : ''}</div></div>
-      ${modeled ? html`<div class="metric"><div class="metric-label">Estimated travel</div><div class="metric-value">${travel == null ? '—' : travel.toFixed(1)}</div><div class="metric-unit">ft · Stimp ${data.stimp}</div></div>` : ''}
-      <div class="metric"><div class="metric-label">Start line</div><div class="metric-value">${latest ? direction(hla) : '—'}</div><div class="metric-unit">at launch</div></div>
-      <div class="metric"><div class="metric-label">Result</div><div class="result ${resultClass}"><span class="result-icon">${good ? '✓' : latest && !excluded ? '!' : '—'}</span>${status}</div></div>
-    </div><div class="metric-foot">${latest ? `Putt ${shots.length} · ${excluded ? 'Excluded from score' : 'Saved automatically'}` : data.ended ? 'No validated putts in this session.' : recording ? 'Waiting for your next validated putt.' : 'Connect your shot source through Relay.'}</div></section>
-    <section class="card progress-card"><div class="eyebrow">SESSION PROGRESS</div><div class="progress-counts"><div><strong>${shots.length} / ${data.repetitions}</strong><span>putts</span></div><div><strong>${summary.successes} / ${summary.count}</strong><span>in window</span></div></div><div class="progress-row">${progress(shots.length, data.repetitions)}</div><div class="target-tile"><small>${data.abandoned ? 'SESSION ABANDONED' : data.ended ? 'SESSION COMPLETE' : data.random_pace || ladder ? 'NEXT TARGET' : 'SESSION TARGET'}</small><strong>${targetLine}</strong>${distance ? html`<p>Required pace ≈ ${displayedSpeed.toFixed(2)} mph · estimated</p>` : ''}${ladder ? html`<p>${active ? 'Rung' : 'Last rung'} ${rung} / ${data.ladder_targets_ft.length} · Round ${Math.min(Math.floor(ladderPosition / data.ladder_targets_ft.length) + 1, data.ladder_rounds)} / ${data.ladder_rounds}</p><p>${data.ladder_targets_ft.map((t, i) => [i ? ' ' : '', html`<span class="ladder-rung ${i + 1 === rung ? 'current' : ''}">${t.toFixed(1)} ft</span>`])}</p>` : ''}<p>${ladder ? 'Start line measured · not scored' : data.drill !== 'Start line' ? `Start line 0° ± ${data.angle_tolerance}°${data.drill === 'Pace consistency' || ladder ? ' · not scored' : ''}` : 'Pace is measured, not scored.'}</p></div></section></div>
-    ${modeled ? html`<p class="model-note">Estimated flat-green travel · Stimp ${data.stimp} · ${data.distance_model.id === 'fuse-flat-braking-v1' ? 'Fuse speed-dependent braking v1' : 'Stimp constant braking v1'}. Uncalibrated; no slope, skid or cup effects. ${distance ? 'Scores estimate windows, not holed putts.' : 'Distance is shown for context; scoring uses launch measurements.'}</p>` : html`<p class="model-note">Distance unavailable: this historical session has no saved Stimp/model. Edit targets to launch a new session with distance estimates.</p>`}
-    <div class="graphs"><section class="card pace-card"><div class="eyebrow">${distance ? 'ESTIMATED DISTANCE (FT)' : 'PACE CHART'}</div><p class="graph-subtitle">${distance ? 'Travel vs target by putt · flat-green estimate' : 'Ball speed by putt'}${data.drill === 'Start line' ? ' · not scored' : ''}</p><div class="legend"><span><i class="swatch"></i>Target zone${data.random_pace || ladder ? ' (varies)' : ''}</span><span><i class="line-swatch"></i>${distance ? 'Distance target per putt' : data.random_pace ? 'Target per putt' : `Target (${data.target.toFixed(1)} mph)`}</span></div>${trend(data, true, distance)}</section>
-    <section class="card"><div class="eyebrow">START LINE (LATEST PUTT)</div><p class="graph-subtitle">Direction at launch relative to target</p>${gauge(data)}<div class="legend"><span><i class="swatch"></i>In window (±${data.angle_tolerance}°)${data.drill === 'Pace consistency' || ladder ? ' · not scored' : ''}</span></div><div class="graph-divider"></div><div class="start-trend"><div class="eyebrow">START LINE TREND</div><p class="graph-subtitle">Direction by putt (right is positive)</p>${trend(data, false)}</div></section></div>
-    <section class="card"><div class="table-head"><div class="eyebrow">SHOT LOG</div><span class="top-hint">Latest first · select a row to review</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Speed (mph)</th><th>Target (mph)</th><th>Pace error</th><th>Start line</th>${modeled ? html`<th>Est. travel (ft)</th><th>Distance target (ft)</th><th>Est. error (ft)</th>` : ''}<th>Result</th></tr></thead><tbody>${shots.length ? logRows : html`<tr><td colspan="${modeled ? 9 : 6}" class="empty">No recorded putts yet.</td></tr>`}</tbody></table></div><div class="table-actions">${button('Exclude / include selected', 'exclude', 'small', !selectedShot ? html`disabled` : '')}${active ? button('Abandon session', 'abandon', 'danger quiet small') : button('Delete session', 'delete-review', 'danger quiet small')}${review ? button('Practice selector', 'home', 'quiet small') : ''}${button(review ? 'Exit review' : 'Exit session', 'exit-session', 'quiet small')}</div><details class="details"><summary>Session statistics</summary><p>${summary.count} included putts · ${summary.successes} in window<br>${statistics}${summary.distance_error_ft?.count ? html`<br>Estimated distance error ${summary.distance_error_ft.mean.toFixed(2)} ± ${summary.distance_error_ft.sd.toFixed(2)} ft · ${summary.distance_error_ft.short} short / ${summary.distance_error_ft.long} long` : modeled ? html`<br>No distance estimates yet.` : ''}<br>Mean ± population standard deviation. Excluded putts remain in the log.</p></details></section>`;
+    },
+    // A correction reopens the session it corrected as the live runner.
+    openLive: next => {
+      review = null;
+      update(next);
+      setView('runner', { replace: true });
+    }
+  };
 }
 
 async function renderSessions() {
@@ -739,7 +490,7 @@ async function renderSessions() {
               : 'Complete'
             : 'Unfinished';
     const entry = s =>
-      html`<section class="card session-entry"><div><h2>${s.demo ? 'DEMO · ' : ''}${courseLabel(s.summary?.course_name ?? s.drill)}${s.summary?.round_selection === 'front' ? ' · Front 9' : s.summary?.round_selection === 'back' ? ' · Back 9' : ''}${s.random_pace ? ' / Random pace' : ''}</h2><p>${date(s.started)} · ${s.summary.count} included · ${s.session_kind === 'golf_sim' ? `${s.summary.strokes} strokes · ${s.summary.hole_count ? `${s.summary.holes_completed}/${s.summary.hole_count} holes complete` : s.summary.holed ? 'hole complete' : 'partial round'}` : `${s.summary.successes} in window`} · <span class="${s.abandoned ? 'miss-text' : ''}">${label(s)}</span></p>${active(s) ? html`<p class="top-hint">Finish or abandon this session before deleting.</p>` : ''}</div><div class="session-actions">${button(active(s) ? 'Return to active drill →' : 'Review session →', 'review', '', html`data-id="${s.id}"`)}${button('Delete', 'delete-session', 'danger quiet', html`data-id="${s.id}" ${active(s) ? 'disabled' : ''}`)}</div></section>`;
+      html`<section class="card session-entry"><div><h2>${s.demo ? 'DEMO · ' : ''}${courseLabel(s.summary?.course_name ?? s.drill)}${s.summary?.round_selection === 'front' ? ' · Front 9' : s.summary?.round_selection === 'back' ? ' · Back 9' : ''}${s.random_pace ? ' / Random pace' : ''}</h2><p>${date(s.started)} · ${s.summary.count} included · ${featureForSession(s).result(s.summary)} · <span class="${s.abandoned ? 'miss-text' : ''}">${label(s)}</span></p>${active(s) ? html`<p class="top-hint">Finish or abandon this session before deleting.</p>` : ''}</div><div class="session-actions">${button(active(s) ? 'Return to active drill →' : 'Review session →', 'review', '', html`data-id="${s.id}"`)}${button('Delete', 'delete-session', 'danger quiet', html`data-id="${s.id}" ${active(s) ? 'disabled' : ''}`)}</div></section>`;
     const deletedEntry = s =>
       html`<section class="card session-entry"><div><h2>${s.demo ? 'DEMO · ' : ''}${s.drill}</h2><p>${date(s.started)} · ${s.captured} recorded ${shotWord(s)}</p></div>${button('Restore session', 'restore-session', '', html`data-id="${s.id}"`)}</section>`;
     app.innerHTML = html`<div class="page-head"><div><h1>Sessions</h1><p class="subtitle">Your saved practice, ready to review.</p></div></div><div class="range-session-mode"><label class="field">Session data<select id="session-mode"><option value="all" ${sessionMode === 'all' ? 'selected' : ''}>All sessions</option><option value="real" ${sessionMode === 'real' ? 'selected' : ''}>Real sessions</option><option value="demo" ${sessionMode === 'demo' ? 'selected' : ''}>Demo sessions only</option></select></label></div><div class="session-list">${visible.length ? visible.map(entry) : html`<section class="card empty">No saved sessions. Choose a drill in Practice to get started.</section>`}</div><details id="deleted-sessions" class="details deleted-sessions" ${deletedWasOpen ? 'open' : ''}><summary>Recently deleted (${deleted.length})</summary><p>Deleted sessions stay here until you restore them.</p><div class="session-list">${deleted.length ? deleted.map(deletedEntry) : html`<p>No deleted sessions.</p>`}</div></details>`;
@@ -935,14 +686,14 @@ document.addEventListener('click', async event => {
         if (
           await confirmAction(
             'Abandon session?',
-            `End this ${data.session_kind === 'golf_sim' ? 'round' : 'drill'} and return to ${data.session_kind === 'golf_sim' ? 'Play' : 'Practice'}? Recorded ${shotWord(data)} will stay in Sessions as Abandoned. Relay keeps listening.`,
+            `End this ${featureForSession(data).unit} and return to ${home(data).label}? Recorded ${shotWord(data)} will stay in Sessions as Abandoned. Relay keeps listening.`,
             'Abandon session'
           )
         ) {
           state = await api(`/api/practice/${data.id}/abandon`, {});
           abandonedSession = { ...data, abandoned: true, ended: true };
           review = null;
-          setView(data.session_kind === 'golf_sim' ? 'play' : 'choose');
+          setView(home(data).view);
           notice(`Session abandoned. Recorded ${shotWord(data)} are saved in Sessions.`);
         }
         break;

@@ -44,3 +44,7 @@ export function fitCourseCamera(svg, data, zoom) {
   observer = watcher;
   watcher.observe(svg);
 }
+export function disposeCourseCamera() {
+  observer?.disconnect();
+  observer = null;
+}

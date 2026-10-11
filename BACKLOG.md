@@ -18,8 +18,10 @@
   storage split; server-side drill registry; escape-by-default `html` templates; docs
   reorganized to current state. See WORK_LOG.
 - Completed 2026-10-11 (follow-up): isolated instances leave `web_runtime.json` alone; frozen
-  per-version migration files; typed per-drill request models; every UI template on `html`.
-- Remaining: the browser feature lifecycle; incremental live deltas and bounded detail reads.
+  per-version migration files; typed per-drill request models; every UI template on `html`;
+  browser feature registry with a mount/update/dispose runner lifecycle.
+- Remaining: incremental per-feature runner updates (the lifecycle exists; `update` still
+  repaints), incremental live deltas and bounded detail reads.
 - Future extensions: server-shared dynamic analysis views, provider contracts and operational
   receipt/save/calculation/backup diagnostics. Desktop/video remain future product features below.
 

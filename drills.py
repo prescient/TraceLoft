@@ -12,7 +12,8 @@ Adding a drill:
      keyed by `drill`. Otherwise it falls through to the putting scorer.
   3. If its sessions need a different scorer class when reopened, give the persisted data a
      distinguishing field, extend session_kind() and add the class to _session_class().
-  4. Add its browser setup/runner modules, tests, and update NAVIGATION.md.
+  4. In the browser, add a feature to web/features.js (setup ids, `runs`, setup and runner
+     lifecycle), a setup route in web/navigation.js, tests, and update NAVIGATION.md.
 """
 
 from collections.abc import Callable

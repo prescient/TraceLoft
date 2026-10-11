@@ -200,7 +200,12 @@ const clock = new MotionClock();
 let frameId = null;
 export function resetShotMotion() {
   clock.reset();
+  stopShotMotion();
+}
+/** Cancel the pending frame but keep the clock, so a remounted view resumes a playing replay. */
+export function stopShotMotion() {
   if (frameId !== null) cancelAnimationFrame(frameId);
+  frameId = null;
 }
 export function observeShotMotion(scope, shot, plan, live) {
   clock.observe(
