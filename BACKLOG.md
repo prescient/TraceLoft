@@ -221,6 +221,13 @@ median/IQR and sample counts. Apply the selected club set consistently to summar
 comparisons and CSV, while respecting date, inclusion and real/demo filters. Provide clear
 selected-club controls suitable for iPad touch. Do not implement until prioritized by the user.
 
+**Proposed — Analyze redesign (2026-10-10; concepts only):** selectable metric panels over a shared
+timeline, linked chart/range cross-filtering, and named period/equipment/tag cohorts. Recommended
+workspace: Trends → Explore → Compare, with common multi-club scope, metric-specific coverage,
+reported/estimated identity and a shared query for charts, rows and CSV. Filters never exclude or
+retag shots. Implement in that order only after concept selection; current Analyze remains unchanged.
+See [concepts and query semantics](designs/analyze-exploration/README.md).
+
 ### 4. Web-based GSPro remote (requested 2026-10-01)
 Phone/tablet-friendly controls served by a local background companion on the GSPro PC. The companion
 should remain available while GSPro runs, independently of whether screen scraping or shot logging is active.

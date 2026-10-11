@@ -30,3 +30,7 @@ corrected v2 layouts, fixed pixel probes and iPad boundary evidence.
 
 [Judges Course](judges-course/README.md) records the map/photo-inspired 18-hole parkland aerials,
 generation prompts, finished-art boundary review and iPad view.
+# Analyze exploration
+
+[Trends, Explore and Compare](analyze-exploration/README.md) propose selectable time-series metrics,
+linked chart filters and named cohorts in the Vector interface. Concept preview only; no app changes.

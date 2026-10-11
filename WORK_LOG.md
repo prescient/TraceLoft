@@ -649,3 +649,16 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
   `%USERPROFILE%/GolfData/migration-final-377cff4c`. Generated QA data stayed isolated.
   Physical Safari/touch and new live launch-monitor ingestion remain unverified in this turn.
   Google Drive/off-device backup and remote authentication remain future work.
+## 2026-10-10 — Analyze redesign concepts
+
+- Proposed one shared-scope Analyze workspace with multi-metric Trends, linked Explore and named
+  Compare cohorts. Documented independent units, shared dates, robust per-metric coverage, multi-club
+  configurations, numerical filter semantics, transient selection versus cleanup and frozen/dynamic
+  saved-view distinctions. No design preference was treated as implementation approval.
+- Created an interactive conversation preview with 216 deterministic synthetic shots. Reviewed
+  metric toggles/shared inspection, club selection, chart-axis changes, linked 10–15 yd offline
+  filtering (26/216 matching), detail rows and updated baseline/recent boundaries. Browser reviewed
+  1366×1024/390×844 with no outer horizontal overflow or console warnings/errors; physical Safari
+  remains unverified. Production app/service/database and routes were unchanged.
+- Added proposal links and pending backlog scope. Only documentation is committed; the conversation
+  preview remains outside the repository. No production tests needed for this concept-only change.
