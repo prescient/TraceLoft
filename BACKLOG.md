@@ -228,6 +228,10 @@ reported/estimated identity and a shared query for charts, rows and CSV. Filters
 retag shots. Implement in that order only after concept selection; current Analyze remains unchanged.
 See [concepts and query semantics](designs/analyze-exploration/README.md).
 
+Refinement: selection/filter controls expand/collapse, defaulting compact with a visible active-scope
+summary. Preserve values and expanded state; collapsing changes layout only. Included in the updated
+concepts; production implementation remains pending.
+
 ### 4. Web-based GSPro remote (requested 2026-10-01)
 Phone/tablet-friendly controls served by a local background companion on the GSPro PC. The companion
 should remain available while GSPro runs, independently of whether screen scraping or shot logging is active.

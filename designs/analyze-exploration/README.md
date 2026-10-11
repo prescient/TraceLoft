@@ -11,6 +11,12 @@ Retain the Vector language, global navigation, compact golfer identity and expli
 Put the charts first; keep detailed shot rows and calculation management secondary. Primary target
 is iPad Pro landscape, with stacked phone charts and internally scrolling wide tables.
 
+User refinement: put selection/filter controls in an expandable **Selections & filters** drawer,
+collapsed by default. Keep a compact active-scope summary visible: bag/clubs, dates, chosen metrics
+or chart axes and any numeric constraints. Keep real/demo and source/estimate identity visible too.
+Collapsing never clears or reapplies filters. Preserve choices and expanded state when switching
+views/returning; charts, legends, coverage and Clear selection stay usable while the drawer is closed.
+
 ### Trends
 
 - Select multiple metrics; initially Carry, Absolute offline and Launch angle. Add Total, Spin,

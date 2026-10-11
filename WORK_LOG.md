@@ -662,3 +662,17 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
   remains unverified. Production app/service/database and routes were unchanged.
 - Added proposal links and pending backlog scope. Only documentation is committed; the conversation
   preview remains outside the repository. No production tests needed for this concept-only change.
+
+## 2026-10-10 — Collapsible Analyze selections and filters
+
+- Refined all three Analyze concepts with a native expandable Selections & filters drawer,
+  collapsed by default. Active clubs, dates, metrics/axes and numeric constraints remain visible;
+  collapsing changes layout only. Added the requirement to design principles and pending backlog.
+- Browser verified mouse and keyboard disclosure, adding descent/another club and retaining five
+  charts after collapse, shared session inspection and selected-club legends. Explore retains its
+  10–15 yd offline selection (26/216 shots and six preview rows); Compare retains the four-session
+  boundary with its summary updated. Expanded/collapsed layouts fit 1366×1024 and 390×844 without
+  outer horizontal overflow. JavaScript syntax check passed; no browser warnings/errors observed.
+- Conversation preview remains outside the repository. Production app, database and routes were
+  unchanged; implementation remains pending. Physical iPad Safari is unverified. Preview server
+  stopped, QA tab closed and temporary viewport override reset.

@@ -152,6 +152,11 @@ layout and every control. Earlier dark studio and alternate layouts are historic
 
 ## 8. Target iPad Pro landscape; support desktop and phone
 
+Analyze selection and filter controls must expand/collapse to preserve chart space. A collapsed
+summary keeps active bag/clubs, date range, metric choices and constraints visible. Retain query
+choices when collapsing or returning; collapsing must never change inclusion or erase selections.
+This is a requirement for the proposed Analyze redesign, not current implementation status.
+
 - Primary device: **13-inch / 12.9-inch iPad Pro in landscape**. Design and verify at CSS viewports
   1376 × 1032 and 1366 × 1024, plus reduced height (1366 × 900) for browser chrome. CSS pixels,
   rather than the display panel's physical pixels, determine responsive layout. Record viewport
