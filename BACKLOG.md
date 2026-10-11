@@ -537,7 +537,7 @@ Real-course sources/import enhancements remain optional deferred work.
   Remote authentication/authorization remains a separate future feature.
 - [x] Implement idempotent model runs, immutable results/input context, explicit analytical version
   selection, recalculation preview/publication and version-aware wide/history CSV exports.
-- [ ] Verify source reconciliation, rollback/restore, interrupted runs, missing inputs, exclusions,
+- [x] Verify source reconciliation, rollback/restore, interrupted runs, missing inputs, exclusions,
   retagging dependencies and historical review in isolation before production cutover.
 
 See [redesign](docs/DATABASE_REDESIGN.md) and [implemented schema 5](docs/SHOT_DATABASE.md).

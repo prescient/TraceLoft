@@ -263,3 +263,6 @@ In Analyze, calculation previews stage immutable outputs. Publication changes se
 versions only after complete coverage and dependency checks. Interrupted staging is resumable while
 its code hash matches; unavailable/error batches cannot publish. Historical review and game outcomes
 remain pinned. See [readable schema and version workflow](SHOT_DATABASE.md) and [ERD](DATABASE_ERD.md).
+
+Live schema 5 cutover completed 2026-10-10 with exact session/source/history reconciliation and
+isolated restore/re-upgrade verification. See [work log](../WORK_LOG.md) for counts and backups.

@@ -629,3 +629,23 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
   Wedge review shows all 12 persisted cells and publication controls. Preview table is bounded and
   keyboard-scrollable; screenshot saved outside the repository. Documentation links and diff checks pass.
   Production cutover results follow below.
+
+### Live cutover and recovery verification
+
+- Committed feature stages: a51f6ac (relational core), 8c4cfda (SQL/cohorts), 9d080c8
+  (staged calculation/version workflow). Gracefully stopped production, acquired the service lease
+  and upgraded schema 2→3→4→5. Verified backups precede each transition: UTC 20261011T015002,
+  015005 and 015006 in `%USERPROFILE%/GolfData/data/backups`, with matching manifests.
+- Exact reconciliation: all 47 session DTOs, all 12 original evidence-table hashes, 2,429 source
+  reports and 1,059 original attempt result pins unchanged. Integrity check returns ok; foreign
+  keys clean. Restored the schema-2 pre-cutover snapshot to an isolated new path, verified its
+  evidence and re-upgraded to schema 5 with all 47 DTOs still exact. Production was not restored.
+- Normal launcher restarted localhost:8765. Entire active range DTO is identical (session
+  1b8a1f0f37334e1b94700c59ec8896e6, 40 shots, unfinished); input remains 900, relay off.
+  Real/demo Analyze returns 36/1,020 included attempts; no production recalculation batches exist.
+  Live browser refreshed to the golfer/expanded metric/calculation interface, with no console
+  warnings/errors. QA stopped, its tab closed and temporary viewport sizing reset.
+- Detailed cutover, restore and test evidence is outside the repository at
+  `%USERPROFILE%/GolfData/migration-final-377cff4c`. Generated QA data stayed isolated.
+  Physical Safari/touch and new live launch-monitor ingestion remain unverified in this turn.
+  Google Drive/off-device backup and remote authentication remain future work.
