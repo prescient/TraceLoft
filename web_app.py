@@ -702,6 +702,20 @@ def create_app(service=None):
     return app
 
 
+def runtime_file(environ=None):
+    """The launcher's runtime record, or None for an isolated instance.
+
+    `launch_web.py` and Stop TraceLoft.cmd use web_runtime.json to find the user's real
+    service. Only the service owning the default database may write or remove it; an
+    instance started with GOLFDATA_DATABASE (QA, tests) must leave it alone. A second
+    owner of the default database cannot start: the service lease rejects it first.
+    """
+    import os
+
+    environ = os.environ if environ is None else environ
+    return None if environ.get('GOLFDATA_DATABASE') else ROOT / 'web_runtime.json'
+
+
 def main():
     import os
     import uvicorn
@@ -740,8 +754,9 @@ def main():
     )
     server = uvicorn.Server(config)
     app.state.stop_server = lambda: setattr(server, "should_exit", True)
-    runtime = ROOT / "web_runtime.json"
-    runtime.write_text(json.dumps(dict(pid=os.getpid(), port=args.port, lan=args.lan)))
+    runtime = runtime_file()
+    if runtime:
+        runtime.write_text(json.dumps(dict(pid=os.getpid(), port=args.port, lan=args.lan)))
     print(f"TraceLoft: http://localhost:{args.port}", flush=True)
     if args.lan:
         print(
@@ -756,7 +771,7 @@ def main():
         server.run()
     finally:
         try:
-            if json.loads(runtime.read_text()).get("pid") == os.getpid():
+            if runtime and json.loads(runtime.read_text()).get("pid") == os.getpid():
                 runtime.unlink()
         except (OSError, ValueError):
             pass

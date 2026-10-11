@@ -1,5 +1,15 @@
 # TraceLoft work log
 
+## 2026-10-11 — Isolated instances leave web_runtime.json alone
+
+- Fixed the follow-up from the browser QA entry. `web_app.main()` wrote `web_runtime.json` for
+  every instance, so an isolated QA service overwrote, then deleted, the record that `launch_web.py`
+  and Stop TraceLoft.cmd use to find the real service. `runtime_file()` now returns None when
+  `GOLFDATA_DATABASE` is set. A second owner of the default database still cannot start (the
+  service lease rejects it before the file is written).
+- Tests (`tests/test_launch_web.py`): an isolated instance leaves an existing record untouched
+  while running and after exit; the default-database service writes its record and removes it.
+
 ## 2026-10-11 — Browser QA of the review changes (isolated instance)
 
 - Ran an isolated service (separate database, input 9901, HTTP 8799) from a scratchpad script that

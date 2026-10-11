@@ -69,8 +69,10 @@ verified upgrade. Helper tests do not verify the interface in a real browser.
   or run migrations against it during development.
 - For state-changing checks, use an isolated instance:
   `GOLFDATA_DATABASE=<temp>\golfdata.sqlite3`, `TRACELOFT_INPUT_PORT=<free port>` and
-  `python web_app.py --port <free port>`. Tests construct `GolfService(<tempdir>)`, which
-  isolates the database and binds input to an ephemeral port.
+  `python web_app.py --port <free port>`. With `GOLFDATA_DATABASE` set, the instance never
+  writes or removes `web_runtime.json`, the file the launcher uses to find the real service.
+  Tests construct `GolfService(<tempdir>)`, which isolates the database and binds input to an
+  ephemeral port.
 - Runtime files (`web_runtime.json`, `web_service.log`, `practice_sessions/`, receipts, backups,
   `*.sqlite3`) are gitignored. Keep them out of commits.
 
