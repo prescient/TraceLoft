@@ -1,5 +1,19 @@
 # TraceLoft backlog
 
+## Future desktop application and swing video (requested 2026-10-10)
+
+- Package TraceLoft as desktop software in a future version. Preserve the local SQLite database,
+  source-neutral shot-input/relay contract and independent private TraceCapture application. Retain
+  tablet/browser access where useful; desktop packaging must not require merging acquisition code.
+- Link swing video to the physical shot ID and session attempt so Analyze/review can open the
+  associated swing. Explore time synchronization, manual linking, camera/import workflows and
+  playback/frame inspection for swing analysis. Keep original clips and shot evidence intact;
+  corrections/reused shots must not silently relink a different swing.
+- Design video storage paths, missing/moved-file recovery, retention/export and backup separately
+  from scalar metrics. Video-derived measurements, if added, need their own provenance and versioned
+  results. Camera capture and automated biomechanical analysis are not yet implemented or specified.
+- Future scope only; current priority remains the approved Analyze workspace implementation.
+
 ## Judges Course — implemented 2026-10-03
 
 - [x] All 18 supplied layouts/yardages; 6,163 yd/par 72 with full/front/back choices.

@@ -1,5 +1,12 @@
 # TraceLoft work log
 
+## 2026-10-10 — Future desktop and swing-video backlog
+
+- Added future desktop packaging and shot/attempt-linked swing video, including synchronization,
+  playback, file recovery and separate retention/provenance. Retain tablet access and the private
+  TraceCapture boundary. No desktop/video implementation is included in the current Analyze work.
+- Checked the backlog wording and Git whitespace; documentation only, no data or runtime changes.
+
 ## 2026-10-10 — Relational golfers, equipment, session state and tags
 
 - Added schema 3, verified v2 backup, transactional backfill/evidence reconciliation and exact DTO
