@@ -1,5 +1,21 @@
 # TraceLoft work log
 
+## 2026-10-11 — Typed per-drill request models
+
+- Added `drill_params.py`: one Pydantic model per scorer (putting, distance ladder, range,
+  collection, golf), each declaring exactly the fields its session receives. Shared fields
+  (equipment choice, demo, handedness, Stimp, distance metric) are declared once in mixins.
+- `PracticeParams`, the POST /api/practice body, is now derived as the union with unknown keys
+  rejected. A conflicting redefinition of a shared field fails at import. Its JSON schema
+  (48 fields, bounds, defaults, required) was compared with the removed hand-written model and
+  is identical.
+- `drills.create()` validates with the drill's own model and passes the typed object to its
+  factory, replacing the field-name filtering. Direct service calls (scripts, tests) now get the
+  API's defaults and bounds instead of each constructor's own defaults.
+- Tests (`tests/test_drills.py`): each scorer's fields equal what its session receives; the
+  envelope is the union and rejects unknown keys; conflicts are rejected; bounds/defaults apply
+  and other drills' fields are ignored; a direct launch equals an API launch.
+
 ## 2026-10-11 — Frozen per-version migrations
 
 - `migrations.py` became the `migrations/` package:

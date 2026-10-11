@@ -47,7 +47,7 @@ class DrillCatalogTests(unittest.TestCase):
         ids = [d.id for d in drills.CATALOG]
         self.assertEqual(len(ids), len(set(ids)))
         names = {d.drill for d in drills.CATALOG}
-        self.assertLessEqual(set(drills.FACTORIES), names)
+        self.assertLessEqual(set(drills.SCORERS), names)
 
     def test_session_kind_is_derived_from_persisted_fields(self):
         cases = [
@@ -70,6 +70,69 @@ class DrillCatalogTests(unittest.TestCase):
             restored = drills.restore(session)
             self.assertIs(type(restored), cls)
             self.assertIs(restored.data, data)
+
+
+class TypedParamsTests(unittest.TestCase):
+    def test_each_scorer_declares_exactly_the_fields_its_session_receives(self):
+        from collection import COLLECTION_FIELDS
+        from distance_ladder import RANGE_FIELDS
+        from driving_range import DRIVING_FIELDS
+        from golf_sim import GAME_FIELDS
+
+        expected = {
+            '2D golf': {*GAME_FIELDS, 'demo', 'stimp', 'range_bag_id', 'range_club_id'},
+            'Bag mapping': {
+                *COLLECTION_FIELDS,
+                'range_bag_id',
+                'range_club_id',
+                'range_metric',
+                'demo',
+                'handedness',
+            },
+            'Driving range': {*DRIVING_FIELDS, 'range_bag_id', 'range_club_id'},
+            'Distance ladder': set(RANGE_FIELDS),
+        }
+        for drill, fields in expected.items():
+            with self.subTest(drill=drill):
+                self.assertEqual(set(drills.scorer(drill).params.model_fields) - {'drill'}, fields)
+        other = set().union(*expected.values())
+        putting = set(drills.scorer('Pace consistency').params.model_fields) - {'drill'}
+        self.assertFalse(putting & (other - {'stimp'}))
+
+    def test_envelope_is_the_union_and_rejects_unknown_keys(self):
+        import pydantic
+
+        from drill_params import SCORER_PARAMS, PracticeParams
+
+        union = set().union(*(model.model_fields for model in SCORER_PARAMS))
+        self.assertEqual(set(PracticeParams.model_fields), union)
+        self.assertEqual(len(union), 48)
+        with self.assertRaises(pydantic.ValidationError):
+            PracticeParams(drill='Driving range', not_a_field=1)
+
+    def test_conflicting_shared_field_is_rejected_at_definition(self):
+        from pydantic import Field
+
+        from drill_params import DrillParams, RangeParams, envelope
+
+        class Conflict(DrillParams):
+            range_target: float = Field(default=1, ge=0)
+
+        with self.assertRaises(TypeError):
+            envelope((RangeParams, Conflict))
+
+    def test_scorer_validates_bounds_ignores_other_drills_fields_and_applies_defaults(self):
+        import pydantic
+
+        params = drills.scorer('Driving range').params.model_validate(
+            dict(drill='Driving range', game_rough=12, range_width=40)
+        )
+        self.assertEqual((params.range_width, params.range_target), (40, 150))
+        self.assertFalse(hasattr(params, 'game_rough'))
+        with self.assertRaises(pydantic.ValidationError):
+            drills.scorer('Driving range').params.model_validate(
+                dict(drill='Driving range', range_width=0)
+            )
 
 
 class DrillLifecycleTests(unittest.TestCase):
@@ -107,6 +170,16 @@ class DrillLifecycleTests(unittest.TestCase):
                 self.assertIs(type(reopened), type(live))
                 self.assertEqual(reopened.data, live.data)
                 self.service.change_practice(live.data['id'], 'abandon')
+
+    def test_direct_service_launch_gets_the_api_defaults(self):
+        api = self.client.post('/api/practice', json=dict(drill='Driving range')).json()['practice']
+        self.service.change_practice(api['id'], 'abandon')
+        direct = self.service.create_practice(dict(drill='Driving range'))
+        ignored = {'id', 'started', 'shots', 'equipment_selection'}
+        self.assertEqual(
+            {k: v for k, v in direct.items() if k not in ignored},
+            {k: v for k, v in api.items() if k not in ignored},
+        )
 
     def test_unknown_drill_is_rejected_by_the_putting_fallback(self):
         response = self.client.post('/api/practice', json=dict(drill='Not a drill'))

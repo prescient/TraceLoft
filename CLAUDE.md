@@ -184,8 +184,10 @@ DESIGN_PRINCIPLES.md. Read the relevant section before changing those features.
 - Drills are registered in `drills.py`: catalog entry, creation factory, and scorer
   restoration via `session_kind()`. Its docstring lists the steps to add one. A drill's `id`
   and `drill` name are persisted identifiers, so never rename them; titles and descriptions
-  are copy. Request fields still live in `web_app.PracticeParams`. Browser setup/runner modules
-  and NAVIGATION.md need matching updates.
+  are copy. Each scorer declares its typed request model in `drill_params.py`. The API body
+  `PracticeParams` is derived as their union (unknown keys rejected), and fields shared by
+  several scorers live in one mixin. Browser setup/runner modules and NAVIGATION.md need
+  matching updates.
 - New behavior needs tests: `tests/test_*.py` (unittest, temp-dir `GolfService`) for the service
   and storage, and `tests/test_*.mjs` (`node --test`) for browser helpers and controllers.
 

@@ -7,15 +7,24 @@ Change `title` and `description` freely; never rename `id` or `drill`.
 
 Adding a drill:
   1. Add a Drill entry to CATALOG (choose a new id and drill name).
-  2. If it needs its own scorer, register a factory in FACTORIES (keyed by `drill`). Otherwise it
-     falls through to the putting scorer.
+  2. If it needs its own scorer, declare its typed request model in drill_params.py (add it to
+     SCORER_PARAMS so the API envelope accepts its fields) and register a Scorer in SCORERS,
+     keyed by `drill`. Otherwise it falls through to the putting scorer.
   3. If its sessions need a different scorer class when reopened, give the persisted data a
      distinguishing field, extend session_kind() and add the class to _session_class().
-  4. Add request fields to web_app.PracticeParams, browser setup/runner modules, tests,
-     and update NAVIGATION.md.
+  4. Add its browser setup/runner modules, tests, and update NAVIGATION.md.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
+
+from drill_params import (
+    CollectionParams,
+    DistanceLadderParams,
+    GolfParams,
+    PuttingParams,
+    RangeParams,
+)
 
 
 @dataclass(frozen=True)
@@ -114,9 +123,7 @@ def _folder(service):
 def _selected(service, params):
     from equipment import selection
 
-    return selection(
-        service.equipment, params.get('range_bag_id', ''), params.get('range_club_id', '')
-    )
+    return selection(service.equipment, params.range_bag_id, params.range_club_id)
 
 
 def create_golf(service, params):
@@ -127,8 +134,8 @@ def create_golf(service, params):
         _folder(service),
         store=service.store,
         equipment_selection=_selected(service, params),
-        course=load(service.store, params.get('game_course_id', 'pebble-boulder-blue-v3')),
-        **{k: v for k, v in params.items() if k in GAME_FIELDS or k in ('demo', 'stimp')},
+        course=load(service.store, params.game_course_id),
+        **params.model_dump(include={*GAME_FIELDS, 'demo', 'stimp'}),
     )
 
 
@@ -138,14 +145,14 @@ def create_collection(service, params):
     return CollectionSession(
         _folder(service),
         service.equipment,
-        params.get('range_bag_id', ''),
-        params.get('collection_clubs', []),
-        samples=params.get('collection_samples', 5),
-        metric=params.get('range_metric', 'carry'),
-        demo=params.get('demo', False),
-        handedness=params.get('handedness', 'right_handed'),
+        params.range_bag_id,
+        params.collection_clubs,
+        samples=params.collection_samples,
+        metric=params.range_metric,
+        demo=params.demo,
+        handedness=params.handedness,
         store=service.store,
-        swing_labels=params.get('swing_labels') if params['drill'] == 'Wedge matrix' else None,
+        swing_labels=params.swing_labels if params.drill == 'Wedge matrix' else None,
     )
 
 
@@ -156,7 +163,7 @@ def create_range(service, params):
         _folder(service),
         store=service.store,
         equipment_selection=_selected(service, params),
-        **{k: v for k, v in params.items() if k in DRIVING_FIELDS},
+        **params.model_dump(include=set(DRIVING_FIELDS)),
     )
 
 
@@ -167,42 +174,51 @@ def create_distance_ladder(service, params):
         _folder(service),
         store=service.store,
         equipment_selection=_selected(service, params),
-        **{
-            k: v
-            for k, v in params.items()
-            if k in RANGE_FIELDS and k not in ('range_bag_id', 'range_club_id')
-        },
+        **params.model_dump(include=set(RANGE_FIELDS) - {'range_bag_id', 'range_club_id'}),
     )
 
 
 def create_putting(service, params):
     """Putting drills, and the validating fallback for unknown drill names."""
-    from collection import COLLECTION_FIELDS
-    from distance_ladder import RANGE_FIELDS
-    from driving_range import DRIVING_FIELDS
-    from golf_sim import GAME_FIELDS
     from putting import PuttingSession
 
-    other = set(RANGE_FIELDS) | set(DRIVING_FIELDS) | set(COLLECTION_FIELDS) | set(GAME_FIELDS)
-    return PuttingSession(
-        _folder(service),
-        store=service.store,
-        **{k: v for k, v in params.items() if k not in other},
-    )
+    return PuttingSession(_folder(service), store=service.store, **params.model_dump())
 
 
-FACTORIES = {
-    '2D golf': create_golf,
-    'Bag mapping': create_collection,
-    'Wedge matrix': create_collection,
-    'Driving range': create_range,
-    'Distance ladder': create_distance_ladder,
+@dataclass(frozen=True)
+class Scorer:
+    """How a persisted drill name is launched: its typed request model and factory."""
+
+    params: type
+    create: Callable
+
+
+GOLF = Scorer(GolfParams, create_golf)
+COLLECTION = Scorer(CollectionParams, create_collection)
+PUTTING = Scorer(PuttingParams, create_putting)
+SCORERS = {
+    '2D golf': GOLF,
+    'Bag mapping': COLLECTION,
+    'Wedge matrix': COLLECTION,
+    'Driving range': Scorer(RangeParams, create_range),
+    'Distance ladder': Scorer(DistanceLadderParams, create_distance_ladder),
 }
 
 
+def scorer(drill):
+    """The scorer for a persisted drill name; unknown names reach the validating putting scorer."""
+    return SCORERS.get(drill, PUTTING)
+
+
 def create(service, params):
-    """Create and persist a new session for validated PracticeParams."""
-    return FACTORIES.get(params['drill'], create_putting)(service, params)
+    """Validate launch parameters with the drill's own model, then create and persist a session.
+
+    `params` is a mapping (PracticeParams.model_dump() from the API, or a partial dict from
+    scripts and tests); fields the model does not declare are ignored, missing ones use its
+    defaults, so direct calls get exactly the API's defaults and bounds.
+    """
+    chosen = scorer(params['drill'])
+    return chosen.create(service, chosen.params.model_validate(dict(params)))
 
 
 def session_kind(data):
