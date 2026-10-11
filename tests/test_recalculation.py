@@ -12,6 +12,14 @@ class RecalculationTests(unittest.TestCase):
 
     def publish(self,b):return self.store.publish_calculations(b['batch_id'],b['selection_token'])
 
+    def test_batch_reconstructs_each_session_once(self):
+        from domain_schema import read_session
+        with patch('recalculation.read_session', wraps=read_session) as reads:
+            batch = self.stage()
+        self.assertEqual(batch['expected'], 5)
+        self.assertEqual(reads.call_count, 1)
+        self.assertEqual(reads.call_args.args[1], self.sid)
+
     def test_preview_publish_history_and_historical_pins(self):
         original=self.store.load_session(self.sid);evidence=evidence_manifest(self.store.connection)
         old_median=self.store.analysis(dict(mode='demo',basis='flight'))['selected']['total']['median']

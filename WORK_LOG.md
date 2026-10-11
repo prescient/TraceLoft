@@ -1,5 +1,15 @@
 # TraceLoft work log
 
+## 2026-10-10 — Architecture review and recalculation cache
+
+- Reviewed the supplied findings against storage/domain persistence, recalculation and live state.
+  Kept the existing service/SQLite/browser architecture and documented the six-stage improvement
+  plan and safeguards. Performance claims in the review remain isolated probes, not production SLA.
+- Replaced eager `setdefault` reconstruction with a lazy per-session cache in batch staging.
+  A five-attempt regression now reconstructs its session once. Seven recalculation tests passed,
+  including publication, pinned outcomes, interruption/recovery, missing inputs and stale guards.
+  No production data writes or service restart; incremental persistence is next.
+
 ## 2026-10-10 — Future desktop and swing-video backlog
 
 - Added future desktop packaging and shot/attempt-linked swing video, including synchronization,

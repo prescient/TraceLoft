@@ -1,5 +1,15 @@
 # TraceLoft backlog
 
+## Architecture/performance improvements — requested 2026-10-10
+
+- Recalculation lazy session cache; incremental attempt/state persistence; revision notifications
+  and browser focus/edit preservation; neutral feature contracts; shared SQL selection/lineage with
+  paginated detail; frozen numbered migrations and repeatable controller/whole-app checks.
+- Work in that order with focused commits, isolated synthetic probes and preserved original data,
+  scoring, recovery and the TraceCapture boundary. See [plan](docs/ARCHITECTURE_IMPROVEMENTS.md).
+- Future extensions: server-shared dynamic analysis views, provider contracts and operational
+  receipt/save/calculation/backup diagnostics. Desktop/video remain future product features below.
+
 ## Future desktop application and swing video (requested 2026-10-10)
 
 - Package TraceLoft as desktop software in a future version. Preserve the local SQLite database,

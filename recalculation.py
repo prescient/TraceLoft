@@ -109,7 +109,10 @@ def stage(store,family,filters,putting_model='saved'):
             key=(r['shot_id'],context)
             if key in seen:continue
             seen.add(key)
-            data=sessions.setdefault(r['session_id'],read_session(c,r['session_id']));shot=data['shots'][r['ordinal']-1]
+            if r['session_id'] not in sessions:
+                sessions[r['session_id']] = read_session(c, r['session_id'])
+            data = sessions[r['session_id']]
+            shot = data['shots'][r['ordinal'] - 1]
             stimp=shot.get('stimp_ft',data.get('stimp'));target=shot.get('target_distance_ft')
             model=shot.get('distance_model_id',data.get('distance_model',{}).get('id')) if putting_model=='saved' else putting_model
             # Each result names its exact attempt report; source features use the selected physical-shot report.
