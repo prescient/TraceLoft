@@ -13,8 +13,15 @@ class IncrementalStorageTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.store = Store(Path(self.temp.name) / 'data.sqlite3')
         self.addCleanup(self.store.close)
-        self.data = dict(id=uuid.uuid4().hex, started='2026-10-10T12:00:00Z', ended=None,
-                         drill='Driving range', practice_type='full_swing', target=150, shots=[])
+        self.data = dict(
+            id=uuid.uuid4().hex,
+            started='2026-10-10T12:00:00Z',
+            ended=None,
+            drill='Driving range',
+            practice_type='full_swing',
+            target=150,
+            shots=[],
+        )
         self.store.save_session(self.data)
         self.store.connection.executescript('''
             CREATE TEMP TABLE field_writes(action TEXT,ordinal INTEGER,path TEXT);
@@ -28,9 +35,23 @@ class IncrementalStorageTests(unittest.TestCase):
 
     def append(self):
         seq = len(self.data['shots']) + 1
-        self.data['shots'].append(dict(key=f'fixture:{seq}', captured='2026-10-10T12:00:00Z',
-            vals=dict(ball_speed=100, launch_ang=18, launch_dir=0, total_spin=6000,
-                      carry=150, total=160), target=150, success=True, excluded=False))
+        self.data['shots'].append(
+            dict(
+                key=f'fixture:{seq}',
+                captured='2026-10-10T12:00:00Z',
+                vals=dict(
+                    ball_speed=100,
+                    launch_ang=18,
+                    launch_dir=0,
+                    total_spin=6000,
+                    carry=150,
+                    total=160,
+                ),
+                target=150,
+                success=True,
+                excluded=False,
+            )
+        )
         self.store.append_attempt(self.data)
 
     def writes(self):
@@ -50,7 +71,8 @@ class IncrementalStorageTests(unittest.TestCase):
         self.assertTrue(all(action == 'insert' and ordinal == 100 for action, ordinal, _ in writes))
         field_count = self.store.connection.execute(
             'SELECT count(*) FROM attempt_fields WHERE session_id=? AND ordinal=100',
-            (self.data['id'],)).fetchone()[0]
+            (self.data['id'],),
+        ).fetchone()[0]
         self.assertEqual(len(writes), field_count)
         restored = self.store.load_session(self.data['id'])
         self.assertEqual(restored['shots'][0], first)
@@ -68,7 +90,10 @@ class IncrementalStorageTests(unittest.TestCase):
         self.store.save_session(self.data)
         self.assertEqual({row[1] for row in self.writes()}, {2})
         self.assertEqual({row[2] for row in self.writes()}, {'/excluded', '/cleanup_reason'})
-        self.assertEqual(self.store.connection.execute('SELECT count(*) FROM inclusion_decisions').fetchone()[0], 1)
+        self.assertEqual(
+            self.store.connection.execute('SELECT count(*) FROM inclusion_decisions').fetchone()[0],
+            1,
+        )
         self.assertTrue(self.store.load_session(self.data['id'])['shots'][1]['excluded'])
 
     def test_outer_rollback_does_not_poison_attempt_cache_or_skip_retry(self):
@@ -107,8 +132,10 @@ class IncrementalStorageTests(unittest.TestCase):
     def test_removal_reordering_and_invalid_append_reject_atomically(self):
         self.append()
         original = self.store.load_session(self.data['id'])
-        for changed in ({**self.data, 'shots': []},
-                        {**self.data, 'shots': [{**self.data['shots'][0], 'key': 'other:1'}]}):
+        for changed in (
+            {**self.data, 'shots': []},
+            {**self.data, 'shots': [{**self.data['shots'][0], 'key': 'other:1'}]},
+        ):
             with self.assertRaises(ValueError):
                 self.store.save_session(changed)
         with self.assertRaises(ValueError):

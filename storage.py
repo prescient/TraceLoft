@@ -1,4 +1,5 @@
 """SQLite authority for capture records and practice, with preserved source evidence."""
+
 import contextlib
 import copy
 import csv
@@ -18,19 +19,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SCHEMA_VERSION = 5
 FIELDS = {
-    'ball_speed': ('ball.speed', 'mph', .44704),
+    'ball_speed': ('ball.speed', 'mph', 0.44704),
     'launch_ang': ('ball.launch_angle', 'deg', 1),
     'launch_dir': ('ball.launch_direction', 'deg', 1),
     'total_spin': ('ball.spin_rate', 'rpm', 1),
     'spin_axis': ('ball.spin_axis', 'deg', 1),
     'back_spin': ('ball.backspin', 'rpm', 1),
     'side_spin': ('ball.sidespin', 'rpm', 1),
-    'total': ('flight.total_distance', 'yd', .9144),
-    'carry': ('flight.carry_distance', 'yd', .9144),
-    'offline': ('flight.total_side', 'yd', .9144),
+    'total': ('flight.total_distance', 'yd', 0.9144),
+    'carry': ('flight.carry_distance', 'yd', 0.9144),
+    'offline': ('flight.total_side', 'yd', 0.9144),
     'descent_ang': ('flight.descent_angle', 'deg', 1),
-    'peak_height': ('flight.apex_height', 'ft', .3048),
-    'curve': ('flight.curve', 'yd', .9144),
+    'peak_height': ('flight.apex_height', 'ft', 0.3048),
+    'curve': ('flight.curve', 'yd', 0.9144),
     'hang_time': ('flight.flight_time', 's', 1),
 }
 EXTENDED_FIELDS = {'total', 'carry', 'offline', 'descent_ang', 'peak_height', 'curve', 'hang_time'}
@@ -157,8 +158,9 @@ class Store:
         self.depth = 0
         self._attempt_cache = {}
         self._attempt_updates = {}
-        self.connection = sqlite3.connect(self.path, timeout=5, check_same_thread=False,
-                                          isolation_level=None)
+        self.connection = sqlite3.connect(
+            self.path, timeout=5, check_same_thread=False, isolation_level=None
+        )
         self.connection.row_factory = sqlite3.Row
         self.connection.execute('PRAGMA foreign_keys=ON')
         self.connection.execute('PRAGMA busy_timeout=5000')
@@ -170,8 +172,12 @@ class Store:
         if version == 0:
             # Schema and catalog initialization must succeed together.
             try:
-                if self.connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchone():
-                    raise OSError('Unrecognized database; refusing to initialize over existing tables.')
+                if self.connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchone():
+                    raise OSError(
+                        'Unrecognized database; refusing to initialize over existing tables.'
+                    )
                 self.connection.executescript('BEGIN IMMEDIATE;\n' + SCHEMA)
                 self._catalog()
                 self.connection.execute('PRAGMA application_id=1196379206')
@@ -190,6 +196,7 @@ class Store:
             try:
                 if not new_database and not migration_lease_held:
                     from database_tools import ServiceLease
+
                     lease = ServiceLease(self.path)
                 self.connection.execute('PRAGMA journal_mode=WAL')
                 self.connection.execute('PRAGMA synchronous=FULL')
@@ -208,70 +215,115 @@ class Store:
             try:
                 if not new_database and not migration_lease_held:
                     from database_tools import ServiceLease
+
                     lease = ServiceLease(self.path)
                 self._upgrade_domain(backup=not new_database)
             except BaseException:
                 self.connection.close()
                 raise
             finally:
-                if lease: lease.close()
+                if lease:
+                    lease.close()
         if self.connection.execute('PRAGMA user_version').fetchone()[0] == 3:
-            lease=None
+            lease = None
             try:
                 if not new_database and not migration_lease_held:
                     from database_tools import ServiceLease
-                    lease=ServiceLease(self.path)
+
+                    lease = ServiceLease(self.path)
                 self._upgrade_analysis(backup=not new_database)
             except BaseException:
                 self.connection.close()
                 raise
             finally:
-                if lease:lease.close()
+                if lease:
+                    lease.close()
         if self.connection.execute('PRAGMA user_version').fetchone()[0] == 4:
-            lease=None
+            lease = None
             try:
                 if not new_database and not migration_lease_held:
                     from database_tools import ServiceLease
-                    lease=ServiceLease(self.path)
+
+                    lease = ServiceLease(self.path)
                 self._upgrade_calculations(backup=not new_database)
             except BaseException:
-                self.connection.close();raise
+                self.connection.close()
+                raise
             finally:
-                if lease:lease.close()
-        self.profile = json.loads(self.connection.execute(
-            "SELECT payload FROM mapping_versions WHERE id='golfdata.foresight_screen.parsed.v1'").fetchone()[0])
-        self.extended_profile = json.loads((ROOT / 'data/metric_mapping.v2.json').read_text('utf-8'))['profiles'][0]
-        self.generic_profile = json.loads((ROOT / 'data/metric_mapping.normalized.v2.json').read_text('utf-8'))['profiles'][0]
+                if lease:
+                    lease.close()
+        self.profile = json.loads(
+            self.connection.execute(
+                "SELECT payload FROM mapping_versions WHERE id='golfdata.foresight_screen.parsed.v1'"
+            ).fetchone()[0]
+        )
+        self.extended_profile = json.loads(
+            (ROOT / 'data/metric_mapping.v2.json').read_text('utf-8')
+        )['profiles'][0]
+        self.generic_profile = json.loads(
+            (ROOT / 'data/metric_mapping.normalized.v2.json').read_text('utf-8')
+        )['profiles'][0]
         with self.transaction():
             payload = encoded(self.generic_profile)
-            old = self.connection.execute('SELECT payload FROM mapping_versions WHERE id=?',(self.generic_profile['id'],)).fetchone()
-            if old and old[0] != payload:raise ValueError('Normalized mapping conflicts with its archived definition.')
-            self.connection.execute('INSERT OR IGNORE INTO mapping_versions VALUES(?,?,?)', (self.generic_profile['id'], digest(payload.encode()), payload))
+            old = self.connection.execute(
+                'SELECT payload FROM mapping_versions WHERE id=?', (self.generic_profile['id'],)
+            ).fetchone()
+            if old and old[0] != payload:
+                raise ValueError('Normalized mapping conflicts with its archived definition.')
+            self.connection.execute(
+                'INSERT OR IGNORE INTO mapping_versions VALUES(?,?,?)',
+                (self.generic_profile['id'], digest(payload.encode()), payload),
+            )
         with self.transaction():
             payload = encoded(self.extended_profile)
             mapping_id = self.extended_profile['id']
-            old = self.connection.execute('SELECT payload FROM mapping_versions WHERE id=?', (mapping_id,)).fetchone()
+            old = self.connection.execute(
+                'SELECT payload FROM mapping_versions WHERE id=?', (mapping_id,)
+            ).fetchone()
             if old and old[0] != payload:
                 raise ValueError('Metric mapping version conflicts with its archived definition.')
-            self.connection.execute('INSERT OR IGNORE INTO mapping_versions VALUES(?,?,?)',
-                                    (mapping_id, digest(payload.encode()), payload))
+            self.connection.execute(
+                'INSERT OR IGNORE INTO mapping_versions VALUES(?,?,?)',
+                (mapping_id, digest(payload.encode()), payload),
+            )
 
     def _upgrade_metrics(self, backup=True):
         from shot_schema import DDL, backfill, evidence_manifest
+
         snapshot = self.backup() if backup else None
-        before = {t:self.count(t) for t in ('shots','observations','metric_values','sessions','session_attempts','ingest_events')}
+        before = {
+            t: self.count(t)
+            for t in (
+                'shots',
+                'observations',
+                'metric_values',
+                'sessions',
+                'session_attempts',
+                'ingest_events',
+            )
+        }
         evidence_before = evidence_manifest(self.connection)
         try:
             self.connection.executescript('BEGIN IMMEDIATE;\n' + DDL)
             backfill(self.connection)
-            after = {t:self.count(t) for t in before}
+            after = {t: self.count(t) for t in before}
             if before != after:
                 raise ValueError('Schema upgrade changed original evidence counts.')
             if evidence_manifest(self.connection) != evidence_before:
                 raise ValueError('Schema upgrade changed original evidence or saved outcomes.')
-            report = dict(from_schema=1,to_schema=2,at=now(),backup=str(snapshot) if snapshot else None,
-                          before=before,after=after,evidence=evidence_before,stage='wide_source_and_derived_metrics')
-            self.connection.execute('INSERT INTO metadata VALUES(?,?)', ('schema_migration.v2',encoded(report)))
+            report = dict(
+                from_schema=1,
+                to_schema=2,
+                at=now(),
+                backup=str(snapshot) if snapshot else None,
+                before=before,
+                after=after,
+                evidence=evidence_before,
+                stage='wide_source_and_derived_metrics',
+            )
+            self.connection.execute(
+                'INSERT INTO metadata VALUES(?,?)', ('schema_migration.v2', encoded(report))
+            )
             self.connection.execute('PRAGMA user_version=2')
             self.connection.execute('COMMIT')
         except BaseException:
@@ -282,212 +334,399 @@ class Store:
     def write_derived_result(self, *args, **kwargs):
         """Append an analytical version; select=True explicitly publishes for analysis only."""
         from shot_schema import write_result
+
         with self.transaction():
-            return write_result(self.connection,*args,**kwargs)
+            return write_result(self.connection, *args, **kwargs)
 
     def _upgrade_domain(self, backup=True):
         from domain_schema import DDL, backfill, read_session
         from shot_schema import hydrate_session, evidence_manifest
+
         snapshot = self.backup() if backup else None
         evidence = evidence_manifest(self.connection)
-        originals = {r['id']:hydrate_session(self.connection,json.loads(r['payload_json']))
-                     for r in self.connection.execute('SELECT id,payload_json FROM sessions')}
+        originals = {
+            r['id']: hydrate_session(self.connection, json.loads(r['payload_json']))
+            for r in self.connection.execute('SELECT id,payload_json FROM sessions')
+        }
         try:
-            self.connection.executescript('BEGIN IMMEDIATE;\n'+DDL)
+            self.connection.executescript('BEGIN IMMEDIATE;\n' + DDL)
             backfill(self.connection)
-            for sid,data in originals.items():
-                if read_session(self.connection,sid)!=data:
+            for sid, data in originals.items():
+                if read_session(self.connection, sid) != data:
                     raise ValueError(f'Relational migration changed session {sid}.')
-            if evidence_manifest(self.connection)!=evidence:
+            if evidence_manifest(self.connection) != evidence:
                 raise ValueError('Relational migration changed original evidence.')
-            report=dict(from_schema=2,to_schema=3,at=now(),backup=str(snapshot) if snapshot else None,
-                        evidence=evidence,sessions_reconciled=len(originals),stage='relational_golfers_equipment_sessions')
-            self.connection.execute('INSERT INTO metadata VALUES(?,?)',('schema_migration.v3',encoded(report)))
+            report = dict(
+                from_schema=2,
+                to_schema=3,
+                at=now(),
+                backup=str(snapshot) if snapshot else None,
+                evidence=evidence,
+                sessions_reconciled=len(originals),
+                stage='relational_golfers_equipment_sessions',
+            )
+            self.connection.execute(
+                'INSERT INTO metadata VALUES(?,?)', ('schema_migration.v3', encoded(report))
+            )
             self.connection.execute('PRAGMA user_version=3')
             self.connection.execute('COMMIT')
         except BaseException:
-            if self.connection.in_transaction:self.connection.execute('ROLLBACK')
+            if self.connection.in_transaction:
+                self.connection.execute('ROLLBACK')
             raise
 
-    def _upgrade_analysis(self,backup=True):
+    def _upgrade_analysis(self, backup=True):
         from analysis_schema import DDL
         from shot_schema import evidence_manifest
-        snapshot=self.backup() if backup else None;evidence=evidence_manifest(self.connection)
+
+        snapshot = self.backup() if backup else None
+        evidence = evidence_manifest(self.connection)
         try:
-            self.connection.executescript('BEGIN IMMEDIATE;\n'+DDL)
-            if self.connection.execute('PRAGMA foreign_key_check').fetchall() or evidence_manifest(self.connection)!=evidence:
+            self.connection.executescript('BEGIN IMMEDIATE;\n' + DDL)
+            if (
+                self.connection.execute('PRAGMA foreign_key_check').fetchall()
+                or evidence_manifest(self.connection) != evidence
+            ):
                 raise ValueError('Analysis migration reconciliation failed.')
-            self.connection.execute('INSERT INTO metadata VALUES(?,?)',('schema_migration.v4',encoded(dict(from_schema=3,to_schema=4,backup=str(snapshot) if snapshot else None,at=now(),stage='reproducible_collection_cohorts'))))
-            self.connection.execute('PRAGMA user_version=4');self.connection.execute('COMMIT')
+            self.connection.execute(
+                'INSERT INTO metadata VALUES(?,?)',
+                (
+                    'schema_migration.v4',
+                    encoded(
+                        dict(
+                            from_schema=3,
+                            to_schema=4,
+                            backup=str(snapshot) if snapshot else None,
+                            at=now(),
+                            stage='reproducible_collection_cohorts',
+                        )
+                    ),
+                ),
+            )
+            self.connection.execute('PRAGMA user_version=4')
+            self.connection.execute('COMMIT')
         except BaseException:
-            if self.connection.in_transaction:self.connection.execute('ROLLBACK')
+            if self.connection.in_transaction:
+                self.connection.execute('ROLLBACK')
             raise
 
-    def analysis(self,params):
+    def analysis(self, params):
         from analysis_schema import report
-        with self.lock:return report(self.connection,params)
 
-    def _upgrade_calculations(self,backup=True):
+        with self.lock:
+            return report(self.connection, params)
+
+    def _upgrade_calculations(self, backup=True):
         from recalculation import DDL
         from analysis_schema import backfill
         from shot_schema import evidence_manifest
-        snapshot=self.backup() if backup else None;evidence=evidence_manifest(self.connection)
+
+        snapshot = self.backup() if backup else None
+        evidence = evidence_manifest(self.connection)
         try:
-            self.connection.executescript('BEGIN IMMEDIATE;\n'+DDL)
+            self.connection.executescript('BEGIN IMMEDIATE;\n' + DDL)
             backfill(self.connection)
-            if self.connection.execute('PRAGMA foreign_key_check').fetchall() or evidence_manifest(self.connection)!=evidence:
+            if (
+                self.connection.execute('PRAGMA foreign_key_check').fetchall()
+                or evidence_manifest(self.connection) != evidence
+            ):
                 raise ValueError('Calculation migration reconciliation failed.')
-            self.connection.execute('INSERT INTO metadata VALUES(?,?)',('schema_migration.v5',encoded(dict(from_schema=4,to_schema=5,backup=str(snapshot) if snapshot else None,at=now(),stage='staged_calculation_publication'))))
-            self.connection.execute('PRAGMA user_version=5');self.connection.execute('COMMIT')
+            self.connection.execute(
+                'INSERT INTO metadata VALUES(?,?)',
+                (
+                    'schema_migration.v5',
+                    encoded(
+                        dict(
+                            from_schema=4,
+                            to_schema=5,
+                            backup=str(snapshot) if snapshot else None,
+                            at=now(),
+                            stage='staged_calculation_publication',
+                        )
+                    ),
+                ),
+            )
+            self.connection.execute('PRAGMA user_version=5')
+            self.connection.execute('COMMIT')
         except BaseException:
-            if self.connection.in_transaction:self.connection.execute('ROLLBACK')
+            if self.connection.in_transaction:
+                self.connection.execute('ROLLBACK')
             raise
 
-    def stage_calculations(self,family,filters,putting_model='saved'):
+    def stage_calculations(self, family, filters, putting_model='saved'):
         from recalculation import stage
-        return stage(self,family,filters,putting_model)
 
-    def resume_calculations(self,batch_id):
+        return stage(self, family, filters, putting_model)
+
+    def resume_calculations(self, batch_id):
         from recalculation import resume
-        return resume(self,batch_id)
 
-    def publish_calculations(self,batch_id,token):
+        return resume(self, batch_id)
+
+    def publish_calculations(self, batch_id, token):
         from recalculation import publish
-        return publish(self,batch_id,token)
 
-    def calculation_snapshot(self,batch_id):
+        return publish(self, batch_id, token)
+
+    def calculation_snapshot(self, batch_id):
         from recalculation import snapshot
-        with self.lock:return snapshot(self.connection,batch_id)
 
-    def calculation_history(self,shot_id):
+        with self.lock:
+            return snapshot(self.connection, batch_id)
+
+    def calculation_history(self, shot_id):
         from recalculation import history
-        with self.lock:return history(self.connection,shot_id)
+
+        with self.lock:
+            return history(self.connection, shot_id)
 
     def calculation_batches(self):
-        with self.lock:return [dict(r) for r in self.connection.execute('SELECT * FROM recalculation_batches WHERE user_id=? ORDER BY created_at DESC LIMIT 100',(self.active_user(),))]
+        with self.lock:
+            return [
+                dict(r)
+                for r in self.connection.execute(
+                    'SELECT * FROM recalculation_batches WHERE user_id=? ORDER BY created_at DESC LIMIT 100',
+                    (self.active_user(),),
+                )
+            ]
 
     def calculation_history_csv(self):
         from recalculation import csv_history
-        with self.lock:return csv_history(self.connection)
 
-    def collection_analysis(self,session_id):
-        from analysis_schema import collection_snapshot
         with self.lock:
-            if self.session_owner(session_id)!=self.active_user():raise ValueError('Switch golfer to view this collection.')
-            return collection_snapshot(self.connection,session_id)
+            return csv_history(self.connection)
 
-    def select_equipment_profile(self,session_id):
+    def collection_analysis(self, session_id):
+        from analysis_schema import collection_snapshot
+
+        with self.lock:
+            if self.session_owner(session_id) != self.active_user():
+                raise ValueError('Switch golfer to view this collection.')
+            return collection_snapshot(self.connection, session_id)
+
+    def select_equipment_profile(self, session_id):
         from analysis_schema import select_profile
+
         with self.transaction():
-            aid=select_profile(self.connection,session_id)
-            self._audit(session_id,'publish_equipment_profile',dict(analysis_id=aid))
+            aid = select_profile(self.connection, session_id)
+            self._audit(session_id, 'publish_equipment_profile', dict(analysis_id=aid))
             return aid
 
     def active_user(self):
         from domain_schema import active_user
-        with self.lock:return active_user(self.connection)
+
+        with self.lock:
+            return active_user(self.connection)
 
     def users(self):
         with self.lock:
-            return [dict(r) for r in self.connection.execute('SELECT * FROM users WHERE archived_at IS NULL ORDER BY created_at,user_id')]
+            return [
+                dict(r)
+                for r in self.connection.execute(
+                    'SELECT * FROM users WHERE archived_at IS NULL ORDER BY created_at,user_id'
+                )
+            ]
 
     def create_user(self, name, handedness='right_handed'):
         from equipment import text, default_catalog
         from domain_schema import save_catalog
-        name=text(name,'Golfer name')
-        if handedness not in ('right_handed','left_handed'):raise ValueError('Choose a valid handedness.')
-        uid=uuid.uuid4().hex
+
+        name = text(name, 'Golfer name')
+        if handedness not in ('right_handed', 'left_handed'):
+            raise ValueError('Choose a valid handedness.')
+        uid = uuid.uuid4().hex
         with self.transaction():
-            self.connection.execute('INSERT INTO users VALUES(?,?,?,?,?)',(uid,name,handedness,now(),None))
-            save_catalog(self.connection,default_catalog(),uid)
-            self._audit(uid,'create_golfer',dict(name=name,handedness=handedness))
+            self.connection.execute(
+                'INSERT INTO users VALUES(?,?,?,?,?)', (uid, name, handedness, now(), None)
+            )
+            save_catalog(self.connection, default_catalog(), uid)
+            self._audit(uid, 'create_golfer', dict(name=name, handedness=handedness))
         return uid
 
     def select_user(self, user_id):
         with self.transaction():
-            if not self.connection.execute('SELECT 1 FROM users WHERE user_id=? AND archived_at IS NULL',(user_id,)).fetchone():
+            if not self.connection.execute(
+                'SELECT 1 FROM users WHERE user_id=? AND archived_at IS NULL', (user_id,)
+            ).fetchone():
                 raise ValueError('Golfer not found.')
-            self.connection.execute('UPDATE golfer_selection SET user_id=? WHERE singleton=1',(user_id,))
-            self._audit(user_id,'select_golfer',{})
+            self.connection.execute(
+                'UPDATE golfer_selection SET user_id=? WHERE singleton=1', (user_id,)
+            )
+            self._audit(user_id, 'select_golfer', {})
 
     def session_owner(self, session_id):
         with self.lock:
-            row=self.connection.execute('SELECT user_id FROM session_owners WHERE session_id=?',(session_id,)).fetchone()
+            row = self.connection.execute(
+                'SELECT user_id FROM session_owners WHERE session_id=?', (session_id,)
+            ).fetchone()
             return row[0] if row else None
 
-    def edit_tags(self, session_id, keys, name, action='add', scope='attempt', reason='Manual tag', batch_id=None):
+    def edit_tags(
+        self,
+        session_id,
+        keys,
+        name,
+        action='add',
+        scope='attempt',
+        reason='Manual tag',
+        batch_id=None,
+    ):
         """Append associations atomically; an attempt tag never leaks to other sessions."""
         from equipment import text
-        if action not in ('add','remove','undo') or scope not in ('shot','attempt'):
+
+        if action not in ('add', 'remove', 'undo') or scope not in ('shot', 'attempt'):
             raise ValueError('Choose a valid tag action and scope.')
         with self.transaction():
-            user=self.active_user()
-            if self.session_owner(session_id)!=user:raise ValueError('Switch golfer before tagging this session.')
-            if action=='undo':
-                row=self.connection.execute("SELECT payload_json FROM audit_events WHERE entity_id=? AND action='tag_batch' AND id=?",(session_id,batch_id)).fetchone()
-                if not row:raise ValueError('Tag batch not found.')
-                items=json.loads(row[0])['items']
+            user = self.active_user()
+            if self.session_owner(session_id) != user:
+                raise ValueError('Switch golfer before tagging this session.')
+            if action == 'undo':
+                row = self.connection.execute(
+                    "SELECT payload_json FROM audit_events WHERE entity_id=? AND action='tag_batch' AND id=?",
+                    (session_id, batch_id),
+                ).fetchone()
+                if not row:
+                    raise ValueError('Tag batch not found.')
+                items = json.loads(row[0])['items']
                 for item in items:
-                    last=self.connection.execute('SELECT batch_id FROM shot_tag_events WHERE tag_id=? AND shot_id=? AND session_id IS ? AND ordinal IS ? ORDER BY rowid DESC LIMIT 1',
-                        (item['tag_id'],item['shot_id'],item['session_id'],item['ordinal'])).fetchone()
-                    if not last or last[0]!=batch_id:raise ValueError('Tags changed since this batch; refresh before undoing.')
+                    last = self.connection.execute(
+                        'SELECT batch_id FROM shot_tag_events WHERE tag_id=? AND shot_id=? AND session_id IS ? AND ordinal IS ? ORDER BY rowid DESC LIMIT 1',
+                        (item['tag_id'], item['shot_id'], item['session_id'], item['ordinal']),
+                    ).fetchone()
+                    if not last or last[0] != batch_id:
+                        raise ValueError('Tags changed since this batch; refresh before undoing.')
             else:
-                name=text(name,'Tag');reason=text(reason,'Reason')
-                if not keys or len(keys)>1000 or len(set(keys))!=len(keys):raise ValueError('Select 1–1000 distinct shots.')
-                tag=self.connection.execute('SELECT tag_id FROM tags WHERE user_id=? AND name_key=?',(user,name.casefold())).fetchone()
-                tid=tag[0] if tag else uuid.uuid4().hex
-                if not tag:self.connection.execute('INSERT INTO tags VALUES(?,?,?,?,?)',(tid,user,name,name.casefold(),now()))
-                links={r['legacy_key']:r for r in self.connection.execute('SELECT * FROM session_attempts WHERE session_id=?',(session_id,))}
-                if any(k not in links for k in keys):raise ValueError('Selection includes a shot outside this session.')
-                items=[];seen=set()
+                name = text(name, 'Tag')
+                reason = text(reason, 'Reason')
+                if not keys or len(keys) > 1000 or len(set(keys)) != len(keys):
+                    raise ValueError('Select 1–1000 distinct shots.')
+                tag = self.connection.execute(
+                    'SELECT tag_id FROM tags WHERE user_id=? AND name_key=?',
+                    (user, name.casefold()),
+                ).fetchone()
+                tid = tag[0] if tag else uuid.uuid4().hex
+                if not tag:
+                    self.connection.execute(
+                        'INSERT INTO tags VALUES(?,?,?,?,?)',
+                        (tid, user, name, name.casefold(), now()),
+                    )
+                links = {
+                    r['legacy_key']: r
+                    for r in self.connection.execute(
+                        'SELECT * FROM session_attempts WHERE session_id=?', (session_id,)
+                    )
+                }
+                if any(k not in links for k in keys):
+                    raise ValueError('Selection includes a shot outside this session.')
+                items = []
+                seen = set()
                 for key in keys:
-                    link=links[key];sid=session_id if scope=='attempt' else None;ordinal=link['ordinal'] if scope=='attempt' else None
-                    if (link['shot_id'],sid,ordinal) in seen:continue
-                    seen.add((link['shot_id'],sid,ordinal))
-                    old=self.connection.execute('SELECT added FROM shot_tag_events WHERE tag_id=? AND shot_id=? AND session_id IS ? AND ordinal IS ? ORDER BY rowid DESC LIMIT 1',(tid,link['shot_id'],sid,ordinal)).fetchone()
-                    items.append(dict(tag_id=tid,shot_id=link['shot_id'],session_id=sid,ordinal=ordinal,scope=scope,before=bool(old and old[0]),after=action=='add'))
-            batch=uuid.uuid4().hex
+                    link = links[key]
+                    sid = session_id if scope == 'attempt' else None
+                    ordinal = link['ordinal'] if scope == 'attempt' else None
+                    if (link['shot_id'], sid, ordinal) in seen:
+                        continue
+                    seen.add((link['shot_id'], sid, ordinal))
+                    old = self.connection.execute(
+                        'SELECT added FROM shot_tag_events WHERE tag_id=? AND shot_id=? AND session_id IS ? AND ordinal IS ? ORDER BY rowid DESC LIMIT 1',
+                        (tid, link['shot_id'], sid, ordinal),
+                    ).fetchone()
+                    items.append(
+                        dict(
+                            tag_id=tid,
+                            shot_id=link['shot_id'],
+                            session_id=sid,
+                            ordinal=ordinal,
+                            scope=scope,
+                            before=bool(old and old[0]),
+                            after=action == 'add',
+                        )
+                    )
+            batch = uuid.uuid4().hex
             for item in items:
-                self.connection.execute('INSERT INTO shot_tag_events VALUES(?,?,?,?,?,?,?,?,?,?)',
-                    (uuid.uuid4().hex,item['tag_id'],item['shot_id'],item['session_id'],item['ordinal'],item['scope'],int(item['before'] if action=='undo' else item['after']),batch,reason,now()))
-            self.connection.execute('INSERT INTO audit_events VALUES(?,?,?,?,?)',(batch,session_id,'tag_batch',now(),encoded(dict(action=action,items=items,undo_of=batch_id))))
+                self.connection.execute(
+                    'INSERT INTO shot_tag_events VALUES(?,?,?,?,?,?,?,?,?,?)',
+                    (
+                        uuid.uuid4().hex,
+                        item['tag_id'],
+                        item['shot_id'],
+                        item['session_id'],
+                        item['ordinal'],
+                        item['scope'],
+                        int(item['before'] if action == 'undo' else item['after']),
+                        batch,
+                        reason,
+                        now(),
+                    ),
+                )
+            self.connection.execute(
+                'INSERT INTO audit_events VALUES(?,?,?,?,?)',
+                (
+                    batch,
+                    session_id,
+                    'tag_batch',
+                    now(),
+                    encoded(dict(action=action, items=items, undo_of=batch_id)),
+                ),
+            )
             return batch
 
     def session_tags(self, session_id):
         with self.lock:
-            if self.session_owner(session_id)!=self.active_user():raise ValueError('Switch golfer to view tags.')
-            rows=self.connection.execute('''SELECT a.legacy_key,t.tag_id,t.name,t.scope FROM session_attempts a
+            if self.session_owner(session_id) != self.active_user():
+                raise ValueError('Switch golfer to view tags.')
+            rows = self.connection.execute(
+                '''SELECT a.legacy_key,t.tag_id,t.name,t.scope FROM session_attempts a
                 JOIN v_shot_tags t ON t.shot_id=a.shot_id AND (t.scope='shot' OR (t.session_id=a.session_id AND t.ordinal=a.ordinal))
-                WHERE a.session_id=? ORDER BY t.name,t.scope''',(session_id,))
-            result={}
-            for r in rows:result.setdefault(r['legacy_key'],[]).append(dict(tag_id=r['tag_id'],name=r['name'],scope=r['scope']))
+                WHERE a.session_id=? ORDER BY t.name,t.scope''',
+                (session_id,),
+            )
+            result = {}
+            for r in rows:
+                result.setdefault(r['legacy_key'], []).append(
+                    dict(tag_id=r['tag_id'], name=r['name'], scope=r['scope'])
+                )
             return result
 
     def equipment_catalog(self):
         from domain_schema import read_catalog
-        with self.lock:return read_catalog(self.connection)
+
+        with self.lock:
+            return read_catalog(self.connection)
 
     def save_equipment_catalog(self, catalog):
         from domain_schema import save_catalog
+
         with self.transaction():
-            save_catalog(self.connection,catalog,self.active_user())
-            self._audit(self.active_user(), 'edit_bags', {'revision':catalog['revision']})
+            save_catalog(self.connection, catalog, self.active_user())
+            self._audit(self.active_user(), 'edit_bags', {'revision': catalog['revision']})
 
     def _catalog(self):
         catalog = json.loads((ROOT / 'data/metric_catalog.v1.json').read_text('utf-8'))
         for metric in catalog['metrics']:
-            self.connection.execute('INSERT INTO metric_definitions VALUES(?,?,?,?,?)',
-                (metric['key'], metric['definition_version'], metric['value_type'],
-                 metric.get('canonical_unit'), encoded(metric)))
-        profile = json.loads((ROOT / 'data/metric_mapping.v1.json').read_text('utf-8'))['profiles'][0]
+            self.connection.execute(
+                'INSERT INTO metric_definitions VALUES(?,?,?,?,?)',
+                (
+                    metric['key'],
+                    metric['definition_version'],
+                    metric['value_type'],
+                    metric.get('canonical_unit'),
+                    encoded(metric),
+                ),
+            )
+        profile = json.loads((ROOT / 'data/metric_mapping.v1.json').read_text('utf-8'))['profiles'][
+            0
+        ]
         # Keep v1 immutable; expanded flight columns use a separately registered v2 mapping.
         profile = copy.deepcopy(profile)
         profile['fields'] = [f for f in profile['fields'] if f['source_field'] in FIELDS]
         profile['status'] = 'active_for_current_golfdata_parsed_fields'
         payload = encoded(profile)
         self.mapping_id = profile['id']
-        self.connection.execute('INSERT INTO mapping_versions VALUES(?,?,?)',
-                                (self.mapping_id, digest(payload.encode()), payload))
+        self.connection.execute(
+            'INSERT INTO mapping_versions VALUES(?,?,?)',
+            (self.mapping_id, digest(payload.encode()), payload),
+        )
 
     @contextlib.contextmanager
     def transaction(self):
@@ -521,104 +760,206 @@ class Store:
             self.connection.close()
 
     def count(self, table):
-        if table not in ('shots','ingest_events','sessions','session_attempts','observations','metric_values','import_files'):
+        if table not in (
+            'shots',
+            'ingest_events',
+            'sessions',
+            'session_attempts',
+            'observations',
+            'metric_values',
+            'import_files',
+        ):
             raise ValueError('Unknown table.')
         with self.lock:
             return self.connection.execute(f'SELECT count(*) FROM {table}').fetchone()[0]
 
     def migrated(self):
         with self.lock:
-            return bool(self.connection.execute("SELECT 1 FROM metadata WHERE key='legacy_import_complete'").fetchone())
+            return bool(
+                self.connection.execute(
+                    "SELECT 1 FROM metadata WHERE key='legacy_import_complete'"
+                ).fetchone()
+            )
 
     def _audit(self, entity, action, payload):
-        self.connection.execute('INSERT INTO audit_events VALUES(?,?,?,?,?)',
-            (uuid.uuid4().hex, entity, action, now(), encoded(payload)))
+        self.connection.execute(
+            'INSERT INTO audit_events VALUES(?,?,?,?,?)',
+            (uuid.uuid4().hex, entity, action, now(), encoded(payload)),
+        )
 
     def ingest(self, event, event_id=None, provenance='live_capture', file_id=None, row=None):
         """Receipt is immutable; successful delivery is never replayed from storage."""
         event_id = event_id or event.get('receipt_id') or identity('unspooled:' + encoded(event))
-        if not re.fullmatch('[A-Za-z0-9_-]{1,100}',event_id):
+        if not re.fullmatch('[A-Za-z0-9_-]{1,100}', event_id):
             raise ValueError('Invalid receipt identifier.')
         with self.transaction():
-            existing = self.connection.execute('SELECT raw_json FROM ingest_events WHERE id=?', (event_id,)).fetchone()
+            existing = self.connection.execute(
+                'SELECT raw_json FROM ingest_events WHERE id=?', (event_id,)
+            ).fetchone()
             if existing:
                 if existing['raw_json'] != encoded(event):
                     raise ValueError('Receipt identifier conflicts with different data.')
                 return event_id, False
-            source = event.get('source_configuration', {'acquisition': 'screen_ocr', 'profile': 'legacy_unknown'})
+            source = event.get(
+                'source_configuration', {'acquisition': 'screen_ocr', 'profile': 'legacy_unknown'}
+            )
             source_id = identity('source:' + encoded(source))
-            self.connection.execute('INSERT OR IGNORE INTO sources VALUES(?,?)', (source_id, encoded(source)))
-            legacy_key = f"{event.get('session_id','unknown')}:{event.get('seq','unknown')}"
-            stream_id = identity('stream:' + provenance + ':' + str(event.get('producer_id') or file_id) + ':' + str(event.get('session_id')))
-            self.connection.execute('INSERT OR IGNORE INTO capture_streams VALUES(?,?,?)',
-                                    (stream_id, source_id, str(event.get('session_id',''))))
+            self.connection.execute(
+                'INSERT OR IGNORE INTO sources VALUES(?,?)', (source_id, encoded(source))
+            )
+            legacy_key = f"{event.get('session_id', 'unknown')}:{event.get('seq', 'unknown')}"
+            stream_id = identity(
+                'stream:'
+                + provenance
+                + ':'
+                + str(event.get('producer_id') or file_id)
+                + ':'
+                + str(event.get('session_id'))
+            )
+            self.connection.execute(
+                'INSERT OR IGNORE INTO capture_streams VALUES(?,?,?)',
+                (stream_id, source_id, str(event.get('session_id', ''))),
+            )
             result = event.get('result', 'unknown')
-            accepted = result in ('sent','validated')
-            acceptance = 'accepted' if accepted else result if result in ('failed','logged') else 'unknown'
+            accepted = result in ('sent', 'validated')
+            acceptance = (
+                'accepted' if accepted else result if result in ('failed', 'logged') else 'unknown'
+            )
             when = event.get('captured_at') or event.get('source_time')
             basis = 'utc_receipt' if event.get('captured_at') else 'local_timezone_unknown'
-            self.connection.execute('INSERT INTO ingest_events VALUES(?,?,?,?,?,?,?,?,?,?)',
-                (event_id, stream_id, legacy_key, event.get('source_time') or event.get('time'),
-                 event.get('captured_at'), basis, acceptance, encoded(event), file_id, row))
+            self.connection.execute(
+                'INSERT INTO ingest_events VALUES(?,?,?,?,?,?,?,?,?,?)',
+                (
+                    event_id,
+                    stream_id,
+                    legacy_key,
+                    event.get('source_time') or event.get('time'),
+                    event.get('captured_at'),
+                    basis,
+                    acceptance,
+                    encoded(event),
+                    file_id,
+                    row,
+                ),
+            )
             return self._observation(event_id, event, accepted, when, basis, provenance), True
 
     def _observation(self, event_id, event, accepted, when, basis, provenance):
         shot_id = identity('shot:' + event_id) if accepted else None
         if accepted:
-            self.connection.execute('INSERT INTO shots VALUES(?,?,?,?,?)',
-                (shot_id, event_id, when, basis, event.get('club')))
-            owner=event.get('user_id')
-            sid=event.get('practice_session_id')
-            session_owner=self.session_owner(sid) if sid else None
-            if owner and session_owner and owner!=session_owner:
+            self.connection.execute(
+                'INSERT INTO shots VALUES(?,?,?,?,?)',
+                (shot_id, event_id, when, basis, event.get('club')),
+            )
+            owner = event.get('user_id')
+            sid = event.get('practice_session_id')
+            session_owner = self.session_owner(sid) if sid else None
+            if owner and session_owner and owner != session_owner:
                 raise ValueError('Shot golfer conflicts with its frozen session.')
-            owner=session_owner or owner
+            owner = session_owner or owner
             if owner:
-                self.connection.execute('INSERT INTO shot_owners VALUES(?,?,?)',(shot_id,owner,'accepted_input_context'))
+                self.connection.execute(
+                    'INSERT INTO shot_owners VALUES(?,?,?)',
+                    (shot_id, owner, 'accepted_input_context'),
+                )
         observation_id = identity('observation:' + event_id)
-        profile = self.generic_profile if event.get('mapping_id') in ('traceloft.normalized.v1','traceloft.normalized.v2') or {'club_speed','smash_factor','attack_angle','club_path'}.intersection(event.get('vals',{})) else self.extended_profile if EXTENDED_FIELDS.intersection(event.get('vals', {})) else self.profile
+        profile = (
+            self.generic_profile
+            if event.get('mapping_id') in ('traceloft.normalized.v1', 'traceloft.normalized.v2')
+            or {'club_speed', 'smash_factor', 'attack_angle', 'club_path'}.intersection(
+                event.get('vals', {})
+            )
+            else self.extended_profile
+            if EXTENDED_FIELDS.intersection(event.get('vals', {}))
+            else self.profile
+        )
         mapping_id = profile['id']
-        self.connection.execute('INSERT INTO observations VALUES(?,?,?,?,?)',
-            (observation_id, event_id, shot_id, mapping_id, provenance))
+        self.connection.execute(
+            'INSERT INTO observations VALUES(?,?,?,?,?)',
+            (observation_id, event_id, shot_id, mapping_id, provenance),
+        )
         for mapping in profile['fields']:
             field, metric, unit = mapping['source_field'], mapping['metric'], mapping['source_unit']
             operation = mapping['transform']['operation']
-            if operation not in ('identity','scale'):
+            if operation not in ('identity', 'scale'):
                 raise ValueError('Unsupported archived metric transform.')
-            factor = mapping['transform'].get('factor',1)
+            factor = mapping['transform'].get('factor', 1)
             value = event.get('vals', {}).get(field)
-            valid = isinstance(value, (int,float)) and not isinstance(value, bool) and math.isfinite(value)
+            valid = (
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(value)
+            )
             availability = 'available' if valid else 'unavailable' if value is None else 'invalid'
-            self.connection.execute('INSERT INTO metric_values VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                (observation_id, metric, 1, float(value)*factor if valid else None, None, None, None,
-                 field, unit, encoded(value), availability, 'synthetic_demo' if event.get('simulated') else mapping.get('method', 'provider_unknown'),
-                 mapping['semantic_variant']))
-        self.connection.execute('INSERT INTO delivery_events VALUES(?,?,?,?)',
-            (identity('delivery:' + event_id), event_id,
-             'socket_write_reported_unacknowledged' if event.get('result') == 'sent' else 'not_established',
-             encoded({'result': event.get('result'), 'note':event.get('note'), 'sent_fields':event.get('sent_fields')})))
+            self.connection.execute(
+                'INSERT INTO metric_values VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                (
+                    observation_id,
+                    metric,
+                    1,
+                    float(value) * factor if valid else None,
+                    None,
+                    None,
+                    None,
+                    field,
+                    unit,
+                    encoded(value),
+                    availability,
+                    'synthetic_demo'
+                    if event.get('simulated')
+                    else mapping.get('method', 'provider_unknown'),
+                    mapping['semantic_variant'],
+                ),
+            )
+        self.connection.execute(
+            'INSERT INTO delivery_events VALUES(?,?,?,?)',
+            (
+                identity('delivery:' + event_id),
+                event_id,
+                'socket_write_reported_unacknowledged'
+                if event.get('result') == 'sent'
+                else 'not_established',
+                encoded(
+                    {
+                        'result': event.get('result'),
+                        'note': event.get('note'),
+                        'sent_fields': event.get('sent_fields'),
+                    }
+                ),
+            ),
+        )
         from shot_schema import write_source, source_features
-        write_source(self.connection,observation_id)
+
+        write_source(self.connection, observation_id)
         if shot_id:
-            source_features(self.connection,shot_id)
+            source_features(self.connection, shot_id)
         return event_id
 
     def load_session(self, session_id, deleted=False):
         if not re.fullmatch('[0-9a-f]{32}', session_id):
             raise ValueError('Invalid session identifier.')
         with self.lock:
-            row = self.connection.execute('SELECT payload_json FROM sessions WHERE id=? AND (deleted_at IS NOT NULL)=?',
-                                          (session_id, int(deleted))).fetchone()
+            row = self.connection.execute(
+                'SELECT payload_json FROM sessions WHERE id=? AND (deleted_at IS NOT NULL)=?',
+                (session_id, int(deleted)),
+            ).fetchone()
             if not row:
                 raise FileNotFoundError('Session not found.')
             from domain_schema import read_session
-            return read_session(self.connection,session_id)
+
+            return read_session(self.connection, session_id)
 
     def list_sessions(self, deleted=False):
         with self.lock:
             from domain_schema import read_session
-            return [read_session(self.connection,r[0]) for r in self.connection.execute(
-                'SELECT id FROM sessions WHERE (deleted_at IS NOT NULL)=? ORDER BY started DESC', (int(deleted),)).fetchall()]
+
+            return [
+                read_session(self.connection, r[0])
+                for r in self.connection.execute(
+                    'SELECT id FROM sessions WHERE (deleted_at IS NOT NULL)=? ORDER BY started DESC',
+                    (int(deleted),),
+                ).fetchall()
+            ]
 
     def append_attempt(self, data):
         """Commit one new attempt and its resulting session state atomically.
@@ -639,117 +980,249 @@ class Store:
                 return
             links = self.connection.execute(
                 'SELECT ordinal,legacy_key FROM session_attempts WHERE session_id=? ORDER BY ordinal',
-                (sid,)).fetchall()
+                (sid,),
+            ).fetchall()
             if len(data['shots']) < len(links) or any(
-                    data['shots'][row['ordinal'] - 1]['key'] != row['legacy_key'] for row in links):
-                raise ValueError('Recorded attempts cannot be removed or reordered; use audited cleanup.')
+                data['shots'][row['ordinal'] - 1]['key'] != row['legacy_key'] for row in links
+            ):
+                raise ValueError(
+                    'Recorded attempts cannot be removed or reordered; use audited cleanup.'
+                )
             cache = self._attempt_updates.get(sid, self._attempt_cache.get(sid))
             revision = old['revision'] if old else 0
             if not cache or cache[0] != revision:
                 cache = (revision, None)
             if append:
                 if not old or len(data['shots']) != len(links) + 1:
-                    raise ValueError('Append requires exactly one new attempt on an existing session.')
+                    raise ValueError(
+                        'Append requires exactly one new attempt on an existing session.'
+                    )
                 ordinal = len(data['shots'])
                 changed = {ordinal}
                 fingerprints = dict(cache[1] or {})
                 fingerprints[ordinal] = digest(encoded(data['shots'][-1]).encode())
             else:
                 from domain_schema import read_session
+
                 previous = cache[1]
                 if old and (previous is None or len(previous) != len(links)):
-                    previous = {i: digest(encoded(shot).encode()) for i, shot in
-                                enumerate(read_session(self.connection, sid)['shots'], 1)}
+                    previous = {
+                        i: digest(encoded(shot).encode())
+                        for i, shot in enumerate(read_session(self.connection, sid)['shots'], 1)
+                    }
                 previous = previous or {}
-                fingerprints = {i: digest(encoded(shot).encode()) for i, shot in
-                                enumerate(data['shots'], 1)}
+                fingerprints = {
+                    i: digest(encoded(shot).encode()) for i, shot in enumerate(data['shots'], 1)
+                }
                 changed = {i for i, value in fingerprints.items() if previous.get(i) != value}
-            self.connection.execute('INSERT INTO sessions VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET '
+            self.connection.execute(
+                'INSERT INTO sessions VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET '
                 'started=excluded.started, ended=excluded.ended, drill=excluded.drill, revision=sessions.revision+1',
-                (sid, data['started'], data.get('ended'), data['drill'], now() if deleted else None, 1,
-                 old['payload_json'] if old else encoded(data)))
+                (
+                    sid,
+                    data['started'],
+                    data.get('ended'),
+                    data['drill'],
+                    now() if deleted else None,
+                    1,
+                    old['payload_json'] if old else encoded(data),
+                ),
+            )
             for ordinal, shot in enumerate(data['shots'], 1):
                 if ordinal not in changed:
                     continue
-                previous = self.connection.execute('SELECT * FROM session_attempts WHERE session_id=? AND legacy_key=?',
-                                                   (sid,shot['key'])).fetchone()
+                previous = self.connection.execute(
+                    'SELECT * FROM session_attempts WHERE session_id=? AND legacy_key=?',
+                    (sid, shot['key']),
+                ).fetchone()
                 if previous:
                     shot_id, obs_id = previous['shot_id'], previous['observation_id']
                     if previous['excluded'] != int(shot['excluded']):
-                        correction=shot.get('game_correction')
-                        new_misread=(correction and correction['kind']=='misread'
-                            and not self.connection.execute("SELECT 1 FROM attempt_fields WHERE session_id=? AND ordinal=? AND path='/game_correction/kind'",(sid,ordinal)).fetchone())
-                        self.connection.execute('INSERT INTO inclusion_decisions VALUES(?,?,?,?,?,?)',
-                            (uuid.uuid4().hex,sid,shot['key'],int(shot['excluded']),
-                             'game_misread' if new_misread else 'manual_session_only',now()))
+                        correction = shot.get('game_correction')
+                        new_misread = (
+                            correction
+                            and correction['kind'] == 'misread'
+                            and not self.connection.execute(
+                                "SELECT 1 FROM attempt_fields WHERE session_id=? AND ordinal=? AND path='/game_correction/kind'",
+                                (sid, ordinal),
+                            ).fetchone()
+                        )
+                        self.connection.execute(
+                            'INSERT INTO inclusion_decisions VALUES(?,?,?,?,?,?)',
+                            (
+                                uuid.uuid4().hex,
+                                sid,
+                                shot['key'],
+                                int(shot['excluded']),
+                                'game_misread' if new_misread else 'manual_session_only',
+                                now(),
+                            ),
+                        )
                 else:
                     receipt_id = shot.get('receipt_id')
-                    candidates = self.connection.execute('SELECT id FROM ingest_events WHERE legacy_key=? AND import_file_id IS NOT NULL', (shot['key'],)).fetchall() if imported else []
-                    linked = receipt_id or (candidates[0]['id'] if len(candidates)==1 else None)
-                    shared = self.connection.execute('SELECT o.shot_id FROM observations o WHERE event_id=?', (linked,)).fetchone() if linked else None
+                    candidates = (
+                        self.connection.execute(
+                            'SELECT id FROM ingest_events WHERE legacy_key=? AND import_file_id IS NOT NULL',
+                            (shot['key'],),
+                        ).fetchall()
+                        if imported
+                        else []
+                    )
+                    linked = receipt_id or (candidates[0]['id'] if len(candidates) == 1 else None)
+                    shared = (
+                        self.connection.execute(
+                            'SELECT o.shot_id FROM observations o WHERE event_id=?', (linked,)
+                        ).fetchone()
+                        if linked
+                        else None
+                    )
                     if shared and not shared['shot_id']:
                         linked_shot = identity('shot:' + linked)
-                        self.connection.execute('INSERT INTO shots VALUES(?,?,?,?,?)', (linked_shot, linked, shot.get('captured'),'utc_practice_receipt',None))
-                        self.connection.execute("UPDATE ingest_events SET acceptance='accepted' WHERE id=?", (linked,))
-                        self.connection.execute('UPDATE observations SET shot_id=? WHERE event_id=?',(linked_shot,linked))
+                        self.connection.execute(
+                            'INSERT INTO shots VALUES(?,?,?,?,?)',
+                            (
+                                linked_shot,
+                                linked,
+                                shot.get('captured'),
+                                'utc_practice_receipt',
+                                None,
+                            ),
+                        )
+                        self.connection.execute(
+                            "UPDATE ingest_events SET acceptance='accepted' WHERE id=?", (linked,)
+                        )
+                        self.connection.execute(
+                            'UPDATE observations SET shot_id=? WHERE event_id=?',
+                            (linked_shot, linked),
+                        )
                     else:
                         linked_shot = shared['shot_id'] if shared else None
                     event_id = identity('practice:' + sid + ':' + shot['key'])
-                    event = dict(session_id=shot['key'].rsplit(':',1)[0], seq=shot['key'].rsplit(':',1)[-1],
-                                 captured_at=shot.get('captured'), result='validated', vals=shot['vals'],
-                                 practice_session_id=sid, linking='unique_legacy_key' if linked_shot else 'unresolved_or_practice_only')
+                    event = dict(
+                        session_id=shot['key'].rsplit(':', 1)[0],
+                        seq=shot['key'].rsplit(':', 1)[-1],
+                        captured_at=shot.get('captured'),
+                        result='validated',
+                        vals=shot['vals'],
+                        practice_session_id=sid,
+                        linking='unique_legacy_key'
+                        if linked_shot
+                        else 'unresolved_or_practice_only',
+                    )
                     if shot.get('simulated'):
-                        event.update(simulated=True,source_configuration={'acquisition':'synthetic_demo','generator':'golfdata-demo-v1'})
-                    self.ingest(event, event_id, 'legacy_practice' if imported else 'practice_measurements')
+                        event.update(
+                            simulated=True,
+                            source_configuration={
+                                'acquisition': 'synthetic_demo',
+                                'generator': 'golfdata-demo-v1',
+                            },
+                        )
+                    self.ingest(
+                        event, event_id, 'legacy_practice' if imported else 'practice_measurements'
+                    )
                     obs_id = identity('observation:' + event_id)
                     own_shot = identity('shot:' + event_id)
                     shot_id = linked_shot or own_shot
                     if linked_shot:
-                        self.connection.execute('UPDATE observations SET shot_id=? WHERE id=?',(linked_shot,obs_id))
+                        self.connection.execute(
+                            'UPDATE observations SET shot_id=? WHERE id=?', (linked_shot, obs_id)
+                        )
                         from shot_schema import write_source, source_features
+
                         # Transfer the practice report before deleting its temporary shot identity.
-                        self.connection.execute('DELETE FROM derived_metric_selection WHERE shot_id=?',(own_shot,))
-                        self.connection.execute('DELETE FROM calculation_inputs WHERE result_id IN (SELECT result_id FROM shot_derived_metrics WHERE shot_id=?)',(own_shot,))
-                        self.connection.execute('DELETE FROM shot_derived_metrics WHERE shot_id=?',(own_shot,))
-                        write_source(self.connection,obs_id)
-                        source_features(self.connection,linked_shot)
-                        self.connection.execute('DELETE FROM shot_owners WHERE shot_id=?',(own_shot,))
-                        self.connection.execute('DELETE FROM shots WHERE id=?',(own_shot,))
-                self.connection.execute('INSERT INTO session_attempts VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(session_id,ordinal) DO UPDATE SET '
+                        self.connection.execute(
+                            'DELETE FROM derived_metric_selection WHERE shot_id=?', (own_shot,)
+                        )
+                        self.connection.execute(
+                            'DELETE FROM calculation_inputs WHERE result_id IN (SELECT result_id FROM shot_derived_metrics WHERE shot_id=?)',
+                            (own_shot,),
+                        )
+                        self.connection.execute(
+                            'DELETE FROM shot_derived_metrics WHERE shot_id=?', (own_shot,)
+                        )
+                        write_source(self.connection, obs_id)
+                        source_features(self.connection, linked_shot)
+                        self.connection.execute(
+                            'DELETE FROM shot_owners WHERE shot_id=?', (own_shot,)
+                        )
+                        self.connection.execute('DELETE FROM shots WHERE id=?', (own_shot,))
+                self.connection.execute(
+                    'INSERT INTO session_attempts VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(session_id,ordinal) DO UPDATE SET '
                     'excluded=excluded.excluded',
-                    (sid,ordinal,shot['key'],shot_id,obs_id,shot.get('captured'),shot.get('target',data['target']),
-                     int(shot['success']),int(shot['excluded']),encoded(shot)))
+                    (
+                        sid,
+                        ordinal,
+                        shot['key'],
+                        shot_id,
+                        obs_id,
+                        shot.get('captured'),
+                        shot.get('target', data['target']),
+                        int(shot['success']),
+                        int(shot['excluded']),
+                        encoded(shot),
+                    ),
+                )
                 from shot_schema import write_source, save_attempt_results, source_features
-                write_source(self.connection,obs_id)
-                source_features(self.connection,shot_id)
-                save_attempt_results(self.connection,data,shot,ordinal,legacy=imported)
+
+                write_source(self.connection, obs_id)
+                source_features(self.connection, shot_id)
+                save_attempt_results(self.connection, data, shot, ordinal, legacy=imported)
             from domain_schema import write_session
-            write_session(self.connection,data,backfill=imported,changed_attempts=changed)
+
+            write_session(self.connection, data, backfill=imported, changed_attempts=changed)
             from analysis_schema import save_collection
-            save_collection(self.connection,data)
-            self._audit(sid, 'import_session' if imported else 'save_session', {'shots':len(data['shots']), 'changed_attempts':sorted(changed)})
+
+            save_collection(self.connection, data)
+            self._audit(
+                sid,
+                'import_session' if imported else 'save_session',
+                {'shots': len(data['shots']), 'changed_attempts': sorted(changed)},
+            )
             self._attempt_updates[sid] = (revision + 1, fingerprints)
 
     def set_deleted(self, session_id, deleted):
         with self.transaction():
             self.load_session(session_id, deleted=not deleted)
-            self.connection.execute('UPDATE sessions SET deleted_at=?, revision=revision+1 WHERE id=?',
-                                    (now() if deleted else None, session_id))
+            self.connection.execute(
+                'UPDATE sessions SET deleted_at=?, revision=revision+1 WHERE id=?',
+                (now() if deleted else None, session_id),
+            )
             self._audit(session_id, 'delete' if deleted else 'restore', {})
 
     def backup(self, directory=None):
         directory = Path(directory or self.path.parent / 'backups')
         directory.mkdir(parents=True, exist_ok=True)
-        target = directory / ('golfdata-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S') + '-' + uuid.uuid4().hex[:8] + '.sqlite3')
+        target = directory / (
+            'golfdata-'
+            + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')
+            + '-'
+            + uuid.uuid4().hex[:8]
+            + '.sqlite3'
+        )
         with self.lock:
             with contextlib.closing(sqlite3.connect(target)) as destination:
                 self.connection.backup(destination)
                 destination.execute('PRAGMA journal_mode=DELETE')
-                if destination.execute('PRAGMA integrity_check').fetchone()[0] != 'ok' or destination.execute('PRAGMA foreign_key_check').fetchall():
+                if (
+                    destination.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'
+                    or destination.execute('PRAGMA foreign_key_check').fetchall()
+                ):
                     raise OSError('Backup integrity verification failed.')
-                counts = {t:destination.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('shots','ingest_events','sessions','session_attempts')}
-        atomic_json(target.with_suffix('.manifest.json'), dict(schema=self.connection.execute('PRAGMA user_version').fetchone()[0],created=now(),sha256=digest(target.read_bytes()),counts=counts,
-                     protection='local_only', includes='database and embedded imported evidence; crop/training archives remain separate'))
+                counts = {
+                    t: destination.execute(f'SELECT count(*) FROM {t}').fetchone()[0]
+                    for t in ('shots', 'ingest_events', 'sessions', 'session_attempts')
+                }
+        atomic_json(
+            target.with_suffix('.manifest.json'),
+            dict(
+                schema=self.connection.execute('PRAGMA user_version').fetchone()[0],
+                created=now(),
+                sha256=digest(target.read_bytes()),
+                counts=counts,
+                protection='local_only',
+                includes='database and embedded imported evidence; crop/training archives remain separate',
+            ),
+        )
         return target
 
     def export(self):
@@ -767,86 +1240,235 @@ class Store:
                 ORDER BY o.shot_id,o.id,v.metric_key''')
             metric_fields = [d[0] for d in metric_cursor.description]
             metrics = [dict(r) for r in metric_cursor]
-            attempt_cursor = self.connection.execute('SELECT a.*,s.deleted_at FROM session_attempts a JOIN sessions s ON s.id=a.session_id ORDER BY a.session_id,a.ordinal')
+            attempt_cursor = self.connection.execute(
+                'SELECT a.*,s.deleted_at FROM session_attempts a JOIN sessions s ON s.id=a.session_id ORDER BY a.session_id,a.ordinal'
+            )
             attempt_fields = [d[0] for d in attempt_cursor.description]
             attempts = [dict(r) for r in attempt_cursor]
             # Derived putting outcomes belong to attempts, never to measured ball metrics.
-            distance_fields = ['estimated_distance_ft','target_distance_ft','distance_error_ft',
-                               'distance_model_id','stimp_ft','ladder_rung','ladder_round',
-                               'target_mode','distance_tolerance_ft','distance_source_revision',
-                               'target_distance_yd','distance_yd','distance_error_yd','distance_metric',
-                               'scored','unscored_reason','club_label','distance_tolerance_yd','swing_label',
-                               'bag_id','bag_name','club_id','catalog_revision','selection_mode',
-                               'simulated','removed','cleanup_reason','corrected_equipment','flight']
+            distance_fields = [
+                'estimated_distance_ft',
+                'target_distance_ft',
+                'distance_error_ft',
+                'distance_model_id',
+                'stimp_ft',
+                'ladder_rung',
+                'ladder_round',
+                'target_mode',
+                'distance_tolerance_ft',
+                'distance_source_revision',
+                'target_distance_yd',
+                'distance_yd',
+                'distance_error_yd',
+                'distance_metric',
+                'scored',
+                'unscored_reason',
+                'club_label',
+                'distance_tolerance_yd',
+                'swing_label',
+                'bag_id',
+                'bag_name',
+                'club_id',
+                'catalog_revision',
+                'selection_mode',
+                'simulated',
+                'removed',
+                'cleanup_reason',
+                'corrected_equipment',
+                'flight',
+            ]
             attempt_fields += distance_fields
             from domain_schema import read_session
-            contexts = {r[0]:read_session(self.connection,r[0]) for r in self.connection.execute('SELECT id FROM sessions').fetchall()}
+
+            contexts = {
+                r[0]: read_session(self.connection, r[0])
+                for r in self.connection.execute('SELECT id FROM sessions').fetchall()
+            }
             for attempt in attempts:
-                outcome = contexts[attempt['session_id']]['shots'][attempt['ordinal']-1]
+                outcome = contexts[attempt['session_id']]['shots'][attempt['ordinal'] - 1]
                 context = contexts[attempt['session_id']]
                 for field in distance_fields:
                     attempt[field] = outcome.get(field)
                 attempt['target_mode'] = context.get('target_mode')
                 attempt['distance_tolerance_ft'] = context.get('distance_tolerance')
                 attempt['distance_tolerance_yd'] = context.get('range_tolerance')
-                attempt['distance_source_revision'] = context.get('distance_model',{}).get('source_revision')
+                attempt['distance_source_revision'] = context.get('distance_model', {}).get(
+                    'source_revision'
+                )
             shot_cursor = self.connection.execute('SELECT * FROM shots ORDER BY occurred_at,id')
-            shot_fields = [d[0] for d in shot_cursor.description] + ['simulated'] + [field+'_'+('degrees' if unit=='deg' else unit) for field,(_,unit,_) in FIELDS.items()]
+            shot_fields = (
+                [d[0] for d in shot_cursor.description]
+                + ['simulated']
+                + [
+                    field + '_' + ('degrees' if unit == 'deg' else unit)
+                    for field, (_, unit, _) in FIELDS.items()
+                ]
+            )
             shots = [dict(r) for r in shot_cursor]
-            simulated_events={r['id'] for r in self.connection.execute('SELECT id,raw_json FROM ingest_events') if json.loads(r['raw_json']).get('simulated')}
+            simulated_events = {
+                r['id']
+                for r in self.connection.execute('SELECT id,raw_json FROM ingest_events')
+                if json.loads(r['raw_json']).get('simulated')
+            }
             for shot in shots:
-                shot['simulated']=shot['event_id'] in simulated_events
+                shot['simulated'] = shot['event_id'] in simulated_events
             from shot_schema import SOURCE_FIELDS
-            reports = {r['shot_id']:r for r in self.connection.execute('SELECT * FROM v_shots_source')}
+
+            reports = {
+                r['shot_id']: r for r in self.connection.execute('SELECT * FROM v_shots_source')
+            }
             for shot in shots:
                 # One explicit report supplies the row; never blend values from competing reports.
                 report = reports.get(shot['id'])
-                for field,(_metric,unit,_factor) in FIELDS.items():
-                    shot[field + '_' + ('degrees' if unit=='deg' else unit)] = report[SOURCE_FIELDS[field][0]] if report else None
-            files = {'shots.csv': shots, 'metric_values.csv':metrics, 'session_attempts.csv':attempts}
-            field_sets = {'shots.csv':shot_fields,'metric_values.csv':metric_fields,'session_attempts.csv':attempt_fields}
-            for table in ('shot_source_metrics','source_metric_quality','shot_primary_source',
-                          'shot_derived_metrics','calculation_runs','calculation_inputs',
-                          'derived_metric_selection','attempt_derived_results','shot_trajectories',
-                          'users','session_owners','shot_owners','bags','clubs','bag_revisions','club_revisions',
-                          'bag_memberships','shot_contexts','context_selection','session_plans','session_plan_items',
-                          'session_fields','attempt_fields','tags','shot_tag_events',
-                          'analysis_runs','analysis_members','collection_results','group_metric_results','bag_gap_results','equipment_profile_selection',
-                          'recalculation_batches','recalculation_inputs','recalculation_outputs','calculation_lineage',
-                          'calculation_attempt_contexts','calculation_publications','calculation_publication_items'):
+                for field, (_metric, unit, _factor) in FIELDS.items():
+                    shot[field + '_' + ('degrees' if unit == 'deg' else unit)] = (
+                        report[SOURCE_FIELDS[field][0]] if report else None
+                    )
+            files = {
+                'shots.csv': shots,
+                'metric_values.csv': metrics,
+                'session_attempts.csv': attempts,
+            }
+            field_sets = {
+                'shots.csv': shot_fields,
+                'metric_values.csv': metric_fields,
+                'session_attempts.csv': attempt_fields,
+            }
+            for table in (
+                'shot_source_metrics',
+                'source_metric_quality',
+                'shot_primary_source',
+                'shot_derived_metrics',
+                'calculation_runs',
+                'calculation_inputs',
+                'derived_metric_selection',
+                'attempt_derived_results',
+                'shot_trajectories',
+                'users',
+                'session_owners',
+                'shot_owners',
+                'bags',
+                'clubs',
+                'bag_revisions',
+                'club_revisions',
+                'bag_memberships',
+                'shot_contexts',
+                'context_selection',
+                'session_plans',
+                'session_plan_items',
+                'session_fields',
+                'attempt_fields',
+                'tags',
+                'shot_tag_events',
+                'analysis_runs',
+                'analysis_members',
+                'collection_results',
+                'group_metric_results',
+                'bag_gap_results',
+                'equipment_profile_selection',
+                'recalculation_batches',
+                'recalculation_inputs',
+                'recalculation_outputs',
+                'calculation_lineage',
+                'calculation_attempt_contexts',
+                'calculation_publications',
+                'calculation_publication_items',
+            ):
                 cursor = self.connection.execute(f'SELECT * FROM {table} ORDER BY rowid')
-                files[table+'.csv'] = [dict(r) for r in cursor]
-                field_sets[table+'.csv'] = [d[0] for d in cursor.description]
-            for view,name in (('v_shots_source','shots_source.csv'),('v_session_shots','session_shots_wide.csv'),('v_session_equipment','session_equipment.csv'),('v_calculation_history','calculation_history.csv'),('v_session_current_metrics','session_current_metrics.csv'),('v_bag_map_results','bag_map_results.csv'),('v_wedge_matrix_results','wedge_matrix_results.csv')):
+                files[table + '.csv'] = [dict(r) for r in cursor]
+                field_sets[table + '.csv'] = [d[0] for d in cursor.description]
+            for view, name in (
+                ('v_shots_source', 'shots_source.csv'),
+                ('v_session_shots', 'session_shots_wide.csv'),
+                ('v_session_equipment', 'session_equipment.csv'),
+                ('v_calculation_history', 'calculation_history.csv'),
+                ('v_session_current_metrics', 'session_current_metrics.csv'),
+                ('v_bag_map_results', 'bag_map_results.csv'),
+                ('v_wedge_matrix_results', 'wedge_matrix_results.csv'),
+            ):
                 cursor = self.connection.execute(f'SELECT * FROM {view}')
                 files[name] = [dict(r) for r in cursor]
                 field_sets[name] = [d[0] for d in cursor.description]
             output = io.BytesIO()
-            with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as archive:
-                for name,rows in files.items():
+            with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
+                for name, rows in files.items():
                     text = io.StringIO(newline='')
                     fields = field_sets[name]
                     writer = csv.DictWriter(text, fields)
                     writer.writeheader()
                     # Protect spreadsheet text while preserving genuine numeric values.
-                    writer.writerows({k: "'"+v if isinstance(v,str) and v.lstrip().startswith(('=','+','-','@')) else v for k,v in row.items()} for row in rows)
-                    archive.writestr(name,text.getvalue().encode('utf-8-sig'))
-                archive.writestr('manifest.json',encoded(dict(schema=SCHEMA_VERSION,created=now(),scope='all_captured_including_session_exclusions_and_deleted_sessions',
-                    counts={name:len(rows) for name,rows in files.items()}, missing='blank; see availability in long export',
-                    row_shapes={'shots_source.csv':'one selected report per physical shot; no model fallback',
-                                'shot_source_metrics.csv':'all observations including competing reports',
-                                'session_shots_wide.csv':'one row per session attempt, including excluded/deleted history',
-                                'shot_derived_metrics.csv':'all result versions; filter model family/context before aggregating'},
-                    timestamps='time_basis declares UTC receipts versus timezone-unknown legacy local times',text_safety='formula-leading text prefixed with apostrophe')))
-                archive.writestr('metric_catalog.json',encoded([json.loads(r[0]) for r in self.connection.execute('SELECT definition_json FROM metric_definitions ORDER BY key,version')]))
-                archive.writestr('metric_mappings.json',encoded([json.loads(r[0]) for r in self.connection.execute('SELECT payload FROM mapping_versions ORDER BY id')]))
-                archive.writestr('putting_models.json',encoded({sid:context['distance_model'] for sid,context in contexts.items() if context.get('distance_model')}))
+                    writer.writerows(
+                        {
+                            k: "'" + v
+                            if isinstance(v, str) and v.lstrip().startswith(('=', '+', '-', '@'))
+                            else v
+                            for k, v in row.items()
+                        }
+                        for row in rows
+                    )
+                    archive.writestr(name, text.getvalue().encode('utf-8-sig'))
+                archive.writestr(
+                    'manifest.json',
+                    encoded(
+                        dict(
+                            schema=SCHEMA_VERSION,
+                            created=now(),
+                            scope='all_captured_including_session_exclusions_and_deleted_sessions',
+                            counts={name: len(rows) for name, rows in files.items()},
+                            missing='blank; see availability in long export',
+                            row_shapes={
+                                'shots_source.csv': 'one selected report per physical shot; no model fallback',
+                                'shot_source_metrics.csv': 'all observations including competing reports',
+                                'session_shots_wide.csv': 'one row per session attempt, including excluded/deleted history',
+                                'shot_derived_metrics.csv': 'all result versions; filter model family/context before aggregating',
+                            },
+                            timestamps='time_basis declares UTC receipts versus timezone-unknown legacy local times',
+                            text_safety='formula-leading text prefixed with apostrophe',
+                        )
+                    ),
+                )
+                archive.writestr(
+                    'metric_catalog.json',
+                    encoded(
+                        [
+                            json.loads(r[0])
+                            for r in self.connection.execute(
+                                'SELECT definition_json FROM metric_definitions ORDER BY key,version'
+                            )
+                        ]
+                    ),
+                )
+                archive.writestr(
+                    'metric_mappings.json',
+                    encoded(
+                        [
+                            json.loads(r[0])
+                            for r in self.connection.execute(
+                                'SELECT payload FROM mapping_versions ORDER BY id'
+                            )
+                        ]
+                    ),
+                )
+                archive.writestr(
+                    'putting_models.json',
+                    encoded(
+                        {
+                            sid: context['distance_model']
+                            for sid, context in contexts.items()
+                            if context.get('distance_model')
+                        }
+                    ),
+                )
             return output.getvalue()
 
 
 def legacy_files(root):
     root = Path(root)
-    return sorted(root.glob('shots*.csv')) + sorted((root/'practice_sessions').glob('*.json')) + sorted((root/'practice_sessions'/'.trash').glob('*.json'))
+    return (
+        sorted(root.glob('shots*.csv'))
+        + sorted((root / 'practice_sessions').glob('*.json'))
+        + sorted((root / 'practice_sessions' / '.trash').glob('*.json'))
+    )
 
 
 def inspect_legacy(root):
@@ -858,60 +1480,105 @@ def inspect_legacy(root):
         else:
             data = json.loads(content.decode('utf-8-sig'))
             count = len(data['shots'])
-            if data['id'] != path.stem or not re.fullmatch('[0-9a-f]{32}',path.stem):
+            if data['id'] != path.stem or not re.fullmatch('[0-9a-f]{32}', path.stem):
                 raise ValueError(f'Invalid session identity in {path.name}.')
-        files.append(dict(path=str(path.resolve()),sha256=digest(content),rows=count,bytes=len(content)))
+        files.append(
+            dict(path=str(path.resolve()), sha256=digest(content), rows=count, bytes=len(content))
+        )
     return files
 
 
 def import_legacy(store, root):
     """All-or-nothing, exact-file evidence, repeat-safe import. Originals never rewritten."""
     inventory = inspect_legacy(root)
-    before = {t:store.count(t) for t in ('ingest_events','shots','sessions','session_attempts')}
+    before = {t: store.count(t) for t in ('ingest_events', 'shots', 'sessions', 'session_attempts')}
     with store.transaction():
-        seen_csv = {r[0] for r in store.connection.execute("SELECT hash FROM import_files WHERE path LIKE '%.csv'")}
+        seen_csv = {
+            r[0]
+            for r in store.connection.execute(
+                "SELECT hash FROM import_files WHERE path LIKE '%.csv'"
+            )
+        }
         for item in inventory:
             path = Path(item['path'])
             content = path.read_bytes()
             if digest(content) != item['sha256']:
                 raise OSError('Legacy data changed during import; retry after stopping capture.')
             file_id = identity('file:' + str(path) + ':' + item['sha256'])
-            existing = store.connection.execute('SELECT 1 FROM import_files WHERE id=?',(file_id,)).fetchone()
+            existing = store.connection.execute(
+                'SELECT 1 FROM import_files WHERE id=?', (file_id,)
+            ).fetchone()
             if existing:
                 continue
             # Changed originals are not silently imported a second time.
-            if store.connection.execute('SELECT 1 FROM import_files WHERE path=?',(str(path),)).fetchone():
-                raise ValueError(f'{path.name} changed after import; reconcile before importing again.')
-            store.connection.execute('INSERT INTO import_files VALUES(?,?,?,?,?)',
-                                     (file_id,str(path),item['sha256'],content,now()))
+            if store.connection.execute(
+                'SELECT 1 FROM import_files WHERE path=?', (str(path),)
+            ).fetchone():
+                raise ValueError(
+                    f'{path.name} changed after import; reconcile before importing again.'
+                )
+            store.connection.execute(
+                'INSERT INTO import_files VALUES(?,?,?,?,?)',
+                (file_id, str(path), item['sha256'], content, now()),
+            )
             if path.suffix == '.csv':
                 if item['sha256'] in seen_csv:
                     continue
                 seen_csv.add(item['sha256'])
-                for ordinal,row in enumerate(csv.DictReader(io.StringIO(content.decode('utf-8-sig'))),1):
+                for ordinal, row in enumerate(
+                    csv.DictReader(io.StringIO(content.decode('utf-8-sig'))), 1
+                ):
                     vals = {}
                     for key in FIELDS:
                         raw = row.get(key)
                         try:
-                            value = float(raw) if raw not in ('',None) else None
+                            value = float(raw) if raw not in ('', None) else None
                             vals[key] = value if value is None or math.isfinite(value) else raw
-                        except (ValueError,TypeError):
+                        except (ValueError, TypeError):
                             vals[key] = raw
-                    note = row.get('note','')
-                    accepted = bool(re.match(r'^ok(?: \(no GSPro\))?(?:;|$)',note))
-                    result = ('sent' if row.get('sent','').lower()=='true' else 'validated') if accepted else 'unknown'
-                    event = dict(session_id=row.get('session_id'),seq=row.get('seq'),source_time=row.get('time'),
-                        club=row.get('club'),vals=vals,note=note,result=result,legacy_row=row,
-                        sent_fields={k:v for k,v in row.items() if k.startswith('sent_')})
-                    store.ingest(event,identity('csv:' + file_id + ':' + str(ordinal)), 'legacy_csv',file_id,ordinal)
+                    note = row.get('note', '')
+                    accepted = bool(re.match(r'^ok(?: \(no GSPro\))?(?:;|$)', note))
+                    result = (
+                        ('sent' if row.get('sent', '').lower() == 'true' else 'validated')
+                        if accepted
+                        else 'unknown'
+                    )
+                    event = dict(
+                        session_id=row.get('session_id'),
+                        seq=row.get('seq'),
+                        source_time=row.get('time'),
+                        club=row.get('club'),
+                        vals=vals,
+                        note=note,
+                        result=result,
+                        legacy_row=row,
+                        sent_fields={k: v for k, v in row.items() if k.startswith('sent_')},
+                    )
+                    store.ingest(
+                        event,
+                        identity('csv:' + file_id + ':' + str(ordinal)),
+                        'legacy_csv',
+                        file_id,
+                        ordinal,
+                    )
             else:
                 data = json.loads(content.decode('utf-8-sig'))
-                store.save_session(data, imported=True, deleted=path.parent.name=='.trash')
-        after = {t:store.count(t) for t in before}
-        report = dict(created=now(),files=inventory,before=before,after=after,added={t:after[t]-before[t] for t in before},
-                      caveats=['CSV acceptance requires explicit ok note or unique confirmed practice evidence.',
-                               'Unresolved colliding legacy keys remain separate shots/observations.',
-                               'Legacy CSV local timestamps have unknown timezone; original evidence is embedded.'])
-        store.connection.execute("INSERT OR REPLACE INTO metadata VALUES('legacy_import_complete',?)",(encoded(report),))
-        store._audit('database','legacy_import',report)
+                store.save_session(data, imported=True, deleted=path.parent.name == '.trash')
+        after = {t: store.count(t) for t in before}
+        report = dict(
+            created=now(),
+            files=inventory,
+            before=before,
+            after=after,
+            added={t: after[t] - before[t] for t in before},
+            caveats=[
+                'CSV acceptance requires explicit ok note or unique confirmed practice evidence.',
+                'Unresolved colliding legacy keys remain separate shots/observations.',
+                'Legacy CSV local timestamps have unknown timezone; original evidence is embedded.',
+            ],
+        )
+        store.connection.execute(
+            "INSERT OR REPLACE INTO metadata VALUES('legacy_import_complete',?)", (encoded(report),)
+        )
+        store._audit('database', 'legacy_import', report)
     return report

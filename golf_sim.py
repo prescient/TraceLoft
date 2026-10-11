@@ -1,4 +1,5 @@
 """Versioned endpoint golf game. Gameplay outcomes never replace source observations."""
+
 import copy
 import hashlib
 import math
@@ -13,266 +14,561 @@ from putting import PuttingSession, timestamp
 from putting_distance import distance_ft, required_speed_mph, model_context
 from distance_ladder import numeric
 
-GAME_FIELDS = ('game_rough', 'game_sand', 'game_variation', 'game_gimme', 'game_geometry', 'game_acknowledged', 'game_course_id', 'game_holes', 'game_rollout_rough', 'game_rollout_ob')
-COURSE = dict(id='meadow-one-v1', name='Meadow One', par=4, yards=350, tee=[0,0], pin=[0,350],
-    bounds=[-80,80,-15,385], green_radius=18,
-    fairway=[[-18,0],[18,0],[22,140],[8,250],[10,335],[-15,335],[-32,240],[-25,130]],
-    water=[dict(center=[-43,225],radius=20)],
-    sand=[dict(center=[-25,332],radius=11),dict(center=[23,348],radius=10)])
+GAME_FIELDS = (
+    'game_rough',
+    'game_sand',
+    'game_variation',
+    'game_gimme',
+    'game_geometry',
+    'game_acknowledged',
+    'game_course_id',
+    'game_holes',
+    'game_rollout_rough',
+    'game_rollout_ob',
+)
+COURSE = dict(
+    id='meadow-one-v1',
+    name='Meadow One',
+    par=4,
+    yards=350,
+    tee=[0, 0],
+    pin=[0, 350],
+    bounds=[-80, 80, -15, 385],
+    green_radius=18,
+    fairway=[[-18, 0], [18, 0], [22, 140], [8, 250], [10, 335], [-15, 335], [-32, 240], [-25, 130]],
+    water=[dict(center=[-43, 225], radius=20)],
+    sand=[dict(center=[-25, 332], radius=11), dict(center=[23, 348], radius=10)],
+)
 
 
-def distance(a,b):
-    return math.hypot(a[0]-b[0],a[1]-b[1])
+def distance(a, b):
+    return math.hypot(a[0] - b[0], a[1] - b[1])
 
 
 def inside(point, polygon):
-    x,y=point;result=False;j=len(polygon)-1
-    for i,(xi,yi) in enumerate(polygon):
-        xj,yj=polygon[j]
-        if (yi>y)!=(yj>y) and x<(xj-xi)*(y-yi)/(yj-yi)+xi:result=not result
-        j=i
+    x, y = point
+    result = False
+    j = len(polygon) - 1
+    for i, (xi, yi) in enumerate(polygon):
+        xj, yj = polygon[j]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            result = not result
+        j = i
     return result
 
 
 def lie_at(point, course):
-    return classify(point,course)
+    return classify(point, course)
 
 
 def landing_rollout(start, endpoint, carry, total, course, settings):
     """Simple landing rules; lateral landing is interpolated, not measured separately."""
-    result=dict(version='landing-rollout-v1',applied=False,base_endpoint=copy.deepcopy(endpoint))
-    if not numeric(total,0,600) or total<=0 or not numeric(carry,0,total):
-        result['reason']='Landing rules unavailable: valid reported carry and total are required.'
-        return endpoint,result
-    ratio=carry/total
-    landing=[a+(b-a)*ratio for a,b in zip(start,endpoint)]
-    lie=lie_at(landing,course)
-    reduction={'sand':100,'rough':settings.get('rough_rollout_percent',75),
-               'out of bounds':settings.get('ob_rollout_percent',100)}.get(lie,0)
-    final=[a+(b-a)*(1-reduction/100) for a,b in zip(landing,endpoint)]
-    result.update(applied=True,landing_point=landing,landing_lie=lie,carry_ratio=ratio,
+    result = dict(
+        version='landing-rollout-v1', applied=False, base_endpoint=copy.deepcopy(endpoint)
+    )
+    if not numeric(total, 0, 600) or total <= 0 or not numeric(carry, 0, total):
+        result['reason'] = 'Landing rules unavailable: valid reported carry and total are required.'
+        return endpoint, result
+    ratio = carry / total
+    landing = [a + (b - a) * ratio for a, b in zip(start, endpoint)]
+    lie = lie_at(landing, course)
+    reduction = {
+        'sand': 100,
+        'rough': settings.get('rough_rollout_percent', 75),
+        'out of bounds': settings.get('ob_rollout_percent', 100),
+    }.get(lie, 0)
+    final = [a + (b - a) * (1 - reduction / 100) for a, b in zip(landing, endpoint)]
+    result.update(
+        applied=True,
+        landing_point=landing,
+        landing_lie=lie,
+        carry_ratio=ratio,
         landing_method='reported carry / total ratio; interpolated lateral position',
-        reduction_percent=reduction,original_rollout_yd=distance(landing,endpoint),
-        adjusted_rollout_yd=distance(landing,final))
-    return final,result
+        reduction_percent=reduction,
+        original_rollout_yd=distance(landing, endpoint),
+        adjusted_rollout_yd=distance(landing, final),
+    )
+    return final, result
 
 
 class GolfSimSession(PuttingSession):
-    def __init__(self, folder, store=None, equipment_selection=None, demo=True, stimp=10,
-                 game_rough=7, game_sand=20, game_variation=0, game_gimme=3,
-                 game_geometry='downrange', game_acknowledged=False, game_course_id='pebble-boulder-blue-v3', game_holes='full', course=None,
-                 game_rollout_rough=75, game_rollout_ob=100):
-        if any(not numeric(v,lo,hi) for v,lo,hi in ((game_rough,0,60),(game_sand,0,80),
-            (game_variation,0,10),(game_gimme,0,10),(stimp,3,20),
-            (game_rollout_rough,0,100),(game_rollout_ob,0,100))):
+    def __init__(
+        self,
+        folder,
+        store=None,
+        equipment_selection=None,
+        demo=True,
+        stimp=10,
+        game_rough=7,
+        game_sand=20,
+        game_variation=0,
+        game_gimme=3,
+        game_geometry='downrange',
+        game_acknowledged=False,
+        game_course_id='pebble-boulder-blue-v3',
+        game_holes='full',
+        course=None,
+        game_rollout_rough=75,
+        game_rollout_ob=100,
+    ):
+        if any(
+            not numeric(v, lo, hi)
+            for v, lo, hi in (
+                (game_rough, 0, 60),
+                (game_sand, 0, 80),
+                (game_variation, 0, 10),
+                (game_gimme, 0, 10),
+                (stimp, 3, 20),
+                (game_rollout_rough, 0, 100),
+                (game_rollout_ob, 0, 100),
+            )
+        ):
             raise ValueError('Choose valid lie, putting and variation settings.')
-        if type(demo) is not bool or game_geometry not in ('downrange','radial'):
+        if type(demo) is not bool or game_geometry not in ('downrange', 'radial'):
             raise ValueError('Choose a valid game mode and distance geometry.')
         if not demo and game_acknowledged is not True:
-            raise ValueError('Acknowledge the unverified reported-distance geometry before live play.')
+            raise ValueError(
+                'Acknowledge the unverified reported-distance geometry before live play.'
+            )
         if course is None:
-            if game_course_id=='meadow-one-v1':course=COURSE
-            else:course=load_bundled(game_course_id)
-        package=copy.deepcopy(course) if course.get('holes') else None
-        if game_holes not in ('full','front','back'):
+            if game_course_id == 'meadow-one-v1':
+                course = COURSE
+            else:
+                course = load_bundled(game_course_id)
+        package = copy.deepcopy(course) if course.get('holes') else None
+        if game_holes not in ('full', 'front', 'back'):
             raise ValueError('Choose Full 18, Front 9 or Back 9.')
-        if game_holes!='full':
-            if not package or [c.get('hole_number') for c in package['holes']]!=list(range(1,19)):
+        if game_holes != 'full':
+            if not package or [c.get('hole_number') for c in package['holes']] != list(
+                range(1, 19)
+            ):
                 raise ValueError('Front 9 and Back 9 require an eighteen-hole course.')
-            package['holes']=package['holes'][:9] if game_holes=='front' else package['holes'][9:]
+            package['holes'] = (
+                package['holes'][:9] if game_holes == 'front' else package['holes'][9:]
+            )
         if package:
-            package['par']=sum(c['par'] for c in package['holes'])
-            package['yards']=sum(c['yards'] for c in package['holes'])
-        if package:course=package['holes'][0]
-        self.folder,self.store=Path(folder),store
-        self.data=dict(id=uuid.uuid4().hex,started=timestamp(),ended=None,drill='2D golf',
-            practice_type='full_swing',session_kind='golf_sim',random_pace=False,target=0,demo=demo,
-            equipment_selection=copy.deepcopy(equipment_selection),shots=[],course=copy.deepcopy(course),
-            game_settings=dict(rough_percent=game_rough,sand_percent=game_sand,nature_percent=30,
-                rough_rollout_percent=game_rollout_rough,ob_rollout_percent=game_rollout_ob,
-                variation_degrees=game_variation,gimme_ft=game_gimme,geometry=game_geometry,
-                acknowledged=game_acknowledged,putting=model_context(stimp)),
-            game=dict(position=copy.deepcopy(course['tee']),aim=copy.deepcopy(course['pin']),lie='tee',turn=0,strokes=0,penalties=0,
-                      concessions=0,holed=False,last_message='Aim, choose a club, then hit your first shot.'))
+            package['par'] = sum(c['par'] for c in package['holes'])
+            package['yards'] = sum(c['yards'] for c in package['holes'])
         if package:
-            self.data['round']=dict(course_id=package['id'],name=package['name'],tee_label=package.get('tee_label','Blue'),
-                holes=package['holes'],index=0,results=[],par=package['par'],yards=package['yards'],selection=game_holes)
+            course = package['holes'][0]
+        self.folder, self.store = Path(folder), store
+        self.data = dict(
+            id=uuid.uuid4().hex,
+            started=timestamp(),
+            ended=None,
+            drill='2D golf',
+            practice_type='full_swing',
+            session_kind='golf_sim',
+            random_pace=False,
+            target=0,
+            demo=demo,
+            equipment_selection=copy.deepcopy(equipment_selection),
+            shots=[],
+            course=copy.deepcopy(course),
+            game_settings=dict(
+                rough_percent=game_rough,
+                sand_percent=game_sand,
+                nature_percent=30,
+                rough_rollout_percent=game_rollout_rough,
+                ob_rollout_percent=game_rollout_ob,
+                variation_degrees=game_variation,
+                gimme_ft=game_gimme,
+                geometry=game_geometry,
+                acknowledged=game_acknowledged,
+                putting=model_context(stimp),
+            ),
+            game=dict(
+                position=copy.deepcopy(course['tee']),
+                aim=copy.deepcopy(course['pin']),
+                lie='tee',
+                turn=0,
+                strokes=0,
+                penalties=0,
+                concessions=0,
+                holed=False,
+                last_message='Aim, choose a club, then hit your first shot.',
+            ),
+        )
+        if package:
+            self.data['round'] = dict(
+                course_id=package['id'],
+                name=package['name'],
+                tee_label=package.get('tee_label', 'Blue'),
+                holes=package['holes'],
+                index=0,
+                results=[],
+                par=package['par'],
+                yards=package['yards'],
+                selection=game_holes,
+            )
         self.save()
 
     def context(self):
-        g=self.data['game']
-        result={k:copy.deepcopy(g[k]) for k in ('turn','position','aim','lie')}
-        if 'round' in self.data:result['hole_id']=self.data['course']['id']
+        g = self.data['game']
+        result = {k: copy.deepcopy(g[k]) for k in ('turn', 'position', 'aim', 'lie')}
+        if 'round' in self.data:
+            result['hole_id'] = self.data['course']['id']
         return result
 
-    def next_hole(self,turn):
-        r=self.data.get('round');g=self.data['game']
-        if not r or self.data['ended'] or not g['holed'] or turn!=g['turn'] or r['index']+1>=len(r['holes']):
+    def next_hole(self, turn):
+        r = self.data.get('round')
+        g = self.data['game']
+        if (
+            not r
+            or self.data['ended']
+            or not g['holed']
+            or turn != g['turn']
+            or r['index'] + 1 >= len(r['holes'])
+        ):
             raise ValueError('Complete the current hole before moving to the next tee.')
-        r['index']+=1;c=copy.deepcopy(r['holes'][r['index']]);self.data['course']=c
-        self.data['game']=dict(position=copy.deepcopy(c['tee']),aim=copy.deepcopy(c['pin']),lie='tee',
-            turn=g['turn']+1,strokes=0,penalties=0,concessions=0,holed=False,
-            last_message=f"Hole {c['hole_number']} · choose a club and aim.")
+        r['index'] += 1
+        c = copy.deepcopy(r['holes'][r['index']])
+        self.data['course'] = c
+        self.data['game'] = dict(
+            position=copy.deepcopy(c['tee']),
+            aim=copy.deepcopy(c['pin']),
+            lie='tee',
+            turn=g['turn'] + 1,
+            strokes=0,
+            penalties=0,
+            concessions=0,
+            holed=False,
+            last_message=f"Hole {c['hole_number']} · choose a club and aim.",
+        )
         self.save()
 
     def latest_played_shot(self):
-        return next((s for s in reversed(self.data['shots'])
-                     if s.get('game_outcome',{}).get('applied') and not s.get('game_correction')),None)
+        return next(
+            (
+                s
+                for s in reversed(self.data['shots'])
+                if s.get('game_outcome', {}).get('applied') and not s.get('game_correction')
+            ),
+            None,
+        )
 
-    def correct_shot(self,kind,key,turn):
+    def correct_shot(self, kind, key, turn):
         """Rewind the latest effective stroke; retain immutable readings and outcomes."""
-        shot=self.latest_played_shot()
+        shot = self.latest_played_shot()
         if self.data.get('abandoned'):
             raise ValueError('Abandoned rounds cannot be reopened.')
-        if kind not in ('mulligan','misread'):
+        if kind not in ('mulligan', 'misread'):
             raise ValueError('Choose Mulligan or Misread.')
-        if not shot or shot['key']!=key or turn!=self.data['game']['turn']:
+        if not shot or shot['key'] != key or turn != self.data['game']['turn']:
             raise ValueError('The round changed. Refresh before correcting the latest shot.')
-        r=self.data.get('round')
-        index=next((i for i,c in enumerate(r['holes']) if c['id']==shot['hole_id']),None) if r else None
-        if r and index is None:raise ValueError('The original hole is unavailable.')
-        affected_holes={c['id'] for c in r['holes'][index:]} if r else set()
-        audit=dict(id=uuid.uuid4().hex,kind=kind,shot_key=key,at=timestamp(),
-            hole_id=shot.get('hole_id',self.data['course']['id']),hole_number=shot.get('hole_number',1),
-            previous_game=copy.deepcopy(self.data['game']),previous_ended=self.data['ended'],
-            previous_excluded=shot['excluded'],previous_round_index=r['index'] if r else None,
-            removed_results=copy.deepcopy([v for v in r['results'] if v['hole_id'] in affected_holes]) if r else [])
-        restored=copy.deepcopy(shot['game_outcome']['before'])
-        restored.update(turn=turn+1,last_message=f"{kind.capitalize()} recorded · previous position restored. Ready to replay.")
+        r = self.data.get('round')
+        index = (
+            next((i for i, c in enumerate(r['holes']) if c['id'] == shot['hole_id']), None)
+            if r
+            else None
+        )
+        if r and index is None:
+            raise ValueError('The original hole is unavailable.')
+        affected_holes = {c['id'] for c in r['holes'][index:]} if r else set()
+        audit = dict(
+            id=uuid.uuid4().hex,
+            kind=kind,
+            shot_key=key,
+            at=timestamp(),
+            hole_id=shot.get('hole_id', self.data['course']['id']),
+            hole_number=shot.get('hole_number', 1),
+            previous_game=copy.deepcopy(self.data['game']),
+            previous_ended=self.data['ended'],
+            previous_excluded=shot['excluded'],
+            previous_round_index=r['index'] if r else None,
+            removed_results=copy.deepcopy(
+                [v for v in r['results'] if v['hole_id'] in affected_holes]
+            )
+            if r
+            else [],
+        )
+        restored = copy.deepcopy(shot['game_outcome']['before'])
+        restored.update(
+            turn=turn + 1,
+            last_message=f"{kind.capitalize()} recorded · previous position restored. Ready to replay.",
+        )
         if r:
-            r['index']=index
-            r['results']=[v for v in r['results'] if v['hole_id'] not in affected_holes]
-            self.data['course']=copy.deepcopy(r['holes'][index])
-        self.data.update(game=restored,ended=None)
-        shot['game_correction']={k:audit[k] for k in ('id','kind','at')}
-        if kind=='misread':shot['excluded']=True
-        audit['restored_game']=copy.deepcopy(restored)
-        self.data.setdefault('game_corrections',[]).append(audit)
+            r['index'] = index
+            r['results'] = [v for v in r['results'] if v['hole_id'] not in affected_holes]
+            self.data['course'] = copy.deepcopy(r['holes'][index])
+        self.data.update(game=restored, ended=None)
+        shot['game_correction'] = {k: audit[k] for k in ('id', 'kind', 'at')}
+        if kind == 'misread':
+            shot['excluded'] = True
+        audit['restored_game'] = copy.deepcopy(restored)
+        self.data.setdefault('game_corrections', []).append(audit)
         self.save()
         return audit
 
-    def set_aim(self,x,y,turn):
-        if self.data['ended'] or self.data['game']['holed'] or turn!=self.data['game']['turn']:
+    def set_aim(self, x, y, turn):
+        if self.data['ended'] or self.data['game']['holed'] or turn != self.data['game']['turn']:
             raise ValueError('The round advanced or ended. Refresh before aiming.')
-        left,right,near,far=self.data['course']['bounds']
-        if not numeric(x,left,right) or not numeric(y,near,far) or distance([x,y],self.data['game']['position'])<.1:
+        left, right, near, far = self.data['course']['bounds']
+        if (
+            not numeric(x, left, right)
+            or not numeric(y, near, far)
+            or distance([x, y], self.data['game']['position']) < 0.1
+        ):
             raise ValueError('Choose an aim point on the course, away from the ball.')
-        self.data['game']['aim']=[x,y];self.save()
+        self.data['game']['aim'] = [x, y]
+        self.save()
 
-    def add(self,event):
-        if self.data['ended'] or event.get('result') not in ('sent','validated') or bool(event.get('simulated'))!=self.data['demo']:
+    def add(self, event):
+        if (
+            self.data['ended']
+            or event.get('result') not in ('sent', 'validated')
+            or bool(event.get('simulated')) != self.data['demo']
+        ):
             return False
-        key=f"{event['session_id']}:{event['seq']}"
-        if any(s['key']==key or event.get('receipt_id') and s.get('receipt_id')==event['receipt_id'] for s in self.data['shots']):return False
-        g=self.data['game'];settings=self.data['game_settings'];course=self.data['course'];vals=event.get('vals',{})
-        before=copy.deepcopy(g);context=copy.deepcopy(event.get('game_context'))
-        shot=dict(key=key,captured=event.get('captured_at') or timestamp(),receipt_id=event.get('receipt_id'),
-            vals=copy.deepcopy(vals),excluded=False,success=False,scored=False,simulated=self.data['demo'],
-            **copy.deepcopy(event.get('equipment_selection',self.data.get('equipment_selection')) or {}))
-        shot.update(hole_id=course['id'],hole_number=course.get('hole_number',1))
-        outcome=dict(version='endpoint-golf-v2',course_id=course['id'],context=context,settings=copy.deepcopy(settings),
-                     before=before,applied=False,penalty_strokes=0,conceded_strokes=0)
+        key = f"{event['session_id']}:{event['seq']}"
+        if any(
+            s['key'] == key
+            or event.get('receipt_id')
+            and s.get('receipt_id') == event['receipt_id']
+            for s in self.data['shots']
+        ):
+            return False
+        g = self.data['game']
+        settings = self.data['game_settings']
+        course = self.data['course']
+        vals = event.get('vals', {})
+        before = copy.deepcopy(g)
+        context = copy.deepcopy(event.get('game_context'))
+        shot = dict(
+            key=key,
+            captured=event.get('captured_at') or timestamp(),
+            receipt_id=event.get('receipt_id'),
+            vals=copy.deepcopy(vals),
+            excluded=False,
+            success=False,
+            scored=False,
+            simulated=self.data['demo'],
+            **copy.deepcopy(
+                event.get('equipment_selection', self.data.get('equipment_selection')) or {}
+            ),
+        )
+        shot.update(hole_id=course['id'], hole_number=course.get('hole_number', 1))
+        outcome = dict(
+            version='endpoint-golf-v2',
+            course_id=course['id'],
+            context=context,
+            settings=copy.deepcopy(settings),
+            before=before,
+            applied=False,
+            penalty_strokes=0,
+            conceded_strokes=0,
+        )
         # Legacy active rounds use these defaults for new shots; frozen outcomes stay intact.
-        outcome['settings'].setdefault('rough_rollout_percent',75)
-        outcome['settings'].setdefault('ob_rollout_percent',100)
-        reason=None;putting=g['lie']=='green'
-        left,right,near,far=course['bounds']
-        valid_context=(isinstance(context,dict) and all(context.get(k)==g[k] for k in ('turn','position','lie'))
-            and isinstance(context.get('aim'),list) and len(context['aim'])==2
-            and numeric(context['aim'][0],left,right) and numeric(context['aim'][1],near,far)
-            and distance(context['aim'],g['position'])>=.1)
-        if g['holed']:reason='Shot saved, not scored: hole complete. Select Next hole before hitting.'
-        elif not valid_context or ('round' in self.data and context.get('hole_id')!=course['id']):reason='Shot saved, ball unchanged: aim/turn context is missing or stale. Wait for the updated round before hitting.'
-        elif putting and not (numeric(vals.get('ball_speed'),0,15) and numeric(vals.get('launch_dir'),-45,45)):
-            reason='Shot saved, ball unchanged: putting needs speed 0–15 mph and start line.'
-        elif not putting and not (numeric(vals.get('total'),0,600) and numeric(vals.get('offline'),-600,600)):
-            reason='Shot saved, ball unchanged: full shots need reported total distance and signed offline.'
-        elif not putting and settings['geometry']=='radial' and abs(vals['offline'])>vals['total']:
-            reason='Shot saved, ball unchanged: offline exceeds radial total distance.'
+        outcome['settings'].setdefault('rough_rollout_percent', 75)
+        outcome['settings'].setdefault('ob_rollout_percent', 100)
+        reason = None
+        putting = g['lie'] == 'green'
+        left, right, near, far = course['bounds']
+        valid_context = (
+            isinstance(context, dict)
+            and all(context.get(k) == g[k] for k in ('turn', 'position', 'lie'))
+            and isinstance(context.get('aim'), list)
+            and len(context['aim']) == 2
+            and numeric(context['aim'][0], left, right)
+            and numeric(context['aim'][1], near, far)
+            and distance(context['aim'], g['position']) >= 0.1
+        )
+        if g['holed']:
+            reason = 'Shot saved, not scored: hole complete. Select Next hole before hitting.'
+        elif not valid_context or ('round' in self.data and context.get('hole_id') != course['id']):
+            reason = 'Shot saved, ball unchanged: aim/turn context is missing or stale. Wait for the updated round before hitting.'
+        elif putting and not (
+            numeric(vals.get('ball_speed'), 0, 15) and numeric(vals.get('launch_dir'), -45, 45)
+        ):
+            reason = 'Shot saved, ball unchanged: putting needs speed 0–15 mph and start line.'
+        elif not putting and not (
+            numeric(vals.get('total'), 0, 600) and numeric(vals.get('offline'), -600, 600)
+        ):
+            reason = 'Shot saved, ball unchanged: full shots need reported total distance and signed offline.'
+        elif (
+            not putting
+            and settings['geometry'] == 'radial'
+            and abs(vals['offline']) > vals['total']
+        ):
+            reason = 'Shot saved, ball unchanged: offline exceeds radial total distance.'
         if reason:
-            g['last_message']=reason;outcome['message']=reason
+            g['last_message'] = reason
+            outcome['message'] = reason
         else:
-            aim=context['aim'];p=g['position'];angle=math.atan2(aim[0]-p[0],aim[1]-p[1])
-            reduction=settings.get(g['lie']+'_percent',0)/100
-            variation=settings['variation_degrees'] if g['lie'] in ('rough','sand','nature') else 0
-            seed=hashlib.sha256((self.data['id']+key).encode()).hexdigest()
-            draw=random.Random(seed).uniform(-variation,variation)
-            angle+=math.radians(draw)
+            aim = context['aim']
+            p = g['position']
+            angle = math.atan2(aim[0] - p[0], aim[1] - p[1])
+            reduction = settings.get(g['lie'] + '_percent', 0) / 100
+            variation = (
+                settings['variation_degrees'] if g['lie'] in ('rough', 'sand', 'nature') else 0
+            )
+            seed = hashlib.sha256((self.data['id'] + key).encode()).hexdigest()
+            draw = random.Random(seed).uniform(-variation, variation)
+            angle += math.radians(draw)
             if putting:
-                travel=distance_ft(vals['ball_speed'],settings['putting']['stimp_ft'],settings['putting']['id'])/3
-                lateral=travel*math.sin(math.radians(vals['launch_dir']))
-                forward=travel*math.cos(math.radians(vals['launch_dir']))
+                travel = (
+                    distance_ft(
+                        vals['ball_speed'],
+                        settings['putting']['stimp_ft'],
+                        settings['putting']['id'],
+                    )
+                    / 3
+                )
+                lateral = travel * math.sin(math.radians(vals['launch_dir']))
+                forward = travel * math.cos(math.radians(vals['launch_dir']))
             else:
-                travel=vals['total']*(1-reduction);lateral=vals['offline']*(1-reduction)
-                forward=math.sqrt(max(0,travel*travel-lateral*lateral)) if settings['geometry']=='radial' else travel
-            end=[p[0]+forward*math.sin(angle)+lateral*math.cos(angle),
-                 p[1]+forward*math.cos(angle)-lateral*math.sin(angle)]
+                travel = vals['total'] * (1 - reduction)
+                lateral = vals['offline'] * (1 - reduction)
+                forward = (
+                    math.sqrt(max(0, travel * travel - lateral * lateral))
+                    if settings['geometry'] == 'radial'
+                    else travel
+                )
+            end = [
+                p[0] + forward * math.sin(angle) + lateral * math.cos(angle),
+                p[1] + forward * math.cos(angle) - lateral * math.sin(angle),
+            ]
             if not putting:
-                end,landing=landing_rollout(p,end,vals.get('carry'),vals['total'],course,outcome['settings'])
-                outcome['landing_rollout']=landing
+                end, landing = landing_rollout(
+                    p, end, vals.get('carry'), vals['total'], course, outcome['settings']
+                )
+                outcome['landing_rollout'] = landing
                 if landing['applied']:
-                    adjustment=landing['carry_ratio']+(1-landing['carry_ratio'])*(1-landing['reduction_percent']/100)
-                    forward*=adjustment;lateral*=adjustment
-            final_lie=lie_at(end,course);remaining=distance(end,course['pin'])
-            outcome.update(applied=True,putting=putting,raw_total_yd=vals.get('total'),raw_offline_yd=vals.get('offline'),
-                adjusted_forward_yd=forward,adjusted_right_yd=lateral,distance_factor=1-reduction,
-                random_seed=seed,random_degrees=draw,endpoint=end,destination_lie=final_lie,
-                remaining_at_endpoint_yd=remaining,aim_heading_degrees=math.degrees(angle)-draw)
-            g['strokes']+=1;g['turn']+=1
-            if final_lie in ('water','out of bounds'):
-                g['strokes']+=1;g['penalties']+=1;outcome['penalty_strokes']=1
-                message=f'{final_lie.capitalize()} · +1 penalty. Replay from the previous position.'
+                    adjustment = landing['carry_ratio'] + (1 - landing['carry_ratio']) * (
+                        1 - landing['reduction_percent'] / 100
+                    )
+                    forward *= adjustment
+                    lateral *= adjustment
+            final_lie = lie_at(end, course)
+            remaining = distance(end, course['pin'])
+            outcome.update(
+                applied=True,
+                putting=putting,
+                raw_total_yd=vals.get('total'),
+                raw_offline_yd=vals.get('offline'),
+                adjusted_forward_yd=forward,
+                adjusted_right_yd=lateral,
+                distance_factor=1 - reduction,
+                random_seed=seed,
+                random_degrees=draw,
+                endpoint=end,
+                destination_lie=final_lie,
+                remaining_at_endpoint_yd=remaining,
+                aim_heading_degrees=math.degrees(angle) - draw,
+            )
+            g['strokes'] += 1
+            g['turn'] += 1
+            if final_lie in ('water', 'out of bounds'):
+                g['strokes'] += 1
+                g['penalties'] += 1
+                outcome['penalty_strokes'] = 1
+                message = (
+                    f'{final_lie.capitalize()} · +1 penalty. Replay from the previous position.'
+                )
             else:
-                g.update(position=end,lie=final_lie)
-                holed=remaining*3<=.2
-                conceded=not holed and final_lie=='green' and remaining*3<=settings['gimme_ft']
+                g.update(position=end, lie=final_lie)
+                holed = remaining * 3 <= 0.2
+                conceded = (
+                    not holed and final_lie == 'green' and remaining * 3 <= settings['gimme_ft']
+                )
                 if holed or conceded:
-                    g['holed']=True;g['strokes']+=int(conceded);g['concessions']+=int(conceded)
-                    outcome['conceded_strokes']=int(conceded)
-                    r=self.data.get('round')
-                    if not r or r['index']==len(r['holes'])-1:self.data['ended']=timestamp()
-                    message='Hole complete · one conceded putt added.' if conceded else 'Hole complete · endpoint inside the simulated cup.'
-                else:message=f'Green · {remaining*3:.1f} ft to the pin.' if final_lie=='green' else f'{final_lie.capitalize()} · {remaining:.1f} yd to the pin.'
-                g['aim']=copy.deepcopy(course['pin'])
+                    g['holed'] = True
+                    g['strokes'] += int(conceded)
+                    g['concessions'] += int(conceded)
+                    outcome['conceded_strokes'] = int(conceded)
+                    r = self.data.get('round')
+                    if not r or r['index'] == len(r['holes']) - 1:
+                        self.data['ended'] = timestamp()
+                    message = (
+                        'Hole complete · one conceded putt added.'
+                        if conceded
+                        else 'Hole complete · endpoint inside the simulated cup.'
+                    )
+                else:
+                    message = (
+                        f'Green · {remaining * 3:.1f} ft to the pin.'
+                        if final_lie == 'green'
+                        else f'{final_lie.capitalize()} · {remaining:.1f} yd to the pin.'
+                    )
+                g['aim'] = copy.deepcopy(course['pin'])
             if not putting:
-                landing=outcome['landing_rollout']
-                if not landing['applied']:message+=' '+landing['reason']
-                elif landing['reduction_percent']>0 and landing['original_rollout_yd']>.01:
-                    message+=(' Sand landing stopped rollout.' if landing['landing_lie']=='sand' else
-                        f" {landing['landing_lie'].capitalize()} landing reduced rollout by {landing['reduction_percent']:g}%.")
-            g['last_message']=message;outcome['message']=message
-            shot.update(scored=True,success=g['holed'])
-        outcome['after']=copy.deepcopy(g);shot['game_outcome']=outcome
+                landing = outcome['landing_rollout']
+                if not landing['applied']:
+                    message += ' ' + landing['reason']
+                elif landing['reduction_percent'] > 0 and landing['original_rollout_yd'] > 0.01:
+                    message += (
+                        ' Sand landing stopped rollout.'
+                        if landing['landing_lie'] == 'sand'
+                        else f" {landing['landing_lie'].capitalize()} landing reduced rollout by {landing['reduction_percent']:g}%."
+                    )
+            g['last_message'] = message
+            outcome['message'] = message
+            shot.update(scored=True, success=g['holed'])
+        outcome['after'] = copy.deepcopy(g)
+        shot['game_outcome'] = outcome
         # Independent presentation estimate; never changes the saved game outcome.
         if outcome['applied'] and not putting:
-            shot['flight']=predict(vals)
+            shot['flight'] = predict(vals)
         if outcome['applied'] and g['holed'] and 'round' in self.data:
-            self.data['round']['results'].append(dict(hole_id=course['id'],hole_number=course['hole_number'],
-                par=course['par'],game=copy.deepcopy(g)))
+            self.data['round']['results'].append(
+                dict(
+                    hole_id=course['id'],
+                    hole_number=course['hole_number'],
+                    par=course['par'],
+                    game=copy.deepcopy(g),
+                )
+            )
         self.data['shots'].append(shot)
         self.save(append=True)
         return True
 
     def summary(self):
-        g=self.data['game'];shots=self.data['shots'];remaining=distance(g['position'],self.data['course']['pin'])
-        putting=g['lie']=='green' and not g['holed']
-        pace=required_speed_mph(max(.5,remaining*3),self.data['game_settings']['putting']['stimp_ft']) if putting and remaining*3<=300 else None
-        result=dict(count=sum(not s['excluded'] for s in shots),recorded=len(shots),successes=int(g['holed']),
-            scored=sum(s['scored'] and not s.get('game_correction') for s in shots),strokes=g['strokes'],penalties=g['penalties'],
-            concessions=g['concessions'],remaining_yd=remaining,required_pace_mph=pace,holed=g['holed'])
-        result.update({kind+'s':sum(a['kind']==kind for a in self.data.get('game_corrections',[]))
-                       for kind in ('mulligan','misread')})
-        r=self.data.get('round')
+        g = self.data['game']
+        shots = self.data['shots']
+        remaining = distance(g['position'], self.data['course']['pin'])
+        putting = g['lie'] == 'green' and not g['holed']
+        pace = (
+            required_speed_mph(
+                max(0.5, remaining * 3), self.data['game_settings']['putting']['stimp_ft']
+            )
+            if putting and remaining * 3 <= 300
+            else None
+        )
+        result = dict(
+            count=sum(not s['excluded'] for s in shots),
+            recorded=len(shots),
+            successes=int(g['holed']),
+            scored=sum(s['scored'] and not s.get('game_correction') for s in shots),
+            strokes=g['strokes'],
+            penalties=g['penalties'],
+            concessions=g['concessions'],
+            remaining_yd=remaining,
+            required_pace_mph=pace,
+            holed=g['holed'],
+        )
+        result.update(
+            {
+                kind + 's': sum(a['kind'] == kind for a in self.data.get('game_corrections', []))
+                for kind in ('mulligan', 'misread')
+            }
+        )
+        r = self.data.get('round')
         if r:
-            previous=[v for v in r['results'] if v['hole_id']!=self.data['course']['id']]
-            completed_par=sum(v['par'] for v in r['results'])
-            completed_score=sum(v['game']['strokes'] for v in r['results'])
-            result.update(strokes=g['strokes']+sum(v['game']['strokes'] for v in previous),
-                penalties=g['penalties']+sum(v['game']['penalties'] for v in previous),
-                concessions=g['concessions']+sum(v['game']['concessions'] for v in previous),
-                holes_completed=len(r['results']),hole_count=len(r['holes']),hole_strokes=g['strokes'],
-                round_complete=len(r['results'])==len(r['holes']),to_par=completed_score-completed_par,
-                course_name=r['name'],round_selection=r.get('selection','full'))
+            previous = [v for v in r['results'] if v['hole_id'] != self.data['course']['id']]
+            completed_par = sum(v['par'] for v in r['results'])
+            completed_score = sum(v['game']['strokes'] for v in r['results'])
+            result.update(
+                strokes=g['strokes'] + sum(v['game']['strokes'] for v in previous),
+                penalties=g['penalties'] + sum(v['game']['penalties'] for v in previous),
+                concessions=g['concessions'] + sum(v['game']['concessions'] for v in previous),
+                holes_completed=len(r['results']),
+                hole_count=len(r['holes']),
+                hole_strokes=g['strokes'],
+                round_complete=len(r['results']) == len(r['holes']),
+                to_par=completed_score - completed_par,
+                course_name=r['name'],
+                round_selection=r.get('selection', 'full'),
+            )
         return result
 
 
@@ -280,23 +576,44 @@ def simulated_event(session, distance_yd, offline_yd=0, carry_yd=None):
     """Explicit deterministic test input, recorded as synthetic and isolated from live sessions."""
     if not session.data['demo'] or session.data['ended'] or session.data['game']['holed']:
         raise ValueError('Simulated shots require an active demo round.')
-    if not numeric(distance_yd,.01,600) or not numeric(offline_yd,-200,200):
+    if not numeric(distance_yd, 0.01, 600) or not numeric(offline_yd, -200, 200):
         raise ValueError('Choose a valid simulated distance and offline amount.')
-    putting=session.data['game']['lie']=='green'
-    if carry_yd is not None and (putting or not numeric(carry_yd,0,distance_yd)):
+    putting = session.data['game']['lie'] == 'green'
+    if carry_yd is not None and (putting or not numeric(carry_yd, 0, distance_yd)):
         raise ValueError('Full-swing simulated carry must be between zero and total distance.')
     if putting:
-        travel=math.hypot(distance_yd,offline_yd)
-        speed=required_speed_mph(travel*3,session.data['game_settings']['putting']['stimp_ft'])
-        hla=math.degrees(math.atan2(offline_yd,distance_yd))
-        if abs(hla)>45:raise ValueError('Simulated putting start line must stay within 45 degrees.')
-        vals=dict(ball_speed=speed,launch_ang=0,launch_dir=hla,total_spin=0)
+        travel = math.hypot(distance_yd, offline_yd)
+        speed = required_speed_mph(travel * 3, session.data['game_settings']['putting']['stimp_ft'])
+        hla = math.degrees(math.atan2(offline_yd, distance_yd))
+        if abs(hla) > 45:
+            raise ValueError('Simulated putting start line must stay within 45 degrees.')
+        vals = dict(ball_speed=speed, launch_ang=0, launch_dir=hla, total_spin=0)
     else:
-        vals=dict(ball_speed=max(1,min(200,distance_yd*.55)),launch_ang=18,launch_dir=0,
-                  total=distance_yd,carry=distance_yd*.93 if carry_yd is None else carry_yd,
-                  offline=offline_yd,total_spin=5500,spin_axis=0)
-    return dict(kind='record',session_id='game-demo-'+session.data['id'],seq=len(session.data['shots'])+1,
-        receipt_id=uuid.uuid4().hex,producer_id='golfdata-game-demo-v1',result='validated',simulated=True,
-        captured_at=timestamp(),practice_session_id=session.data['id'],vals=vals,
-        game_context=session.context(),equipment_selection=copy.deepcopy(session.data.get('equipment_selection')),
-        source_configuration={'acquisition':'synthetic_demo','generator':'golfdata-game-demo-v1'})
+        vals = dict(
+            ball_speed=max(1, min(200, distance_yd * 0.55)),
+            launch_ang=18,
+            launch_dir=0,
+            total=distance_yd,
+            carry=distance_yd * 0.93 if carry_yd is None else carry_yd,
+            offline=offline_yd,
+            total_spin=5500,
+            spin_axis=0,
+        )
+    return dict(
+        kind='record',
+        session_id='game-demo-' + session.data['id'],
+        seq=len(session.data['shots']) + 1,
+        receipt_id=uuid.uuid4().hex,
+        producer_id='golfdata-game-demo-v1',
+        result='validated',
+        simulated=True,
+        captured_at=timestamp(),
+        practice_session_id=session.data['id'],
+        vals=vals,
+        game_context=session.context(),
+        equipment_selection=copy.deepcopy(session.data.get('equipment_selection')),
+        source_configuration={
+            'acquisition': 'synthetic_demo',
+            'generator': 'golfdata-game-demo-v1',
+        },
+    )

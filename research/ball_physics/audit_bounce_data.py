@@ -55,15 +55,15 @@ def inspect(path):
                 "exact_duplicate_rows": len(values) - len(set(values)),
                 "inbound_y_nonnegative": sum(row[1] >= 0 for row in values),
                 "outbound_y_nonpositive": sum(row[4] <= 0 for row in values),
-                "horizontal_velocity_sign_reversals": sum(
-                    row[0] * row[3] < 0 for row in values
-                ),
+                "horizontal_velocity_sign_reversals": sum(row[0] * row[3] < 0 for row in values),
                 "contact_slip_sign_reversals": sum(
                     (row[0] + row[2]) * (row[3] + row[5]) < 0 for row in values
                 ),
                 "ranges": {
-                    column: {"min": min(row[i] for row in values),
-                             "max": max(row[i] for row in values)}
+                    column: {
+                        "min": min(row[i] for row in values),
+                        "max": max(row[i] for row in values),
+                    }
                     for i, column in enumerate(COLUMNS)
                 },
             }

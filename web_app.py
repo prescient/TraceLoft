@@ -1,4 +1,5 @@
 """Local TraceLoft web application. External input; Python owns recording and shared practice state."""
+
 import argparse
 import asyncio
 import contextlib
@@ -24,7 +25,7 @@ class PracticeParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
     drill: str
     target: float = Field(default=4, gt=0, allow_inf_nan=False)
-    speed_tolerance: float = Field(default=.3, ge=0, allow_inf_nan=False)
+    speed_tolerance: float = Field(default=0.3, ge=0, allow_inf_nan=False)
     angle_tolerance: float = Field(default=1, ge=0, allow_inf_nan=False)
     repetitions: int = Field(default=10, ge=1, le=1000)
     random_pace: bool = False
@@ -32,11 +33,11 @@ class PracticeParams(BaseModel):
     maximum: float = Field(default=6, allow_inf_nan=False)
     stimp: float = Field(default=10, ge=3, le=20, allow_inf_nan=False)
     target_mode: str = 'speed'
-    target_distance: float = Field(default=10, ge=.5, le=300, allow_inf_nan=False)
+    target_distance: float = Field(default=10, ge=0.5, le=300, allow_inf_nan=False)
     distance_tolerance: float = Field(default=2, ge=0, le=100, allow_inf_nan=False)
-    ladder_start: float = Field(default=5, ge=.5, le=300, allow_inf_nan=False)
-    ladder_end: float = Field(default=25, ge=.5, le=300, allow_inf_nan=False)
-    ladder_step: float = Field(default=5, ge=.5, le=300, allow_inf_nan=False)
+    ladder_start: float = Field(default=5, ge=0.5, le=300, allow_inf_nan=False)
+    ladder_end: float = Field(default=25, ge=0.5, le=300, allow_inf_nan=False)
+    ladder_step: float = Field(default=5, ge=0.5, le=300, allow_inf_nan=False)
     ladder_rounds: int = Field(default=2, ge=1, le=100)
     ladder_direction: str = 'ascending'
     distance_model: str = DEFAULT_MODEL_ID
@@ -57,31 +58,33 @@ class PracticeParams(BaseModel):
     range_depth: float = Field(default=20, ge=1, le=200, allow_inf_nan=False)
     handedness: str = 'right_handed'
     demo: bool = False
-    swing_labels: list[str] = Field(default_factory=lambda:['Half','Three-quarter','Full'], max_length=8)
+    swing_labels: list[str] = Field(
+        default_factory=lambda: ['Half', 'Three-quarter', 'Full'], max_length=8
+    )
     collection_clubs: list[str] = Field(default_factory=list, max_length=50)
     collection_samples: int = Field(default=5, ge=2, le=100)
-    game_rough: float = Field(default=7,ge=0,le=60,allow_inf_nan=False)
-    game_sand: float = Field(default=20,ge=0,le=80,allow_inf_nan=False)
-    game_rollout_rough: float = Field(default=75,ge=0,le=100,allow_inf_nan=False)
-    game_rollout_ob: float = Field(default=100,ge=0,le=100,allow_inf_nan=False)
-    game_variation: float = Field(default=0,ge=0,le=10,allow_inf_nan=False)
-    game_gimme: float = Field(default=3,ge=0,le=10,allow_inf_nan=False)
-    game_course_id: str = Field(default='pebble-boulder-blue-v3',max_length=80)
-    game_holes: Literal['full','front','back'] = 'full'
+    game_rough: float = Field(default=7, ge=0, le=60, allow_inf_nan=False)
+    game_sand: float = Field(default=20, ge=0, le=80, allow_inf_nan=False)
+    game_rollout_rough: float = Field(default=75, ge=0, le=100, allow_inf_nan=False)
+    game_rollout_ob: float = Field(default=100, ge=0, le=100, allow_inf_nan=False)
+    game_variation: float = Field(default=0, ge=0, le=10, allow_inf_nan=False)
+    game_gimme: float = Field(default=3, ge=0, le=10, allow_inf_nan=False)
+    game_course_id: str = Field(default='pebble-boulder-blue-v3', max_length=80)
+    game_holes: Literal['full', 'front', 'back'] = 'full'
     game_geometry: str = 'downrange'
     game_acknowledged: bool = False
 
 
 class CalculationParams(BaseModel):
-    model_config=ConfigDict(extra='forbid')
-    family: Literal['flight','putting','source_features']='flight'
-    filters: dict[str,str]=Field(default_factory=dict)
-    putting_model: str='saved'
+    model_config = ConfigDict(extra='forbid')
+    family: Literal['flight', 'putting', 'source_features'] = 'flight'
+    filters: dict[str, str] = Field(default_factory=dict)
+    putting_model: str = 'saved'
 
 
 class CalculationPublishParams(BaseModel):
-    model_config=ConfigDict(extra='forbid')
-    selection_token: str=Field(min_length=64,max_length=64)
+    model_config = ConfigDict(extra='forbid')
+    selection_token: str = Field(min_length=64, max_length=64)
 
 
 class GameTurnParams(BaseModel):
@@ -91,28 +94,28 @@ class GameTurnParams(BaseModel):
 
 class GameAimParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    x: float = Field(ge=-5000,le=5000,allow_inf_nan=False)
-    y: float = Field(ge=-5000,le=5000,allow_inf_nan=False)
+    x: float = Field(ge=-5000, le=5000, allow_inf_nan=False)
+    y: float = Field(ge=-5000, le=5000, allow_inf_nan=False)
     turn: int = Field(ge=0)
 
 
 class GameCorrectionParams(GameTurnParams):
-    kind: Literal['mulligan','misread']
-    key: str = Field(min_length=1,max_length=256)
+    kind: Literal['mulligan', 'misread']
+    key: str = Field(min_length=1, max_length=256)
 
 
 class GameDemoParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    distance_yd: float = Field(gt=0,le=600,allow_inf_nan=False)
-    offline_yd: float = Field(default=0,ge=-200,le=200,allow_inf_nan=False)
-    carry_yd: float | None = Field(default=None,ge=0,le=600,allow_inf_nan=False)
+    distance_yd: float = Field(gt=0, le=600, allow_inf_nan=False)
+    offline_yd: float = Field(default=0, ge=-200, le=200, allow_inf_nan=False)
+    carry_yd: float | None = Field(default=None, ge=0, le=600, allow_inf_nan=False)
     turn: int = Field(ge=0)
 
 
 class CollectionCellParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
     club_id: str = Field(max_length=32)
-    swing_label: str = Field(min_length=1,max_length=40)
+    swing_label: str = Field(min_length=1, max_length=40)
 
 
 class RangeCleanupParams(BaseModel):
@@ -148,27 +151,27 @@ class ClubParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
     id: str = Field(default='', max_length=32)
     label: str = Field(min_length=1, max_length=80)
-    make: str | None = Field(default=None,max_length=80)
-    model: str | None = Field(default=None,max_length=80)
-    loft_deg: float | None = Field(default=None,ge=0,le=90,allow_inf_nan=False)
-    shaft: str | None = Field(default=None,max_length=80)
-    settings: str | None = Field(default=None,max_length=80)
+    make: str | None = Field(default=None, max_length=80)
+    model: str | None = Field(default=None, max_length=80)
+    loft_deg: float | None = Field(default=None, ge=0, le=90, allow_inf_nan=False)
+    shaft: str | None = Field(default=None, max_length=80)
+    settings: str | None = Field(default=None, max_length=80)
 
 
 class GolferParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    user_id: str | None = Field(default=None,max_length=80)
-    name: str | None = Field(default=None,min_length=1,max_length=80)
-    handedness: Literal['right_handed','left_handed'] = 'right_handed'
+    user_id: str | None = Field(default=None, max_length=80)
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    handedness: Literal['right_handed', 'left_handed'] = 'right_handed'
 
 
 class TagParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    keys: list[str] = Field(default_factory=list,max_length=1000)
-    name: str = Field(default='',max_length=80)
-    action: Literal['add','remove','undo'] = 'add'
-    scope: Literal['shot','attempt'] = 'attempt'
-    reason: str = Field(default='Manual tag',min_length=1,max_length=80)
+    keys: list[str] = Field(default_factory=list, max_length=1000)
+    name: str = Field(default='', max_length=80)
+    action: Literal['add', 'remove', 'undo'] = 'add'
+    scope: Literal['shot', 'attempt'] = 'attempt'
+    reason: str = Field(default='Manual tag', min_length=1, max_length=80)
     batch_id: str | None = None
 
 
@@ -189,11 +192,11 @@ class CourseSourceParams(BaseModel):
 
 class CourseImportParams(CourseSourceParams):
     hole_id: str = Field(max_length=100)
-    name: str = Field(min_length=1,max_length=100)
-    par: int = Field(ge=3,le=6)
-    scorecard_yards: float | None = Field(default=None,ge=30,le=1000,allow_inf_nan=False)
-    tee_label: str = Field(default='Mapped tee',max_length=80)
-    source_url: str = Field(default='',max_length=500)
+    name: str = Field(min_length=1, max_length=100)
+    par: int = Field(ge=3, le=6)
+    scorecard_yards: float | None = Field(default=None, ge=30, le=1000, allow_inf_nan=False)
+    tee_label: str = Field(default='Mapped tee', max_length=80)
+    source_url: str = Field(default='', max_length=500)
     reviewed: bool = False
     edits: dict | None = None
 
@@ -201,11 +204,11 @@ class CourseImportParams(CourseSourceParams):
 class CourseDraftParams(BaseModel):
     params: CourseImportParams
     id: str | None = None
-    revision: int = Field(default=0,ge=0)
+    revision: int = Field(default=0, ge=0)
 
 
 class CourseOSMParams(BaseModel):
-    way_id: int = Field(ge=1,le=10**12)
+    way_id: int = Field(ge=1, le=10**12)
 
 
 def create_app(service=None):
@@ -213,17 +216,25 @@ def create_app(service=None):
 
     @asynccontextmanager
     async def lifespan(app):
-        task=None
+        task = None
         try:
             await service.input.start()
-            saved = service.store.connection.execute("SELECT value FROM metadata WHERE key='relay_settings.v1'").fetchone() if service.store else None
-            if saved:await service.input.relay.configure(json.loads(saved[0]),service.input.port)
+            saved = (
+                service.store.connection.execute(
+                    "SELECT value FROM metadata WHERE key='relay_settings.v1'"
+                ).fetchone()
+                if service.store
+                else None
+            )
+            if saved:
+                await service.input.relay.configure(json.loads(saved[0]), service.input.port)
             task = asyncio.create_task(service.run())
             yield
         finally:
             if task:
                 task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):await task
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
             await service.shutdown()
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
@@ -244,31 +255,45 @@ def create_app(service=None):
     async def protect(request, call_next):
         if not local_host(request.headers.get("host")):
             from fastapi.responses import JSONResponse
+
             return JSONResponse({"detail": "Use the local TraceLoft address."}, status_code=400)
         if request.url.path.startswith("/api/"):
             if not same_origin(request.headers.get("origin"), request.headers.get("host")):
                 from fastapi.responses import JSONResponse
-                return JSONResponse({"detail": "Use the TraceLoft page on this server."}, status_code=403)
+
+                return JSONResponse(
+                    {"detail": "Use the TraceLoft page on this server."}, status_code=403
+                )
         response = await call_next(request)
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'"
+        )
         return response
 
     @app.exception_handler(ValueError)
     async def invalid(request, exc):
         from fastapi.responses import JSONResponse
+
         return JSONResponse({"detail": str(exc)}, status_code=409)
 
     @app.exception_handler(OSError)
     @app.exception_handler(sqlite3.Error)
     async def io_failed(request, exc):
         from fastapi.responses import JSONResponse
+
         return JSONResponse({"detail": f"Could not save or load data: {exc}"}, status_code=500)
 
     @app.get("/api/health")
     async def health():
-        return {"app": "TraceLoft", "status": "ready", "storage": "sqlite" if service.store else "legacy", "architecture": "relay-v1", "input_port": service.input.port}
+        return {
+            "app": "TraceLoft",
+            "status": "ready",
+            "storage": "sqlite" if service.store else "legacy",
+            "architecture": "relay-v1",
+            "input_port": service.input.port,
+        }
 
     @app.get("/api/state")
     async def state():
@@ -276,10 +301,19 @@ def create_app(service=None):
 
     @app.get('/api/analysis')
     async def analysis(request: Request):
-        if service.store:report=await asyncio.to_thread(service.store.analysis,dict(request.query_params))
-        else:report=build_report([service.load_session(s['id']).data for s in service.sessions()],dict(request.query_params))
-        if request.query_params.get('format')=='csv':
-            return Response(report_csv(report),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="traceloft-analysis.csv"'})
+        if service.store:
+            report = await asyncio.to_thread(service.store.analysis, dict(request.query_params))
+        else:
+            report = build_report(
+                [service.load_session(s['id']).data for s in service.sessions()],
+                dict(request.query_params),
+            )
+        if request.query_params.get('format') == 'csv':
+            return Response(
+                report_csv(report),
+                media_type='text/csv',
+                headers={'Content-Disposition': 'attachment; filename="traceloft-analysis.csv"'},
+            )
         return report
 
     @app.get('/api/input/context')
@@ -287,53 +321,74 @@ def create_app(service=None):
         return service.input.context()
 
     @app.get('/api/calculations')
-    async def calculation_batches():return service.store.calculation_batches()
+    async def calculation_batches():
+        return service.store.calculation_batches()
 
     @app.post('/api/calculations')
     async def stage_calculation(params: CalculationParams):
-        return await asyncio.to_thread(service.store.stage_calculations,params.family,params.filters,params.putting_model)
+        return await asyncio.to_thread(
+            service.store.stage_calculations, params.family, params.filters, params.putting_model
+        )
 
     @app.get('/api/calculations/history.csv')
     async def calculation_export():
-        return Response(await asyncio.to_thread(service.store.calculation_history_csv),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="traceloft-calculation-history.csv"'})
+        return Response(
+            await asyncio.to_thread(service.store.calculation_history_csv),
+            media_type='text/csv',
+            headers={
+                'Content-Disposition': 'attachment; filename="traceloft-calculation-history.csv"'
+            },
+        )
 
     @app.get('/api/calculations/{batch_id}')
-    async def calculation_preview(batch_id: str):return service.store.calculation_snapshot(batch_id)
+    async def calculation_preview(batch_id: str):
+        return service.store.calculation_snapshot(batch_id)
 
     @app.post('/api/calculations/{batch_id}/resume')
-    async def calculation_resume(batch_id: str):return await asyncio.to_thread(service.store.resume_calculations,batch_id)
+    async def calculation_resume(batch_id: str):
+        return await asyncio.to_thread(service.store.resume_calculations, batch_id)
 
     @app.post('/api/calculations/{batch_id}/cancel')
     async def calculation_cancel(batch_id: str):
         from recalculation import cancel
-        return await asyncio.to_thread(cancel,service.store,batch_id)
+
+        return await asyncio.to_thread(cancel, service.store, batch_id)
 
     @app.post('/api/calculations/{batch_id}/publish')
-    async def calculation_publish(batch_id: str,params: CalculationPublishParams):
-        result=await asyncio.to_thread(service.store.publish_calculations,batch_id,params.selection_token)
-        service.sessions_revision+=1
+    async def calculation_publish(batch_id: str, params: CalculationPublishParams):
+        result = await asyncio.to_thread(
+            service.store.publish_calculations, batch_id, params.selection_token
+        )
+        service.sessions_revision += 1
         return result
 
     @app.get('/api/shots/{shot_id}/calculations')
-    async def shot_calculation_history(shot_id: str):return service.store.calculation_history(shot_id)
+    async def shot_calculation_history(shot_id: str):
+        return service.store.calculation_history(shot_id)
 
-    forwarding_lock=asyncio.Lock()
+    forwarding_lock = asyncio.Lock()
 
     @app.post('/api/input/forwarding')
     async def forwarding(request: Request):
         settings = await request.json()
-        if not isinstance(settings,dict):raise ValueError('Destination settings must be an object.')
+        if not isinstance(settings, dict):
+            raise ValueError('Destination settings must be an object.')
         async with forwarding_lock:
-            previous={k:service.input.relay.state[k] for k in ('destination','host','port')}
+            previous = {k: service.input.relay.state[k] for k in ('destination', 'host', 'port')}
             await service.input.relay.configure(settings, service.input.port)
             try:
                 if service.store:
                     with service.store.transaction():
-                        service.store.connection.execute("INSERT OR REPLACE INTO metadata VALUES('relay_settings.v1',?)",(json.dumps(settings),))
-            except (OSError,sqlite3.Error):
-                await service.input.relay.configure(previous,service.input.port)
+                        service.store.connection.execute(
+                            "INSERT OR REPLACE INTO metadata VALUES('relay_settings.v1',?)",
+                            (json.dumps(settings),),
+                        )
+            except (OSError, sqlite3.Error):
+                await service.input.relay.configure(previous, service.input.port)
                 raise
-            service.settings = {k:service.input.relay.state[k] for k in ('host','port','enabled')}
+            service.settings = {
+                k: service.input.relay.state[k] for k in ('host', 'port', 'enabled')
+            }
             return service.snapshot()
 
     @app.get("/api/drills")
@@ -342,8 +397,12 @@ def create_app(service=None):
 
     @app.get('/api/range-notices')
     async def range_notices():
-        return Response((ROOT/'third_party/opengolfcoach/NOTICE.txt').read_text('utf-8')+'\n\n'+
-                        (ROOT/'third_party/opengolfcoach/LICENSE').read_text('utf-8'),media_type='text/plain')
+        return Response(
+            (ROOT / 'third_party/opengolfcoach/NOTICE.txt').read_text('utf-8')
+            + '\n\n'
+            + (ROOT / 'third_party/opengolfcoach/LICENSE').read_text('utf-8'),
+            media_type='text/plain',
+        )
 
     @app.post("/api/practice")
     async def launch(params: PracticeParams):
@@ -353,61 +412,82 @@ def create_app(service=None):
     @app.post('/api/demo/analytics-pack')
     async def analytics_pack():
         from analytics_demo import install
+
         result = install(service)
-        return dict(result=result,state=service.snapshot())
+        return dict(result=result, state=service.snapshot())
 
     @app.post('/api/demo/tour-pack')
     async def tour_pack():
         from tour_demo import install
+
         result = install(service)
-        return dict(result=result,state=service.snapshot())
+        return dict(result=result, state=service.snapshot())
 
     @app.get('/api/courses')
     async def courses():
         from course_import import catalog
+
         return catalog(service.store)
 
     @app.get('/api/course-drafts')
     async def course_drafts():
         from course_workbench import list_drafts
+
         return list_drafts(service.store)
 
     @app.get('/api/course-drafts/{identity}')
     async def get_course_draft(identity: str):
         from course_workbench import load_draft
-        return load_draft(service.store,identity)
+
+        return load_draft(service.store, identity)
 
     @app.post('/api/course-drafts')
     async def put_course_draft(body: CourseDraftParams):
         from course_workbench import save_draft
-        return await asyncio.to_thread(save_draft,service.store,body.params.model_dump(exclude={'reviewed'}),body.id,body.revision)
+
+        return await asyncio.to_thread(
+            save_draft,
+            service.store,
+            body.params.model_dump(exclude={'reviewed'}),
+            body.id,
+            body.revision,
+        )
 
     @app.get('/api/courses/example')
     async def course_example():
         from course_import import inspect
-        data=json.loads((ROOT/'courses/examples/jackson-park-osm-2026-10-02.json').read_text('utf-8'))
-        return dict(data=data,**inspect(data))
+
+        data = json.loads(
+            (ROOT / 'courses/examples/jackson-park-osm-2026-10-02.json').read_text('utf-8')
+        )
+        return dict(data=data, **inspect(data))
 
     @app.post('/api/courses/osm')
     async def osm_course(params: CourseOSMParams):
-        from course_import import fetch_osm,inspect
-        data=await asyncio.to_thread(fetch_osm,params.way_id)
-        return dict(data=data,**inspect(data))
+        from course_import import fetch_osm, inspect
+
+        data = await asyncio.to_thread(fetch_osm, params.way_id)
+        return dict(data=data, **inspect(data))
 
     @app.post('/api/courses/inspect')
     async def inspect_course(params: CourseSourceParams):
         from course_import import inspect
+
         return inspect(params.data)
 
     @app.post('/api/courses/preview')
     async def preview_course(params: CourseImportParams):
         from course_import import preview
-        return await asyncio.to_thread(preview,**params.model_dump(exclude={'reviewed'}),allow_incomplete=True)
+
+        return await asyncio.to_thread(
+            preview, **params.model_dump(exclude={'reviewed'}), allow_incomplete=True
+        )
 
     @app.post('/api/courses/save')
     async def save_course(params: CourseImportParams):
         from course_import import save
-        return save(service.store,params.model_dump(exclude={'reviewed'}),params.reviewed)
+
+        return save(service.store, params.model_dump(exclude={'reviewed'}), params.reviewed)
 
     @app.post("/api/practice/{session_id}/finish")
     async def finish(session_id: str):
@@ -421,28 +501,32 @@ def create_app(service=None):
 
     @app.post('/api/collection/{session_id}/cell')
     async def collection_cell(session_id: str, params: CollectionCellParams):
-        service.select_collection_cell(session_id,params.club_id,params.swing_label)
+        service.select_collection_cell(session_id, params.club_id, params.swing_label)
         return service.snapshot()
 
     @app.post('/api/game/{session_id}/aim')
     async def game_aim(session_id: str, params: GameAimParams):
-        service.game_action(session_id,'aim',params.model_dump())
+        service.game_action(session_id, 'aim', params.model_dump())
         return service.snapshot()
 
     @app.post('/api/game/{session_id}/simulate')
     async def game_simulate(session_id: str, params: GameDemoParams):
-        service.game_action(session_id,'simulate',params.model_dump())
+        service.game_action(session_id, 'simulate', params.model_dump())
         return service.snapshot()
 
     @app.post('/api/game/{session_id}/next')
     async def game_next(session_id: str, params: GameTurnParams):
-        service.game_action(session_id,'next',params.model_dump())
+        service.game_action(session_id, 'next', params.model_dump())
         return service.snapshot()
 
     @app.post('/api/game/{session_id}/correct')
     async def game_correct(session_id: str, params: GameCorrectionParams):
-        try:service.correct_game(session_id,params.model_dump())
-        except FileNotFoundError:raise HTTPException(404,'This round is unavailable. Restore it before correcting a shot.')
+        try:
+            service.correct_game(session_id, params.model_dump())
+        except FileNotFoundError:
+            raise HTTPException(
+                404, 'This round is unavailable. Restore it before correcting a shot.'
+            )
         return service.snapshot()
 
     @app.get('/api/game/{session_id}/preview')
@@ -456,26 +540,28 @@ def create_app(service=None):
     @app.post('/api/range/{session_id}/cleanup')
     async def range_cleanup(session_id: str, params: RangeCleanupParams):
         try:
-            if (not service.practice or service.practice.data['id']!=session_id) and await asyncio.to_thread(service.capture_detector):
+            if (
+                not service.practice or service.practice.data['id'] != session_id
+            ) and await asyncio.to_thread(service.capture_detector):
                 raise ValueError('Stop desktop capture before editing saved sessions.')
-            return service.cleanup_range(session_id,params.model_dump())
+            return service.cleanup_range(session_id, params.model_dump())
         except FileNotFoundError:
-            raise HTTPException(404,'Session not found.')
+            raise HTTPException(404, 'Session not found.')
 
     @app.post('/api/range/{session_id}/target')
     async def range_target(session_id: str, params: RangeTargetParams):
         try:
-            service.target_range(session_id,params.target,params.width,params.depth)
+            service.target_range(session_id, params.target, params.width, params.depth)
         except FileNotFoundError:
-            raise HTTPException(404,'Session not found.')
+            raise HTTPException(404, 'Session not found.')
         return service.snapshot()
 
     @app.post('/api/range/{session_id}/simulate')
     async def simulate(session_id: str, params: DemoParams):
         try:
-            service.simulate_range(session_id,params.count)
+            service.simulate_range(session_id, params.count)
         except FileNotFoundError:
-            raise HTTPException(404,'Session not found.')
+            raise HTTPException(404, 'Session not found.')
         return service.snapshot()
 
     @app.post('/api/equipment/bags')
@@ -489,13 +575,13 @@ def create_app(service=None):
 
     @app.post('/api/collection/{session_id}/profile')
     async def collection_profile(session_id: str):
-        result=service.store.select_equipment_profile(session_id)
-        service.sessions_revision+=1
+        result = service.store.select_equipment_profile(session_id)
+        service.sessions_revision += 1
         return dict(analysis_id=result)
 
     @app.post('/api/golfers/select')
     async def golfer(params: GolferParams):
-        service.change_golfer(params.user_id,params.name,params.handedness)
+        service.change_golfer(params.user_id, params.name, params.handedness)
         return service.snapshot()
 
     @app.get('/api/sessions/{session_id}/tags')
@@ -504,14 +590,26 @@ def create_app(service=None):
 
     @app.post('/api/sessions/{session_id}/tags')
     async def tag_shots(session_id: str, params: TagParams):
-        batch=service.store.edit_tags(session_id,params.keys,params.name,params.action,params.scope,params.reason,params.batch_id)
-        service.sessions_revision+=1
-        return dict(batch_id=batch,tags=service.store.session_tags(session_id))
+        batch = service.store.edit_tags(
+            session_id,
+            params.keys,
+            params.name,
+            params.action,
+            params.scope,
+            params.reason,
+            params.batch_id,
+        )
+        service.sessions_revision += 1
+        return dict(batch_id=batch, tags=service.store.session_tags(session_id))
 
     @app.put('/api/equipment/bags/{bag_id}')
     async def edit_bag(bag_id: str, params: BagParams):
-        service.edit_bag(params.revision, params.name, bag_id,
-                         [c.model_dump() for c in params.clubs] if params.clubs is not None else None)
+        service.edit_bag(
+            params.revision,
+            params.name,
+            bag_id,
+            [c.model_dump() for c in params.clubs] if params.clubs is not None else None,
+        )
         return service.snapshot()
 
     @app.post("/api/practice/{session_id}/abandon")
@@ -537,8 +635,14 @@ def create_app(service=None):
         own = service.practice and service.practice.data["id"] == session_id
         if own and not service.practice.data["ended"]:
             raise ValueError("Finish or abandon the active session before deleting it.")
-        if not own and not saved.data["ended"] and await asyncio.to_thread(service.capture_detector):
-            raise ValueError("Stop capture in the desktop app before deleting an unfinished session it may be writing.")
+        if (
+            not own
+            and not saved.data["ended"]
+            and await asyncio.to_thread(service.capture_detector)
+        ):
+            raise ValueError(
+                "Stop capture in the desktop app before deleting an unfinished session it may be writing."
+            )
         service.delete_session(session_id)
         return service.snapshot()
 
@@ -561,8 +665,12 @@ def create_app(service=None):
 
     @app.post("/api/sessions/{session_id}/exclude")
     async def exclude_saved(session_id: str, params: ExcludeParams):
-        if (not service.practice or service.practice.data["id"] != session_id) and await asyncio.to_thread(service.capture_detector):
-            raise ValueError("Stop desktop capture before editing saved sessions; it may still be writing this session.")
+        if (
+            not service.practice or service.practice.data["id"] != session_id
+        ) and await asyncio.to_thread(service.capture_detector):
+            raise ValueError(
+                "Stop desktop capture before editing saved sessions; it may still be writing this session."
+            )
         return service.exclude_saved(session_id, params.key)
 
     @app.get('/api/exports/csv')
@@ -570,17 +678,18 @@ def create_app(service=None):
         if not service.store:
             raise HTTPException(409, 'SQLite storage is required.')
         content = await asyncio.to_thread(service.store.export)
-        return Response(content, media_type='application/zip', headers={
-            'Content-Disposition':'attachment; filename="traceloft-export.zip"'})
+        return Response(
+            content,
+            media_type='application/zip',
+            headers={'Content-Disposition': 'attachment; filename="traceloft-export.zip"'},
+        )
 
     @app.post('/api/storage/backup')
     async def backup():
         if not service.store:
             raise HTTPException(409, 'SQLite storage is required.')
         path = await asyncio.to_thread(service.store.backup)
-        return {'path':str(path),'verified':True,'protection':'local_only'}
-
-
+        return {'path': str(path), 'verified': True, 'protection': 'local_only'}
 
     @app.post("/api/service/stop")
     async def stop_service():
@@ -591,7 +700,9 @@ def create_app(service=None):
 
     @app.websocket("/ws")
     async def live(ws: WebSocket):
-        if not local_host(ws.headers.get("host")) or not same_origin(ws.headers.get("origin"), ws.headers.get("host")):
+        if not local_host(ws.headers.get("host")) or not same_origin(
+            ws.headers.get("origin"), ws.headers.get("host")
+        ):
             await ws.close(code=1008)
             return
         await ws.accept()
@@ -600,12 +711,16 @@ def create_app(service=None):
             while True:
                 revision = service.live_revision()
                 if revision != previous:
-                    message = dict(type='state_changed', **revision) if ws.query_params.get('protocol') == '2' else service.snapshot()
+                    message = (
+                        dict(type='state_changed', **revision)
+                        if ws.query_params.get('protocol') == '2'
+                        else service.snapshot()
+                    )
                     await ws.send_json(message)
                     previous = revision
                 # Receiving also releases idle sockets promptly when a tab closes.
                 try:
-                    await asyncio.wait_for(ws.receive_text(), timeout=.3)
+                    await asyncio.wait_for(ws.receive_text(), timeout=0.3)
                 except asyncio.TimeoutError:
                     pass
         except (WebSocketDisconnect, RuntimeError):
@@ -623,6 +738,7 @@ def create_app(service=None):
 def main():
     import os
     import uvicorn
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--lan", action="store_true")
@@ -630,26 +746,44 @@ def main():
     parser.add_argument("--resume-session", help=argparse.SUPPRESS)
     args = parser.parse_args()
     service = GolfService()
-    saved=service.store.connection.execute("SELECT value FROM metadata WHERE key='active_session.v1'").fetchone()
-    resume=args.resume_session or (json.loads(saved[0]) if saved else None)
+    saved = service.store.connection.execute(
+        "SELECT value FROM metadata WHERE key='active_session.v1'"
+    ).fetchone()
+    resume = args.resume_session or (json.loads(saved[0]) if saved else None)
     if resume:
-        try:service.resume_practice(resume)
-        except (FileNotFoundError,ValueError):
-            if args.resume_session:raise
-    service.access.update(lan=args.lan, port=args.port,
-        addresses=[f"http://{socket.gethostbyname(socket.gethostname())}:{args.port}"] if args.lan else [])
+        try:
+            service.resume_practice(resume)
+        except (FileNotFoundError, ValueError):
+            if args.resume_session:
+                raise
+    service.access.update(
+        lan=args.lan,
+        port=args.port,
+        addresses=[f"http://{socket.gethostbyname(socket.gethostname())}:{args.port}"]
+        if args.lan
+        else [],
+    )
     app = create_app(service)
-    config = uvicorn.Config(app, host="0.0.0.0" if args.lan else "127.0.0.1", port=args.port,
-                            log_level="warning", timeout_graceful_shutdown=5)
+    config = uvicorn.Config(
+        app,
+        host="0.0.0.0" if args.lan else "127.0.0.1",
+        port=args.port,
+        log_level="warning",
+        timeout_graceful_shutdown=5,
+    )
     server = uvicorn.Server(config)
     app.state.stop_server = lambda: setattr(server, "should_exit", True)
     runtime = ROOT / "web_runtime.json"
     runtime.write_text(json.dumps(dict(pid=os.getpid(), port=args.port, lan=args.lan)))
     print(f"TraceLoft: http://localhost:{args.port}", flush=True)
     if args.lan:
-        print(f"LAN address: http://{socket.gethostbyname(socket.gethostname())}:{args.port}", flush=True)
+        print(
+            f"LAN address: http://{socket.gethostbyname(socket.gethostname())}:{args.port}",
+            flush=True,
+        )
     if args.open:
         import threading
+
         threading.Timer(1.5, lambda: webbrowser.open(f"http://localhost:{args.port}/")).start()
     try:
         server.run()

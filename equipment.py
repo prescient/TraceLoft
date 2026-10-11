@@ -1,9 +1,25 @@
 """Small versioned bag catalog; captured selections are immutable name snapshots."""
+
 import copy
 import uuid
 
-COMMON_CLUBS = ('Driver', '3 wood', '5 wood', '4 hybrid', '4 iron', '5 iron', '6 iron',
-                '7 iron', '8 iron', '9 iron', 'PW', 'GW', 'SW', 'LW', 'Putter')
+COMMON_CLUBS = (
+    'Driver',
+    '3 wood',
+    '5 wood',
+    '4 hybrid',
+    '4 iron',
+    '5 iron',
+    '6 iron',
+    '7 iron',
+    '8 iron',
+    '9 iron',
+    'PW',
+    'GW',
+    'SW',
+    'LW',
+    'Putter',
+)
 CATALOG_KEY = 'equipment_catalog.v1'
 
 
@@ -14,8 +30,11 @@ def text(value, label):
 
 
 def new_bag(name):
-    return dict(id=uuid.uuid4().hex, name=text(name, 'Bag name'),
-                clubs=[dict(id=uuid.uuid4().hex, label=label) for label in COMMON_CLUBS])
+    return dict(
+        id=uuid.uuid4().hex,
+        name=text(name, 'Bag name'),
+        clubs=[dict(id=uuid.uuid4().hex, label=label) for label in COMMON_CLUBS],
+    )
 
 
 def default_catalog():
@@ -24,7 +43,9 @@ def default_catalog():
 
 def edit_catalog(catalog, revision, name, bag_id=None, clubs=None):
     if revision != catalog['revision']:
-        raise ValueError('Bags changed in another browser. Close and reopen Manage bags to refresh.')
+        raise ValueError(
+            'Bags changed in another browser. Close and reopen Manage bags to refresh.'
+        )
     updated = copy.deepcopy(catalog)
     name = text(name, 'Bag name')
     if any(b['name'].casefold() == name.casefold() and b['id'] != bag_id for b in updated['bags']):
@@ -49,16 +70,28 @@ def edit_catalog(catalog, revision, name, bag_id=None, clubs=None):
                 raise ValueError('Club does not belong to this bag.')
             if cid in ids or label.casefold() in labels:
                 raise ValueError('Use distinct club names and identities within a bag.')
-            ids.add(cid); labels.add(label.casefold())
-            specs={k:c[k] for k in ('make','model','loft_deg','shaft','settings') if c.get(k) is not None}
+            ids.add(cid)
+            labels.add(label.casefold())
+            specs = {
+                k: c[k]
+                for k in ('make', 'model', 'loft_deg', 'shaft', 'settings')
+                if c.get(k) is not None
+            }
             if 'loft_deg' in specs:
                 import math
-                value=specs['loft_deg']
-                if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<=value<=90:
+
+                value = specs['loft_deg']
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(value)
+                    or not 0 <= value <= 90
+                ):
                     raise ValueError('Loft must be 0–90 degrees.')
-            for k in ('make','model','shaft','settings'):
-                if k in specs:specs[k]=text(specs[k],k)
-            result.append(dict(id=cid, label=label,**specs))
+            for k in ('make', 'model', 'shaft', 'settings'):
+                if k in specs:
+                    specs[k] = text(specs[k], k)
+            result.append(dict(id=cid, label=label, **specs))
         bag.update(name=name, clubs=result)
     updated['revision'] += 1
     return updated, bag['id']
@@ -75,6 +108,11 @@ def selection(catalog, bag_id='', club_id=''):
     club = next((c for c in bag['clubs'] if c['id'] == club_id), None) if club_id else None
     if club_id and not club:
         raise ValueError('Club does not belong to this bag. Choose it again.')
-    return dict(bag_id=bag_id, bag_name=bag['name'], club_id=club_id,
-                club_label=club['label'] if club else '', catalog_revision=catalog['revision'],
-                selection_mode='manual')
+    return dict(
+        bag_id=bag_id,
+        bag_name=bag['name'],
+        club_id=club_id,
+        club_label=club['label'] if club else '',
+        catalog_revision=catalog['revision'],
+        selection_mode='manual',
+    )

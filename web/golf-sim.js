@@ -1,134 +1,403 @@
-import {shotMotion,observeShotMotion,motionControls,mountShotMotion} from './shot-motion.js';
-import {courseLabel,roundLabel,holeShots,roundScorecard,reviewHoleData} from './round-ui.js';
-import {effectiveShot,latestPlayedShot,correctionControls,correctionCounts,correctionHistory} from './game-corrections.js';
-import {mountClubPreview} from './club-preview.js';
-import {courseLayers} from './course-art.js';
-import {courseCamera,fitCourseCamera} from './course-camera.js';
-import {escape as esc} from './charts.js';
-import {equipmentControls,bindEquipment} from './equipment.js';
-import {recordingWarnings} from './recording.js';
-const n=(v,d=1)=>Number.isFinite(v)?v.toFixed(d):'—';
-const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
-const xy=p=>`${p[1]},${p[0]}`;
-let zoomChoice=null,zoomSession=null;
-let mapBoundaries=false,mapDetailed=true;
-let reviewHole=null,reviewSession=null,roundCardOpen=false;
-const openPanels=new Set();
+import { shotMotion, observeShotMotion, motionControls, mountShotMotion } from './shot-motion.js';
+import { courseLabel, roundLabel, holeShots, roundScorecard, reviewHoleData } from './round-ui.js';
+import {
+  effectiveShot,
+  latestPlayedShot,
+  correctionControls,
+  correctionCounts,
+  correctionHistory
+} from './game-corrections.js';
+import { mountClubPreview } from './club-preview.js';
+import { courseLayers } from './course-art.js';
+import { courseCamera, fitCourseCamera } from './course-camera.js';
+import { escape as esc } from './charts.js';
+import { equipmentControls, bindEquipment } from './equipment.js';
+import { recordingWarnings } from './recording.js';
+const n = (v, d = 1) => (Number.isFinite(v) ? v.toFixed(d) : '—');
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const xy = p => `${p[1]},${p[0]}`;
+let zoomChoice = null,
+  zoomSession = null;
+let mapBoundaries = false,
+  mapDetailed = true;
+let reviewHole = null,
+  reviewSession = null,
+  roundCardOpen = false;
+const openPanels = new Set();
 
-export function gameScoreboard(data,compact=false) {
-  const g=data.game,par=data.course.par,played=holeShots(data).filter(effectiveShot).length;
-  const relative=g.strokes-par;
-  const result=relative===0?'Par':relative===-1?'Birdie':relative===-2?'Eagle':relative===1?'Bogey':relative===2?'Double bogey':'Hole complete';
-  const status=g.holed?`${result} · ${relative>0?'+':''}${relative===0?'E':relative}`:data.ended?(g.strokes?'Partial score':'Not played'):'In progress';
-  return `<section class="game-scoreboard ${compact?'compact-score':''}" aria-label="Hole score"><div class="game-score-heading"><strong>Hole ${esc(String(data.course.hole_number??1))} · Par ${par}</strong><span>${status}</span></div><dl class="game-score-counts"><div class="game-score-total"><dt>Total strokes</dt><dd>${g.strokes}</dd></div><div><dt>Shots played</dt><dd>${played}</dd></div><div><dt>Penalties</dt><dd>${g.penalties}</dd></div><div><dt>Gimme putts</dt><dd>${g.concessions}</dd></div></dl>${g.concessions?`<p class="game-gimme-note">${played} played + ${g.penalties} penalty + ${g.concessions} gimme = ${g.strokes} strokes. The gimme counts the final, unplayed putt.</p>`:''}${!data.round&&!compact?`<p class="correction-counts">${correctionCounts(data)}</p>${correctionHistory(data)}`:''}</section>`;
+export function gameScoreboard(data, compact = false) {
+  const g = data.game,
+    par = data.course.par,
+    played = holeShots(data).filter(effectiveShot).length;
+  const relative = g.strokes - par;
+  const result =
+    relative === 0
+      ? 'Par'
+      : relative === -1
+        ? 'Birdie'
+        : relative === -2
+          ? 'Eagle'
+          : relative === 1
+            ? 'Bogey'
+            : relative === 2
+              ? 'Double bogey'
+              : 'Hole complete';
+  const status = g.holed
+    ? `${result} · ${relative > 0 ? '+' : ''}${relative === 0 ? 'E' : relative}`
+    : data.ended
+      ? g.strokes
+        ? 'Partial score'
+        : 'Not played'
+      : 'In progress';
+  return `<section class="game-scoreboard ${compact ? 'compact-score' : ''}" aria-label="Hole score"><div class="game-score-heading"><strong>Hole ${esc(String(data.course.hole_number ?? 1))} · Par ${par}</strong><span>${status}</span></div><dl class="game-score-counts"><div class="game-score-total"><dt>Total strokes</dt><dd>${g.strokes}</dd></div><div><dt>Shots played</dt><dd>${played}</dd></div><div><dt>Penalties</dt><dd>${g.penalties}</dd></div><div><dt>Gimme putts</dt><dd>${g.concessions}</dd></div></dl>${g.concessions ? `<p class="game-gimme-note">${played} played + ${g.penalties} penalty + ${g.concessions} gimme = ${g.strokes} strokes. The gimme counts the final, unplayed putt.</p>` : ''}${!data.round && !compact ? `<p class="correction-counts">${correctionCounts(data)}</p>${correctionHistory(data)}` : ''}</section>`;
 }
 
 export function aimReadout(data) {
-  const {game:g,course:c}=data,feet=g.lie==='green',factor=feet?3:1,unit=feet?'ft':'yd';
-  return `<div class="game-aim-distances" role="status" aria-label="Selected aim distances"><div><span>Ball → aim</span><strong>${n(dist(g.position,g.aim)*factor)} <small>${unit}</small></strong></div><div><span>Aim → pin</span><strong>${n(dist(g.aim,c.pin)*factor)} <small>${unit}</small></strong></div></div>`;
+  const { game: g, course: c } = data,
+    feet = g.lie === 'green',
+    factor = feet ? 3 : 1,
+    unit = feet ? 'ft' : 'yd';
+  return `<div class="game-aim-distances" role="status" aria-label="Selected aim distances"><div><span>Ball → aim</span><strong>${n(dist(g.position, g.aim) * factor)} <small>${unit}</small></strong></div><div><span>Aim → pin</span><strong>${n(dist(g.aim, c.pin) * factor)} <small>${unit}</small></strong></div></div>`;
 }
 
-export function courseMap(data,interactive=false,zoom=false,display={}) {
-  const c=data.course,g=data.game,p=c.pin;
-  const bounds=courseCamera(c,g,zoom,2).join(' ');
-  const scale=zoom?.45:(c.viewbox?.[2]??410)/420;
-  return `<svg class="game-map ${zoom?'zoomed':''}" viewBox="${bounds}" role="img" aria-label="${esc(c.name)} course, ball and saved shot endpoints${interactive?'. Tap to aim; keyboard aim controls are below.':''}">
-    ${courseLayers(c,display)}
+export function courseMap(data, interactive = false, zoom = false, display = {}) {
+  const c = data.course,
+    g = data.game,
+    p = c.pin;
+  const bounds = courseCamera(c, g, zoom, 2).join(' ');
+  const scale = zoom ? 0.45 : (c.viewbox?.[2] ?? 410) / 420;
+  return `<svg class="game-map ${zoom ? 'zoomed' : ''}" viewBox="${bounds}" role="img" aria-label="${esc(c.name)} course, ball and saved shot endpoints${interactive ? '. Tap to aim; keyboard aim controls are below.' : ''}">
+    ${courseLayers(c, display)}
     <g id="club-preview-layer" aria-label="Historical mapped dispersion" pointer-events="none"></g>
-    ${holeShots(data).filter(effectiveShot).map((s,i)=>{const o=s.game_outcome;return `<line x1="${o.before.position[1]}" y1="${o.before.position[0]}" x2="${o.endpoint[1]}" y2="${o.endpoint[0]}" stroke="${o.penalty_strokes?'#ffad80':'#d8ece3'}" stroke-width="${scale*.65}" stroke-dasharray="2 2" opacity=".65"/><circle cx="${o.endpoint[1]}" cy="${o.endpoint[0]}" r="${scale*1.6}" fill="${o.penalty_strokes?'#ffad80':'#fff'}"><title>Shot ${data.shots.indexOf(s)+1}: ${esc(o.message)}</title></circle>`;}).join('')}
-    ${!data.ended?`<line x1="${g.position[1]}" y1="${g.position[0]}" x2="${g.aim[1]}" y2="${g.aim[0]}" stroke="#32e2bf" stroke-width="${scale*.8}" stroke-dasharray="2 2"/><circle cx="${g.aim[1]}" cy="${g.aim[0]}" r="${scale*3}" fill="none" stroke="#32e2bf" stroke-width="${scale*.8}"/>`:''}
-    <circle cx="${p[1]}" cy="${p[0]}" r="${scale*1}" fill="#16382c"/>
-    <path d="M ${p[1]},${p[0]} v${-scale*10} l${scale*6},${scale*2} l${-scale*6},${scale*2}" fill="#fff" stroke="#fff" stroke-width="${scale*.6}"/>
-    <g class="game-current-ball"><circle cx="${g.position[1]}" cy="${g.position[0]}" r="${scale*3.3}" fill="#153330" stroke="#32e2bf" stroke-width="${scale*1}"/>
-    <circle cx="${g.position[1]}" cy="${g.position[0]}" r="${scale*1.6}" fill="#fff"/></g>
-    ${zoom?'':`<text x="${c.tee[1]}" y="${c.tee[0]-18}" fill="#fff" font-size="${scale*5}">TEE</text><text x="${c.pin[1]}" y="${c.pin[0]-27}" text-anchor="middle" fill="#fff" font-size="${scale*5}">PAR ${c.par} · ${c.yards} YD</text>`}
+    ${holeShots(data)
+      .filter(effectiveShot)
+      .map((s, i) => {
+        const o = s.game_outcome;
+        return `<line x1="${o.before.position[1]}" y1="${o.before.position[0]}" x2="${o.endpoint[1]}" y2="${o.endpoint[0]}" stroke="${o.penalty_strokes ? '#ffad80' : '#d8ece3'}" stroke-width="${scale * 0.65}" stroke-dasharray="2 2" opacity=".65"/><circle cx="${o.endpoint[1]}" cy="${o.endpoint[0]}" r="${scale * 1.6}" fill="${o.penalty_strokes ? '#ffad80' : '#fff'}"><title>Shot ${data.shots.indexOf(s) + 1}: ${esc(o.message)}</title></circle>`;
+      })
+      .join('')}
+    ${!data.ended ? `<line x1="${g.position[1]}" y1="${g.position[0]}" x2="${g.aim[1]}" y2="${g.aim[0]}" stroke="#32e2bf" stroke-width="${scale * 0.8}" stroke-dasharray="2 2"/><circle cx="${g.aim[1]}" cy="${g.aim[0]}" r="${scale * 3}" fill="none" stroke="#32e2bf" stroke-width="${scale * 0.8}"/>` : ''}
+    <circle cx="${p[1]}" cy="${p[0]}" r="${scale * 1}" fill="#16382c"/>
+    <path d="M ${p[1]},${p[0]} v${-scale * 10} l${scale * 6},${scale * 2} l${-scale * 6},${scale * 2}" fill="#fff" stroke="#fff" stroke-width="${scale * 0.6}"/>
+    <g class="game-current-ball"><circle cx="${g.position[1]}" cy="${g.position[0]}" r="${scale * 3.3}" fill="#153330" stroke="#32e2bf" stroke-width="${scale * 1}"/>
+    <circle cx="${g.position[1]}" cy="${g.position[0]}" r="${scale * 1.6}" fill="#fff"/></g>
+    ${zoom ? '' : `<text x="${c.tee[1]}" y="${c.tee[0] - 18}" fill="#fff" font-size="${scale * 5}">TEE</text><text x="${c.pin[1]}" y="${c.pin[0] - 27}" text-anchor="middle" fill="#fff" font-size="${scale * 5}">PAR ${c.par} · ${c.yards} YD</text>`}
   </svg>`;
 }
 
-export function renderPlay(app,state,courses=[]) {
-  app.innerHTML=`<div class="page-head"><div><p class="eyebrow">PLAY / COURSE LIBRARY</p><h1>A little golf. A lot to learn.</h1><p class="subtitle">Bring your range shots onto a simple 2D course.</p></div><button class="btn quiet" data-action="home">← Practice</button></div>
-  ${state.practice&&!state.practice.ended?'<section class="card section-space"><h2>You have an active session</h2><p>Return to it, then finish or abandon before starting a round.</p><button class="btn primary" data-action="return">Return to active session</button></section>':''}
+export function renderPlay(app, state, courses = []) {
+  app.innerHTML = `<div class="page-head"><div><p class="eyebrow">PLAY / COURSE LIBRARY</p><h1>A little golf. A lot to learn.</h1><p class="subtitle">Bring your range shots onto a simple 2D course.</p></div><button class="btn quiet" data-action="home">← Practice</button></div>
+  ${state.practice && !state.practice.ended ? '<section class="card section-space"><h2>You have an active session</h2><p>Return to it, then finish or abandon before starting a round.</p><button class="btn primary" data-action="return">Return to active session</button></section>' : ''}
   <p class="form-hint">Choose a full course or an individual hole. Rounds play all selected holes with flat-green putting, adjustable lie effects and your bag's historical dispersion. Yardage follows the playing route; map distances are straight line.</p>
-  <div class="game-library">${courses.filter(c=>!c.imported).map(c=>`<section class="card game-hole-card">
-    ${/^\/assets\/art\/[a-z0-9._-]+$/i.test(c.image??'')?`<img src="${esc(c.image)}" alt="${esc(c.name)} aerial layout" width="1774" height="887">`:''}
-    <div class="game-hole-copy"><p class="eyebrow">${c.hole_count>1?`${c.hole_count} HOLES · ${esc((c.tee_label??'Blue')==='Blue'?'BLUE TEES':c.tee_label)}`:'ORIGINAL HOLE'} · PAR ${c.par} · ${c.yards} YD</p><h2>${esc(c.name)}</h2><p>${esc(c.description??'Original flat-green golf hole.')}</p><button class="btn primary" data-action="choose" data-drill="golf-sim" data-course="${esc(c.id)}" aria-label="Set up ${esc(c.name)}" ${state.practice&&!state.practice.ended?'disabled':''}>Set up round →</button></div>
-  </section>`).join('')}</div>`;
-  if(courses.some(c=>c.imported))app.insertAdjacentHTML('beforeend',`<section class="card section-space"><h2>Imported holes</h2><div class="session-list">${courses.filter(c=>c.imported).map(c=>`<div class="session-entry"><div><strong>${esc(c.name)}</strong><p>Par ${c.par} · ${c.yards} yd · reviewed prototype geometry</p></div><button class="btn" data-action="choose" data-drill="golf-sim" data-course="${esc(c.id)}" ${state.practice&&!state.practice.ended?'disabled':''}>Set up this hole →</button></div>`).join('')}</div></section>`);
-  app.insertAdjacentHTML('beforeend',`<div class="form-foot section-space"><a class="btn" href="#play/import">Import a course →</a><span class="form-hint">Review one mapped hole, then add it to your course library.</span></div><section class="card section-space"><h2>Try a Tour reference bag</h2><p>Load demo bag mapping and a wedge matrix to explore club suggestions. Full-swing averages come from Trackman’s 2023 Tour dataset; dispersion, rollout and partial wedges are synthetic.</p><button class="btn" data-action="tour-demo">Load Tour demo bag</button><p class="form-hint">Creates two saved demo sessions once. Your bags and active session stay intact. Select “Tour reference · DEMO” in a demo round. <a href="https://www.trackman.com/blog/introducing-updated-tour-averages" target="_blank" rel="noopener">Source and context ↗</a></p></section>`);
+  <div class="game-library">${courses
+    .filter(c => !c.imported)
+    .map(
+      c => `<section class="card game-hole-card">
+    ${/^\/assets\/art\/[a-z0-9._-]+$/i.test(c.image ?? '') ? `<img src="${esc(c.image)}" alt="${esc(c.name)} aerial layout" width="1774" height="887">` : ''}
+    <div class="game-hole-copy"><p class="eyebrow">${c.hole_count > 1 ? `${c.hole_count} HOLES · ${esc((c.tee_label ?? 'Blue') === 'Blue' ? 'BLUE TEES' : c.tee_label)}` : 'ORIGINAL HOLE'} · PAR ${c.par} · ${c.yards} YD</p><h2>${esc(c.name)}</h2><p>${esc(c.description ?? 'Original flat-green golf hole.')}</p><button class="btn primary" data-action="choose" data-drill="golf-sim" data-course="${esc(c.id)}" aria-label="Set up ${esc(c.name)}" ${state.practice && !state.practice.ended ? 'disabled' : ''}>Set up round →</button></div>
+  </section>`
+    )
+    .join('')}</div>`;
+  if (courses.some(c => c.imported))
+    app.insertAdjacentHTML(
+      'beforeend',
+      `<section class="card section-space"><h2>Imported holes</h2><div class="session-list">${courses
+        .filter(c => c.imported)
+        .map(
+          c =>
+            `<div class="session-entry"><div><strong>${esc(c.name)}</strong><p>Par ${c.par} · ${c.yards} yd · reviewed prototype geometry</p></div><button class="btn" data-action="choose" data-drill="golf-sim" data-course="${esc(c.id)}" ${state.practice && !state.practice.ended ? 'disabled' : ''}>Set up this hole →</button></div>`
+        )
+        .join('')}</div></section>`
+    );
+  app.insertAdjacentHTML(
+    'beforeend',
+    `<div class="form-foot section-space"><a class="btn" href="#play/import">Import a course →</a><span class="form-hint">Review one mapped hole, then add it to your course library.</span></div><section class="card section-space"><h2>Try a Tour reference bag</h2><p>Load demo bag mapping and a wedge matrix to explore club suggestions. Full-swing averages come from Trackman’s 2023 Tour dataset; dispersion, rollout and partial wedges are synthetic.</p><button class="btn" data-action="tour-demo">Load Tour demo bag</button><p class="form-hint">Creates two saved demo sessions once. Your bags and active session stay intact. Select “Tour reference · DEMO” in a demo round. <a href="https://www.trackman.com/blog/introducing-updated-tour-averages" target="_blank" rel="noopener">Source and context ↗</a></p></section>`
+  );
 }
 
-export function renderGameSetup(app,old,launch,notice,equipment,courses=[]) {
-  const s=old.game_settings??{},number=(label,name,value,min,max,step=1)=>`<div class="field"><label for="${name}">${label}</label><div class="game-slider"><input type="range" aria-label="${label} slider" data-slider="${name}" value="${value}" min="${min}" max="${max}" step="${step}"><input id="${name}" type="number" name="${name}" value="${value}" min="${min}" max="${max}" step="${step}" required></div></div>`;
-  app.innerHTML=`<div class="page-head"><div><p class="eyebrow">PLAY / ROUND SETUP</p><h1>Make it your round</h1><p class="subtitle">Choose a course or hole · flat-green endpoint game</p></div><button class="btn quiet" data-action="play">← Play</button></div><form class="card" id="game-setup"><div class="form-grid"><label class="field">Course / hole<select name="game_course_id">${courses.map(c=>`<option value="${esc(c.id)}" ${c.id===(old.round?.course_id??old.course?.id??'pebble-boulder-blue-v3')?'selected':''}>${esc(c.name)} · ${c.hole_count>1?c.hole_count+' holes · ':''}par ${c.par} · ${c.yards} yd${c.imported?' · imported':''}</option>`).join('')}</select></label><label class="field">Shot source<select name="demo"><option value="true">Demo · simulated shots</option><option value="false">Live capture · experimental</option></select></label><fieldset class="game-round-choice" id="game-round-choice"><legend>Holes to play</legend><div class="round-choices"></div></fieldset><label class="field">Reported total geometry<select name="game_geometry"><option value="downrange" ${s.geometry==='downrange'?'selected':''}>Downrange + signed offline</option><option value="radial" ${s.geometry==='radial'?'selected':''}>Radial distance + signed offline</option></select></label>${number('Shot from rough: distance reduction · %','game_rough',s.rough_percent??7,0,60)}${number('Shot from sand: distance reduction · %','game_sand',s.sand_percent??20,0,80)}${number('Landing in rough: rollout reduction · %','game_rollout_rough',s.rough_rollout_percent??75,0,100)}${number('Landing out of bounds: rollout reduction · %','game_rollout_ob',s.ob_rollout_percent??100,0,100)}${number('Extra lie variation · ±degrees','game_variation',s.variation_degrees??0,0,10,.5)}${number('Green speed · Stimp','stimp',s.putting?.stimp_ft??10,3,20,.5)}${number('Gimme radius · ft (+1 stroke)','game_gimme',s.gimme_ft??3,0,10,.5)}</div><p class="form-hint">Landing in sand stops the ball at carry. Rough/OB settings reduce only the remaining rollout; valid reported carry and total are required. Final water/OB positions incur a penalty. Variation applies to rough, sand and nature only; nature reduces distance by 30%. Water/OB: +1 penalty, replay from the previous position. A gimme adds one putt; endpoint within 0.2 ft is a simulated hole-out. These are game rules, not validated physical coefficients.</p><label class="field check section-space" id="game-ack" hidden><input type="checkbox" name="game_acknowledged">I understand total/offline geometry and right-positive sign are unverified for live source readings. This is an experimental game.</label>${equipmentControls(equipment.catalog(),old.equipment_selection,true)}<div class="form-foot"><button class="btn primary" type="submit">Launch round</button><button class="btn quiet" type="reset">Reset settings</button><button class="btn quiet" data-action="play" type="button">Cancel</button></div></form>`;
-  bindEquipment(app,equipment,null);
-  const form=app.querySelector('form'),mode=()=>{const live=form.elements.demo.value==='false';app.querySelector('#game-ack').hidden=!live;form.elements.game_acknowledged.required=live;};
-  const roundChoice=app.querySelector('#game-round-choice');
-  let selectedHoles=old.round?.selection??'full';
-  const chooseHoles=()=>{
-    const course=courses.find(c=>c.id===form.elements.game_course_id.value);
-    const options=course?.round_options??[];
-    roundChoice.hidden=options.length<2;
-    if(!options.some(o=>o.id===selectedHoles))selectedHoles='full';
-    roundChoice.querySelector('.round-choices').innerHTML=options.map(o=>`<label class="round-choice"><input type="radio" name="game_holes" value="${o.id}" ${o.id===selectedHoles?'checked':''}><span><strong>${esc(o.label)}</strong><small>${o.id==='front'?'Holes 1–9':o.id==='back'?'Holes 10–18':'Holes 1–'+course.hole_count} · par ${o.par} · ${o.yards.toLocaleString()} yd</small></span></label>`).join('');
-    roundChoice.querySelectorAll('input').forEach(input=>input.onchange=()=>selectedHoles=input.value);
+export function renderGameSetup(app, old, launch, notice, equipment, courses = []) {
+  const s = old.game_settings ?? {},
+    number = (label, name, value, min, max, step = 1) =>
+      `<div class="field"><label for="${name}">${label}</label><div class="game-slider"><input type="range" aria-label="${label} slider" data-slider="${name}" value="${value}" min="${min}" max="${max}" step="${step}"><input id="${name}" type="number" name="${name}" value="${value}" min="${min}" max="${max}" step="${step}" required></div></div>`;
+  app.innerHTML = `<div class="page-head"><div><p class="eyebrow">PLAY / ROUND SETUP</p><h1>Make it your round</h1><p class="subtitle">Choose a course or hole · flat-green endpoint game</p></div><button class="btn quiet" data-action="play">← Play</button></div><form class="card" id="game-setup"><div class="form-grid"><label class="field">Course / hole<select name="game_course_id">${courses.map(c => `<option value="${esc(c.id)}" ${c.id === (old.round?.course_id ?? old.course?.id ?? 'pebble-boulder-blue-v3') ? 'selected' : ''}>${esc(c.name)} · ${c.hole_count > 1 ? c.hole_count + ' holes · ' : ''}par ${c.par} · ${c.yards} yd${c.imported ? ' · imported' : ''}</option>`).join('')}</select></label><label class="field">Shot source<select name="demo"><option value="true">Demo · simulated shots</option><option value="false">Live capture · experimental</option></select></label><fieldset class="game-round-choice" id="game-round-choice"><legend>Holes to play</legend><div class="round-choices"></div></fieldset><label class="field">Reported total geometry<select name="game_geometry"><option value="downrange" ${s.geometry === 'downrange' ? 'selected' : ''}>Downrange + signed offline</option><option value="radial" ${s.geometry === 'radial' ? 'selected' : ''}>Radial distance + signed offline</option></select></label>${number('Shot from rough: distance reduction · %', 'game_rough', s.rough_percent ?? 7, 0, 60)}${number('Shot from sand: distance reduction · %', 'game_sand', s.sand_percent ?? 20, 0, 80)}${number('Landing in rough: rollout reduction · %', 'game_rollout_rough', s.rough_rollout_percent ?? 75, 0, 100)}${number('Landing out of bounds: rollout reduction · %', 'game_rollout_ob', s.ob_rollout_percent ?? 100, 0, 100)}${number('Extra lie variation · ±degrees', 'game_variation', s.variation_degrees ?? 0, 0, 10, 0.5)}${number('Green speed · Stimp', 'stimp', s.putting?.stimp_ft ?? 10, 3, 20, 0.5)}${number('Gimme radius · ft (+1 stroke)', 'game_gimme', s.gimme_ft ?? 3, 0, 10, 0.5)}</div><p class="form-hint">Landing in sand stops the ball at carry. Rough/OB settings reduce only the remaining rollout; valid reported carry and total are required. Final water/OB positions incur a penalty. Variation applies to rough, sand and nature only; nature reduces distance by 30%. Water/OB: +1 penalty, replay from the previous position. A gimme adds one putt; endpoint within 0.2 ft is a simulated hole-out. These are game rules, not validated physical coefficients.</p><label class="field check section-space" id="game-ack" hidden><input type="checkbox" name="game_acknowledged">I understand total/offline geometry and right-positive sign are unverified for live source readings. This is an experimental game.</label>${equipmentControls(equipment.catalog(), old.equipment_selection, true)}<div class="form-foot"><button class="btn primary" type="submit">Launch round</button><button class="btn quiet" type="reset">Reset settings</button><button class="btn quiet" data-action="play" type="button">Cancel</button></div></form>`;
+  bindEquipment(app, equipment, null);
+  const form = app.querySelector('form'),
+    mode = () => {
+      const live = form.elements.demo.value === 'false';
+      app.querySelector('#game-ack').hidden = !live;
+      form.elements.game_acknowledged.required = live;
+    };
+  const roundChoice = app.querySelector('#game-round-choice');
+  let selectedHoles = old.round?.selection ?? 'full';
+  const chooseHoles = () => {
+    const course = courses.find(c => c.id === form.elements.game_course_id.value);
+    const options = course?.round_options ?? [];
+    roundChoice.hidden = options.length < 2;
+    if (!options.some(o => o.id === selectedHoles)) selectedHoles = 'full';
+    roundChoice.querySelector('.round-choices').innerHTML = options
+      .map(
+        o =>
+          `<label class="round-choice"><input type="radio" name="game_holes" value="${o.id}" ${o.id === selectedHoles ? 'checked' : ''}><span><strong>${esc(o.label)}</strong><small>${o.id === 'front' ? 'Holes 1–9' : o.id === 'back' ? 'Holes 10–18' : 'Holes 1–' + course.hole_count} · par ${o.par} · ${o.yards.toLocaleString()} yd</small></span></label>`
+      )
+      .join('');
+    roundChoice
+      .querySelectorAll('input')
+      .forEach(input => (input.onchange = () => (selectedHoles = input.value)));
   };
-  form.elements.game_course_id.onchange=chooseHoles;chooseHoles();
-  form.querySelectorAll('[data-slider]').forEach(slider=>{const input=form.elements[slider.dataset.slider];slider.oninput=()=>input.value=slider.value;input.oninput=()=>slider.value=input.value;});
-  form.elements.demo.onchange=mode;form.onreset=e=>{e.preventDefault();renderGameSetup(app,{},launch,notice,equipment,courses);};
-  form.onsubmit=async e=>{e.preventDefault();const f=new FormData(form),params={drill:'2D golf',demo:f.get('demo')==='true',game_acknowledged:f.has('game_acknowledged'),game_geometry:f.get('game_geometry'),game_course_id:f.get('game_course_id'),game_holes:f.get('game_holes')??'full',range_bag_id:f.get('range_bag_id'),range_club_id:f.get('range_club_id')};for(const k of ['game_rough','game_sand','game_rollout_rough','game_rollout_ob','game_variation','stimp','game_gimme'])params[k]=Number(f.get(k));try{form.querySelector('[type=submit]').disabled=true;await launch(params);}catch(err){notice(err.message);form.querySelector('[type=submit]').disabled=false;}};
+  form.elements.game_course_id.onchange = chooseHoles;
+  chooseHoles();
+  form.querySelectorAll('[data-slider]').forEach(slider => {
+    const input = form.elements[slider.dataset.slider];
+    slider.oninput = () => (input.value = slider.value);
+    input.oninput = () => (slider.value = input.value);
+  });
+  form.elements.demo.onchange = mode;
+  form.onreset = e => {
+    e.preventDefault();
+    renderGameSetup(app, {}, launch, notice, equipment, courses);
+  };
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const f = new FormData(form),
+      params = {
+        drill: '2D golf',
+        demo: f.get('demo') === 'true',
+        game_acknowledged: f.has('game_acknowledged'),
+        game_geometry: f.get('game_geometry'),
+        game_course_id: f.get('game_course_id'),
+        game_holes: f.get('game_holes') ?? 'full',
+        range_bag_id: f.get('range_bag_id'),
+        range_club_id: f.get('range_club_id')
+      };
+    for (const k of [
+      'game_rough',
+      'game_sand',
+      'game_rollout_rough',
+      'game_rollout_ob',
+      'game_variation',
+      'stimp',
+      'game_gimme'
+    ])
+      params[k] = Number(f.get(k));
+    try {
+      form.querySelector('[type=submit]').disabled = true;
+      await launch(params);
+    } catch (err) {
+      notice(err.message);
+      form.querySelector('[type=submit]').disabled = false;
+    }
+  };
 }
 
-export function renderGame(app,data,summary,state,review,sessionNotice,ctx) {
-  const original=data,sessionActive=!review&&!data.ended;
-  if(reviewSession!==data.id){reviewSession=data.id;reviewHole=null;roundCardOpen=false;openPanels.clear();}
-  if(!sessionActive&&data.round&&reviewHole!==null)data=reviewHoleData(data,reviewHole);
-  const g=data.game,c=data.course,s=data.game_settings,active=sessionActive&&!g.holed,green=g.lie==='green',last=holeShots(data).at(-1)?.game_outcome;
-  const waiting=sessionActive&&g.holed&&data.round;
-  const scorecard=roundScorecard(original,!sessionActive,reviewHole,!sessionActive||roundCardOpen,gameScoreboard(data,true))||`<section class="card single-hole-score">${gameScoreboard(data,true)}<div><p class="correction-counts">${correctionCounts(original)}</p>${correctionHistory(original)}</div></section>`;
-  const panel=(id,label,body,extra='')=>`<details class="card play-disclosure ${extra}" data-play-panel="${id}" ${openPanels.has(id)||(!sessionActive&&id==='log')?'open':''}><summary>${label}</summary><div class="play-disclosure-body">${body}</div></details>`;
+export function renderGame(app, data, summary, state, review, sessionNotice, ctx) {
+  const original = data,
+    sessionActive = !review && !data.ended;
+  if (reviewSession !== data.id) {
+    reviewSession = data.id;
+    reviewHole = null;
+    roundCardOpen = false;
+    openPanels.clear();
+  }
+  if (!sessionActive && data.round && reviewHole !== null) data = reviewHoleData(data, reviewHole);
+  const g = data.game,
+    c = data.course,
+    s = data.game_settings,
+    active = sessionActive && !g.holed,
+    green = g.lie === 'green',
+    last = holeShots(data).at(-1)?.game_outcome;
+  const waiting = sessionActive && g.holed && data.round;
+  const scorecard =
+    roundScorecard(
+      original,
+      !sessionActive,
+      reviewHole,
+      !sessionActive || roundCardOpen,
+      gameScoreboard(data, true)
+    ) ||
+    `<section class="card single-hole-score">${gameScoreboard(data, true)}<div><p class="correction-counts">${correctionCounts(original)}</p>${correctionHistory(original)}</div></section>`;
+  const panel = (id, label, body, extra = '') =>
+    `<details class="card play-disclosure ${extra}" data-play-panel="${id}" ${openPanels.has(id) || (!sessionActive && id === 'log') ? 'open' : ''}><summary>${label}</summary><div class="play-disclosure-body">${body}</div></details>`;
 
-  if(zoomSession!==data.id+c.id){zoomSession=data.id+c.id;zoomChoice=null;}
-  const motionShot=holeShots(data).at(-1),motion=shotMotion(motionShot,true);
-  const moving=observeShotMotion('game:'+data.id+':'+c.id,motionShot,motion,!review);
-  const zoom=moving&&!motionShot?.game_outcome?.putting?false:(zoomChoice??green),remaining=dist(g.position,c.pin),penalty=s[g.lie+'_percent']??0;
-  app.innerHTML=`<div class="page-head play-head"><div><div class="play-title"><p class="eyebrow">${data.demo?'SIMULATED DATA / ':''}PLAY · ${review?'SAVED REVIEW':data.ended?'ROUND ENDED':'ACTIVE ROUND'}</p><h1>${esc(courseLabel(data.round?.name??c.name))}</h1></div><p class="subtitle">Hole ${esc(String(c.hole_number??1))}${data.round?' · '+roundLabel(data.round)+' · '+esc(c.name):''} · par ${c.par} · ${c.yards} yd <span class="chip">GAME ESTIMATE</span></p></div><div class="head-actions game-head-actions">${correctionControls(original,state)}${sessionActive?'<button class="btn danger" data-action="finish">End round</button>':''}<button class="btn quiet" data-action="play">Play menu</button><button class="btn ${active?'quiet':'primary'}" data-action="exit-session">${review?'Exit review':'Exit round'}</button>${!sessionActive?'<button class="btn quiet" data-action="edit">New round / edit setup</button>':''}</div></div>
-  ${!sessionActive?sessionNotice(original,review):''}${waiting?`<section class="hole-complete-banner" role="status"><div><strong>Hole ${c.hole_number} complete · ${g.strokes} strokes</strong><p>This hole is closed. New shots will not count until you move to the next tee.</p></div><button class="btn primary" data-next-hole>Next hole → ${c.hole_number+1}</button></section>`:''}${scorecard}${state.practice_error&&active?`<p class="session-error" role="alert">${esc(state.practice_error)}</p>`:''}
-  ${active&&!data.demo?`<div id="recording-feedback">${recordingWarnings(state.capture,'shots')}</div>`:''}
-  ${active?`<section class="card equipment-card game-equipment section-space">${equipmentControls(state.equipment,data.equipment_selection,false,true)}</section>`:''}
+  if (zoomSession !== data.id + c.id) {
+    zoomSession = data.id + c.id;
+    zoomChoice = null;
+  }
+  const motionShot = holeShots(data).at(-1),
+    motion = shotMotion(motionShot, true);
+  const moving = observeShotMotion('game:' + data.id + ':' + c.id, motionShot, motion, !review);
+  const zoom = moving && !motionShot?.game_outcome?.putting ? false : (zoomChoice ?? green),
+    remaining = dist(g.position, c.pin),
+    penalty = s[g.lie + '_percent'] ?? 0;
+  app.innerHTML = `<div class="page-head play-head"><div><div class="play-title"><p class="eyebrow">${data.demo ? 'SIMULATED DATA / ' : ''}PLAY · ${review ? 'SAVED REVIEW' : data.ended ? 'ROUND ENDED' : 'ACTIVE ROUND'}</p><h1>${esc(courseLabel(data.round?.name ?? c.name))}</h1></div><p class="subtitle">Hole ${esc(String(c.hole_number ?? 1))}${data.round ? ' · ' + roundLabel(data.round) + ' · ' + esc(c.name) : ''} · par ${c.par} · ${c.yards} yd <span class="chip">GAME ESTIMATE</span></p></div><div class="head-actions game-head-actions">${correctionControls(original, state)}${sessionActive ? '<button class="btn danger" data-action="finish">End round</button>' : ''}<button class="btn quiet" data-action="play">Play menu</button><button class="btn ${active ? 'quiet' : 'primary'}" data-action="exit-session">${review ? 'Exit review' : 'Exit round'}</button>${!sessionActive ? '<button class="btn quiet" data-action="edit">New round / edit setup</button>' : ''}</div></div>
+  ${!sessionActive ? sessionNotice(original, review) : ''}${waiting ? `<section class="hole-complete-banner" role="status"><div><strong>Hole ${c.hole_number} complete · ${g.strokes} strokes</strong><p>This hole is closed. New shots will not count until you move to the next tee.</p></div><button class="btn primary" data-next-hole>Next hole → ${c.hole_number + 1}</button></section>` : ''}${scorecard}${state.practice_error && active ? `<p class="session-error" role="alert">${esc(state.practice_error)}</p>` : ''}
+  ${active && !data.demo ? `<div id="recording-feedback">${recordingWarnings(state.capture, 'shots')}</div>` : ''}
+  ${active ? `<section class="card equipment-card game-equipment section-space">${equipmentControls(state.equipment, data.equipment_selection, false, true)}</section>` : ''}
   <section class="game-layout play-map-stage" aria-label="Course map">
-    ${courseMap(data,active,zoom,{detailed:mapDetailed,boundaries:mapBoundaries})}
-    <div class="map-topline"><div class="map-position" role="status"><strong>${n(green?remaining*3:remaining)} ${green?'ft':'yd'} ${g.holed?'final distance':'to pin'}</strong><span>${esc(g.lie)}</span><span>${active?'Next stroke '+(g.strokes+1):g.holed?'Hole complete':'Saved review'}</span>${green&&active?`<strong class="map-pace">Pace ${n(summary.required_pace_mph,2)} mph <small>estimated · Stimp ${s.putting.stimp_ft}</small></strong>`:''}</div><div class="map-buttons"><div class="segmented"><button class="btn small ${!zoom?'primary':''}" data-game-zoom="hole">Hole</button><button class="btn small ${zoom?'primary':''}" data-game-zoom="green">Green</button></div>${active?'<button class="btn small" data-game-aim="pin">Aim at pin</button>':''}</div></div>
-    ${active?aimReadout(data):''}
-   <p class="game-feedback play-feedback ${last&&!last.applied?'session-error':''}" role="status">${esc(g.last_message)}${data.ended&&!g.holed&&g.strokes>0?' · Partial score; hole not completed.':''}</p>
+    ${courseMap(data, active, zoom, { detailed: mapDetailed, boundaries: mapBoundaries })}
+    <div class="map-topline"><div class="map-position" role="status"><strong>${n(green ? remaining * 3 : remaining)} ${green ? 'ft' : 'yd'} ${g.holed ? 'final distance' : 'to pin'}</strong><span>${esc(g.lie)}</span><span>${active ? 'Next stroke ' + (g.strokes + 1) : g.holed ? 'Hole complete' : 'Saved review'}</span>${green && active ? `<strong class="map-pace">Pace ${n(summary.required_pace_mph, 2)} mph <small>estimated · Stimp ${s.putting.stimp_ft}</small></strong>` : ''}</div><div class="map-buttons"><div class="segmented"><button class="btn small ${!zoom ? 'primary' : ''}" data-game-zoom="hole">Hole</button><button class="btn small ${zoom ? 'primary' : ''}" data-game-zoom="green">Green</button></div>${active ? '<button class="btn small" data-game-aim="pin">Aim at pin</button>' : ''}</div></div>
+    ${active ? aimReadout(data) : ''}
+   <p class="game-feedback play-feedback ${last && !last.applied ? 'session-error' : ''}" role="status">${esc(g.last_message)}${data.ended && !g.holed && g.strokes > 0 ? ' · Partial score; hole not completed.' : ''}</p>
   </section>
   ${motionControls(motion)}
-  ${panel('dispersion','<strong>Club dispersion</strong><span data-preview-summary>Choose a club to view its mapping</span><span data-preview-state></span>','<section id="club-preview" aria-label="Club dispersion preview"></section>')}
-  <details class="card play-disclosure" data-play-panel="log" ${openPanels.has('log')||!sessionActive?'open':''}><summary><strong>${data.round?`Hole ${c.hole_number} shot log`:'Round shot log'}</strong><span>${holeShots(data).length} ${holeShots(data).length===1?'attempt':'attempts'}</span></summary><div class="play-disclosure-body"><p class="form-hint">Original shots remain intact. Excluding a shot affects Analyze only; the played position, strokes and penalties stay in the score.</p><div class="table-wrap"><table><thead><tr><th>Attempt / equipment</th><th>Source carry / total / offline</th><th>Speed / start line</th><th>Start → destination</th><th>Game result</th><th>Analyze</th></tr></thead><tbody>${holeShots(data).map((shot,i)=>{const o=shot.game_outcome;return `<tr class="${shot.excluded?'excluded':''}"><th>${i+1}<small class="range-stat-detail">${esc(shot.bag_name||'No bag')} / ${esc(shot.club_label||'Untagged')}</small></th><td>${n(shot.vals.carry)} / ${n(shot.vals.total)} / ${n(shot.vals.offline)} yd</td><td>${n(shot.vals.ball_speed)} mph / ${n(shot.vals.launch_dir)}°</td><td>${esc(o.before.lie)} → ${esc(o.destination_lie||'unchanged')}</td><td>${shot.game_correction?`<strong class="correction-label">${shot.game_correction.kind==='misread'?'Misread':'Mulligan'} · removed from score</strong>`:''}${esc(o.message)}${o.applied?`<small class="range-stat-detail">Travel ${n(Math.hypot(o.adjusted_forward_yd,o.adjusted_right_yd))} yd${o.landing_rollout?.applied?` · Landing ${esc(o.landing_rollout.landing_lie)} · rollout ${n(o.landing_rollout.adjusted_rollout_yd)} yd`:''} · variation ${n(o.random_degrees)}° · ${shot.game_correction?'original total':'total after shot'} ${o.after.strokes}</small>`:''}</td><td><button class="btn small quiet" data-game-exclude="${esc(shot.key)}">${shot.excluded?'Include':'Exclude'}</button></td></tr>`;}).reverse().join('')||'<tr><td colspan="6" class="empty">Your first shot will appear here.</td></tr>'}</tbody></table></div></div></details>
-  ${panel('map','Map options & hole guide',`${active&&!data.demo?`<div class="form-foot"><button class="btn small" data-action="relay">Relay</button><span class="form-hint">${green?'Putting: speed and start line.':'Full swing: total distance and signed offline required.'}</span></div>`:''}<p class="form-hint">Tap the map to measure and aim. Distances are straight-line, before lie adjustments. Aim resets to the pin after each move. Dashed lines connect saved endpoints. Ball replay uses source distances and OpenGolfCoach shape/hang time when available; the fitted path, landing lateral position and roll timing are illustrative. Replay never changes scoring.</p>${c.strategy?`<p><strong>Hole guide · ${c.bunker_count} sand areas</strong><br>${esc(c.strategy)}</p>`:''}<p class="form-hint">Starting-lie distance reduction: ${penalty}%. Extra variation ±${penalty?s.variation_degrees:0}°.</p>${active?`<form id="game-aim-form" class="game-aim-form"><label class="field">Aim right (+) / left (−) · yd<input name="x" type="number" min="${c.bounds[0]}" max="${c.bounds[1]}" step="any" value="${n(g.aim[0])}" required></label><label class="field">Aim down course · yd<input name="y" type="number" min="${c.bounds[2]}" max="${c.bounds[3]}" step="any" value="${n(g.aim[1])}" required></label><button class="btn" type="submit">Set aim</button></form>`:''}${c.provenance?.attribution?`<p class="form-hint">${esc(courseLabel(c.provenance.attribution))}${c.provenance.license_url?' · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">License ↗</a>':''}</p>`:''}<div class="game-map-display"><label class="field check"><input type="checkbox" data-map-detailed ${mapDetailed?'checked':''}>Detailed terrain</label><label class="field check"><input type="checkbox" data-map-boundaries ${mapBoundaries?'checked':''}>Show scoring boundaries</label><p class="form-hint">${c.image?'AI-generated artwork':'Imported or schematic map'}; saved course geometry determines the lie. Trees are scenery within nature areas, not individual collision obstacles.</p>${mapBoundaries?'<p class="game-boundary-key">White: fairway · lime: green/tee · gold: sand · cyan: water · purple: nature · pink: out of bounds</p>':''}</div>`)}
-  ${active&&data.demo?panel('demo','Simulate a '+(green?'putt':'shot'),`<form id="game-demo"><p class="form-hint">Explicit synthetic input. Lie adjustments apply after this value.</p><label class="field">${green?'Roll distance · ft':'Reported total · yd'}<input name="distance" type="number" min=".5" max="${green?300:600}" step=".1" value="${n(green?remaining*3:Math.min(200,remaining))}" required></label>${green?'':'<label class="field section-space">Reported carry · yd (optional)<input name="carry" type="number" min="0" max="600" step=".1" placeholder="Blank = 93% of total"></label>'}<label class="field section-space">Offline · ${green?'ft':'yd'} (right +)<input name="offline" type="number" min="${green?-100:-200}" max="${green?100:200}" step=".1" value="0" required></label><button type="submit" class="btn primary section-space">Simulate ${green?'putt':'shot'}</button></form>`):''}
-  ${panel('suggestions','Bag suggestions',`<div id="game-suggestions"><p class="form-hint">${green?(active?'Choose your putter. Pace uses the flat-green estimate.':'Saved round · putting used the recorded Stimp and model.'):'Loading your bag mapping and wedge matrix…'}</p></div>`)}
+  ${panel('dispersion', '<strong>Club dispersion</strong><span data-preview-summary>Choose a club to view its mapping</span><span data-preview-state></span>', '<section id="club-preview" aria-label="Club dispersion preview"></section>')}
+  <details class="card play-disclosure" data-play-panel="log" ${openPanels.has('log') || !sessionActive ? 'open' : ''}><summary><strong>${data.round ? `Hole ${c.hole_number} shot log` : 'Round shot log'}</strong><span>${holeShots(data).length} ${holeShots(data).length === 1 ? 'attempt' : 'attempts'}</span></summary><div class="play-disclosure-body"><p class="form-hint">Original shots remain intact. Excluding a shot affects Analyze only; the played position, strokes and penalties stay in the score.</p><div class="table-wrap"><table><thead><tr><th>Attempt / equipment</th><th>Source carry / total / offline</th><th>Speed / start line</th><th>Start → destination</th><th>Game result</th><th>Analyze</th></tr></thead><tbody>${
+    holeShots(data)
+      .map((shot, i) => {
+        const o = shot.game_outcome;
+        return `<tr class="${shot.excluded ? 'excluded' : ''}"><th>${i + 1}<small class="range-stat-detail">${esc(shot.bag_name || 'No bag')} / ${esc(shot.club_label || 'Untagged')}</small></th><td>${n(shot.vals.carry)} / ${n(shot.vals.total)} / ${n(shot.vals.offline)} yd</td><td>${n(shot.vals.ball_speed)} mph / ${n(shot.vals.launch_dir)}°</td><td>${esc(o.before.lie)} → ${esc(o.destination_lie || 'unchanged')}</td><td>${shot.game_correction ? `<strong class="correction-label">${shot.game_correction.kind === 'misread' ? 'Misread' : 'Mulligan'} · removed from score</strong>` : ''}${esc(o.message)}${o.applied ? `<small class="range-stat-detail">Travel ${n(Math.hypot(o.adjusted_forward_yd, o.adjusted_right_yd))} yd${o.landing_rollout?.applied ? ` · Landing ${esc(o.landing_rollout.landing_lie)} · rollout ${n(o.landing_rollout.adjusted_rollout_yd)} yd` : ''} · variation ${n(o.random_degrees)}° · ${shot.game_correction ? 'original total' : 'total after shot'} ${o.after.strokes}</small>` : ''}</td><td><button class="btn small quiet" data-game-exclude="${esc(shot.key)}">${shot.excluded ? 'Include' : 'Exclude'}</button></td></tr>`;
+      })
+      .reverse()
+      .join('') || '<tr><td colspan="6" class="empty">Your first shot will appear here.</td></tr>'
+  }</tbody></table></div></div></details>
+  ${panel('map', 'Map options & hole guide', `${active && !data.demo ? `<div class="form-foot"><button class="btn small" data-action="relay">Relay</button><span class="form-hint">${green ? 'Putting: speed and start line.' : 'Full swing: total distance and signed offline required.'}</span></div>` : ''}<p class="form-hint">Tap the map to measure and aim. Distances are straight-line, before lie adjustments. Aim resets to the pin after each move. Dashed lines connect saved endpoints. Ball replay uses source distances and OpenGolfCoach shape/hang time when available; the fitted path, landing lateral position and roll timing are illustrative. Replay never changes scoring.</p>${c.strategy ? `<p><strong>Hole guide · ${c.bunker_count} sand areas</strong><br>${esc(c.strategy)}</p>` : ''}<p class="form-hint">Starting-lie distance reduction: ${penalty}%. Extra variation ±${penalty ? s.variation_degrees : 0}°.</p>${active ? `<form id="game-aim-form" class="game-aim-form"><label class="field">Aim right (+) / left (−) · yd<input name="x" type="number" min="${c.bounds[0]}" max="${c.bounds[1]}" step="any" value="${n(g.aim[0])}" required></label><label class="field">Aim down course · yd<input name="y" type="number" min="${c.bounds[2]}" max="${c.bounds[3]}" step="any" value="${n(g.aim[1])}" required></label><button class="btn" type="submit">Set aim</button></form>` : ''}${c.provenance?.attribution ? `<p class="form-hint">${esc(courseLabel(c.provenance.attribution))}${c.provenance.license_url ? ' · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">License ↗</a>' : ''}</p>` : ''}<div class="game-map-display"><label class="field check"><input type="checkbox" data-map-detailed ${mapDetailed ? 'checked' : ''}>Detailed terrain</label><label class="field check"><input type="checkbox" data-map-boundaries ${mapBoundaries ? 'checked' : ''}>Show scoring boundaries</label><p class="form-hint">${c.image ? 'AI-generated artwork' : 'Imported or schematic map'}; saved course geometry determines the lie. Trees are scenery within nature areas, not individual collision obstacles.</p>${mapBoundaries ? '<p class="game-boundary-key">White: fairway · lime: green/tee · gold: sand · cyan: water · purple: nature · pink: out of bounds</p>' : ''}</div>`)}
+  ${active && data.demo ? panel('demo', 'Simulate a ' + (green ? 'putt' : 'shot'), `<form id="game-demo"><p class="form-hint">Explicit synthetic input. Lie adjustments apply after this value.</p><label class="field">${green ? 'Roll distance · ft' : 'Reported total · yd'}<input name="distance" type="number" min=".5" max="${green ? 300 : 600}" step=".1" value="${n(green ? remaining * 3 : Math.min(200, remaining))}" required></label>${green ? '' : '<label class="field section-space">Reported carry · yd (optional)<input name="carry" type="number" min="0" max="600" step=".1" placeholder="Blank = 93% of total"></label>'}<label class="field section-space">Offline · ${green ? 'ft' : 'yd'} (right +)<input name="offline" type="number" min="${green ? -100 : -200}" max="${green ? 100 : 200}" step=".1" value="0" required></label><button type="submit" class="btn primary section-space">Simulate ${green ? 'putt' : 'shot'}</button></form>`) : ''}
+  ${panel('suggestions', 'Bag suggestions', `<div id="game-suggestions"><p class="form-hint">${green ? (active ? 'Choose your putter. Pace uses the flat-green estimate.' : 'Saved round · putting used the recorded Stimp and model.') : 'Loading your bag mapping and wedge matrix…'}</p></div>`)}
 
-<div class="table-actions play-bottom-actions">${sessionActive?'<button class="btn danger quiet" data-action="abandon">Abandon round</button>':'<button class="btn danger quiet" data-action="delete-review">Delete round</button>'}<a class="btn quiet" href="#analyze">Analyze sessions</a><button class="btn quiet" data-action="home">Practice selector</button><button class="btn quiet" data-action="exit-session">${review?'Exit review':'Exit round'}</button></div><details class="details"><summary>Game assumptions and saved settings</summary>${c.warnings?`<ul>${c.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>`:''}<p>Full shots use reported total as ${esc(s.geometry)} distance and positive offline to the right of aim. The final endpoint determines the lie; lines are not flight paths. Current landing rules for new shots: sand stops at carry. Rough rollout reduction ${s.rough_rollout_percent??75}%; out-of-bounds rollout reduction ${s.ob_rollout_percent??100}%. Landing is estimated from reported carry/total and interpolated offline; missing/invalid carry keeps endpoint-only rules. Final water/OB positions incur penalties. Earlier saved outcomes retain their recorded rules. No bounce, obstacle collision, elevation or wind simulation. Rough ${s.rough_percent}%, sand ${s.sand_percent}%, nature 30%; lie variation ±${s.variation_degrees}°. Water and OB replay with +1. Gimme ${s.gimme_ft} ft adds one putt. Cup acceptance uses a 0.2 ft endpoint window. Putting uses ${esc(s.putting.id)}, Stimp ${s.putting.stimp_ft}; no slope or skid. All rules and random draws are stored per shot.</p></details>`;
-  app.querySelectorAll('[data-play-panel]').forEach(el=>el.ontoggle=()=>{if(el.isConnected){if(el.open)openPanels.add(el.dataset.playPanel);else openPanels.delete(el.dataset.playPanel);}});
-  const card=app.querySelector('.round-scorecard');if(card)card.ontoggle=()=>{roundCardOpen=card.open;};
-  mountClubPreview(app,data,state,ctx,active);
-  fitCourseCamera(app.querySelector('.game-map'),data,zoom);
-  mountShotMotion(app,app.querySelector('.game-map'),motion,p=>[p.x,p.y],ctx.redraw);
-  app.querySelectorAll('[data-game-zoom]').forEach(b=>b.onclick=()=>{zoomChoice=b.dataset.gameZoom==='green';ctx.redraw();});
-  for(const kind of ['detailed','boundaries'])app.querySelector(`[data-map-${kind}]`).onchange=e=>{if(kind==='detailed')mapDetailed=e.target.checked;else mapBoundaries=e.target.checked;ctx.redraw();app.querySelector('[data-play-panel=map]').open=true;app.querySelector(`[data-map-${kind}]`).focus({preventScroll:true});};
-  const attempt=async work=>{try{await work();}catch(e){ctx.notice(e.message);}};
-  app.querySelectorAll('[data-game-correct]').forEach(b=>b.onclick=()=>{app.querySelectorAll('[data-game-correct]').forEach(v=>v.disabled=true);attempt(async()=>{try{roundCardOpen=false;reviewHole=null;await ctx.correct({kind:b.dataset.gameCorrect,key:latestPlayedShot(original).key,turn:original.game.turn});}finally{if(b.isConnected)ctx.redraw();}});});
-  const next=app.querySelector('[data-next-hole]');if(next)next.onclick=()=>{next.disabled=true;attempt(async()=>{try{await ctx.next({turn:g.turn});}finally{if(next.isConnected)next.disabled=false;}});};
-  const chooser=app.querySelector('[data-round-review]');if(chooser)chooser.onchange=e=>{reviewHole=Number(e.target.value);zoomChoice=null;ctx.redraw();};
-  app.querySelectorAll('[data-game-exclude]').forEach(b=>b.onclick=()=>attempt(()=>ctx.exclude(b.dataset.gameExclude)));
-  if(active){
-    bindEquipment(app,ctx.equipment,ctx.select,ctx.current);
-    const aim=(x,y)=>attempt(()=>ctx.aim({x,y,turn:g.turn}));
-    const map=app.querySelector('.game-map');map.onclick=e=>{const p=map.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(map.getScreenCTM().inverse());aim(Math.max(c.bounds[0],Math.min(c.bounds[1],q.y)),Math.max(c.bounds[2],Math.min(c.bounds[3],q.x)));};
-    app.querySelector('[data-game-aim=pin]').onclick=()=>aim(...c.pin);
-    app.querySelector('#game-aim-form').onsubmit=e=>{e.preventDefault();aim(Number(e.target.elements.x.value),Number(e.target.elements.y.value));};
-    const demo=app.querySelector('#game-demo');if(demo)demo.onsubmit=e=>{e.preventDefault();const distance=Number(demo.elements.distance.value)/(green?3:1),offline=Number(demo.elements.offline.value)/(green?3:1);demo.querySelector('button').disabled=true;attempt(async()=>{try{await ctx.simulate({distance_yd:distance,offline_yd:offline,...(!green&&demo.elements.carry.value!==''?{carry_yd:Number(demo.elements.carry.value)}:{}),turn:g.turn});}finally{if(demo.isConnected)demo.querySelector('button').disabled=false;}});};
+<div class="table-actions play-bottom-actions">${sessionActive ? '<button class="btn danger quiet" data-action="abandon">Abandon round</button>' : '<button class="btn danger quiet" data-action="delete-review">Delete round</button>'}<a class="btn quiet" href="#analyze">Analyze sessions</a><button class="btn quiet" data-action="home">Practice selector</button><button class="btn quiet" data-action="exit-session">${review ? 'Exit review' : 'Exit round'}</button></div><details class="details"><summary>Game assumptions and saved settings</summary>${c.warnings ? `<ul>${c.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}<p>Full shots use reported total as ${esc(s.geometry)} distance and positive offline to the right of aim. The final endpoint determines the lie; lines are not flight paths. Current landing rules for new shots: sand stops at carry. Rough rollout reduction ${s.rough_rollout_percent ?? 75}%; out-of-bounds rollout reduction ${s.ob_rollout_percent ?? 100}%. Landing is estimated from reported carry/total and interpolated offline; missing/invalid carry keeps endpoint-only rules. Final water/OB positions incur penalties. Earlier saved outcomes retain their recorded rules. No bounce, obstacle collision, elevation or wind simulation. Rough ${s.rough_percent}%, sand ${s.sand_percent}%, nature 30%; lie variation ±${s.variation_degrees}°. Water and OB replay with +1. Gimme ${s.gimme_ft} ft adds one putt. Cup acceptance uses a 0.2 ft endpoint window. Putting uses ${esc(s.putting.id)}, Stimp ${s.putting.stimp_ft}; no slope or skid. All rules and random draws are stored per shot.</p></details>`;
+  app.querySelectorAll('[data-play-panel]').forEach(
+    el =>
+      (el.ontoggle = () => {
+        if (el.isConnected) {
+          if (el.open) openPanels.add(el.dataset.playPanel);
+          else openPanels.delete(el.dataset.playPanel);
+        }
+      })
+  );
+  const card = app.querySelector('.round-scorecard');
+  if (card)
+    card.ontoggle = () => {
+      roundCardOpen = card.open;
+    };
+  mountClubPreview(app, data, state, ctx, active);
+  fitCourseCamera(app.querySelector('.game-map'), data, zoom);
+  mountShotMotion(app, app.querySelector('.game-map'), motion, p => [p.x, p.y], ctx.redraw);
+  app.querySelectorAll('[data-game-zoom]').forEach(
+    b =>
+      (b.onclick = () => {
+        zoomChoice = b.dataset.gameZoom === 'green';
+        ctx.redraw();
+      })
+  );
+  for (const kind of ['detailed', 'boundaries'])
+    app.querySelector(`[data-map-${kind}]`).onchange = e => {
+      if (kind === 'detailed') mapDetailed = e.target.checked;
+      else mapBoundaries = e.target.checked;
+      ctx.redraw();
+      app.querySelector('[data-play-panel=map]').open = true;
+      app.querySelector(`[data-map-${kind}]`).focus({ preventScroll: true });
+    };
+  const attempt = async work => {
+    try {
+      await work();
+    } catch (e) {
+      ctx.notice(e.message);
+    }
+  };
+  app.querySelectorAll('[data-game-correct]').forEach(
+    b =>
+      (b.onclick = () => {
+        app.querySelectorAll('[data-game-correct]').forEach(v => (v.disabled = true));
+        attempt(async () => {
+          try {
+            roundCardOpen = false;
+            reviewHole = null;
+            await ctx.correct({
+              kind: b.dataset.gameCorrect,
+              key: latestPlayedShot(original).key,
+              turn: original.game.turn
+            });
+          } finally {
+            if (b.isConnected) ctx.redraw();
+          }
+        });
+      })
+  );
+  const next = app.querySelector('[data-next-hole]');
+  if (next)
+    next.onclick = () => {
+      next.disabled = true;
+      attempt(async () => {
+        try {
+          await ctx.next({ turn: g.turn });
+        } finally {
+          if (next.isConnected) next.disabled = false;
+        }
+      });
+    };
+  const chooser = app.querySelector('[data-round-review]');
+  if (chooser)
+    chooser.onchange = e => {
+      reviewHole = Number(e.target.value);
+      zoomChoice = null;
+      ctx.redraw();
+    };
+  app
+    .querySelectorAll('[data-game-exclude]')
+    .forEach(b => (b.onclick = () => attempt(() => ctx.exclude(b.dataset.gameExclude))));
+  if (active) {
+    bindEquipment(app, ctx.equipment, ctx.select, ctx.current);
+    const aim = (x, y) => attempt(() => ctx.aim({ x, y, turn: g.turn }));
+    const map = app.querySelector('.game-map');
+    map.onclick = e => {
+      const p = map.createSVGPoint();
+      p.x = e.clientX;
+      p.y = e.clientY;
+      const q = p.matrixTransform(map.getScreenCTM().inverse());
+      aim(
+        Math.max(c.bounds[0], Math.min(c.bounds[1], q.y)),
+        Math.max(c.bounds[2], Math.min(c.bounds[3], q.x))
+      );
+    };
+    app.querySelector('[data-game-aim=pin]').onclick = () => aim(...c.pin);
+    app.querySelector('#game-aim-form').onsubmit = e => {
+      e.preventDefault();
+      aim(Number(e.target.elements.x.value), Number(e.target.elements.y.value));
+    };
+    const demo = app.querySelector('#game-demo');
+    if (demo)
+      demo.onsubmit = e => {
+        e.preventDefault();
+        const distance = Number(demo.elements.distance.value) / (green ? 3 : 1),
+          offline = Number(demo.elements.offline.value) / (green ? 3 : 1);
+        demo.querySelector('button').disabled = true;
+        attempt(async () => {
+          try {
+            await ctx.simulate({
+              distance_yd: distance,
+              offline_yd: offline,
+              ...(!green && demo.elements.carry.value !== ''
+                ? { carry_yd: Number(demo.elements.carry.value) }
+                : {}),
+              turn: g.turn
+            });
+          } finally {
+            if (demo.isConnected) demo.querySelector('button').disabled = false;
+          }
+        });
+      };
   }
-  if(!green&&!sessionActive){app.querySelector('#game-suggestions').textContent='Club suggestions are available during an active hole.';}
-  if(!green&&sessionActive){const box=app.querySelector('#game-suggestions');ctx.recommendations().then(rows=>{if(!box.isConnected)return;box.innerHTML=rows.length?rows.map(r=>`<p><strong>${esc(r.club_label)}${r.swing_label?' · '+esc(r.swing_label):''}</strong><br>${n(r.adjusted_yd)} yd after lie reduction<small class="range-stat-detail">Total median ${n(r.median_yd)} / IQR ${n(r.iqr_yd)} yd · n=${r.count}</small></p>`).join('')+'<p class="form-hint">From included bag/matrix shots in this bag and data mode; ≥5 readings per club/intent. Nearest distance to the pin; no hazard strategy or weather adjustment.</p>':'<p class="form-hint">No matching profile yet. Collect at least 5 total-distance readings per club/intent in Bag mapping or Wedge matrix. Real and demo profiles stay separate.</p>';}).catch(e=>{if(box.isConnected)box.textContent=e.message;});}
+  if (!green && !sessionActive) {
+    app.querySelector('#game-suggestions').textContent =
+      'Club suggestions are available during an active hole.';
+  }
+  if (!green && sessionActive) {
+    const box = app.querySelector('#game-suggestions');
+    ctx
+      .recommendations()
+      .then(rows => {
+        if (!box.isConnected) return;
+        box.innerHTML = rows.length
+          ? rows
+              .map(
+                r =>
+                  `<p><strong>${esc(r.club_label)}${r.swing_label ? ' · ' + esc(r.swing_label) : ''}</strong><br>${n(r.adjusted_yd)} yd after lie reduction<small class="range-stat-detail">Total median ${n(r.median_yd)} / IQR ${n(r.iqr_yd)} yd · n=${r.count}</small></p>`
+              )
+              .join('') +
+            '<p class="form-hint">From included bag/matrix shots in this bag and data mode; ≥5 readings per club/intent. Nearest distance to the pin; no hazard strategy or weather adjustment.</p>'
+          : '<p class="form-hint">No matching profile yet. Collect at least 5 total-distance readings per club/intent in Bag mapping or Wedge matrix. Real and demo profiles stay separate.</p>';
+      })
+      .catch(e => {
+        if (box.isConnected) box.textContent = e.message;
+      });
+  }
 }

@@ -25,13 +25,16 @@ class LiveStateTests(unittest.TestCase):
         class History(list):
             def __iter__(self):
                 raise AssertionError('Idle update walked attempt history')
+
         summary = Mock(side_effect=AssertionError('Idle update calculated summary'))
-        self.service.practice = SimpleNamespace(data=dict(id='fixture', ended=None, shots=History([{}]*1000)), summary=summary)
+        self.service.practice = SimpleNamespace(
+            data=dict(id='fixture', ended=None, shots=History([{}] * 1000)), summary=summary
+        )
         first = self.service.live_revision()
         for _ in range(10):
             self.assertEqual(self.service.live_revision(), first)
         self.service.capture['error'] = 'Source disconnected'
-        self.assertEqual(self.service.live_revision()['revision'], first['revision']+1)
+        self.assertEqual(self.service.live_revision()['revision'], first['revision'] + 1)
         summary.assert_not_called()
         self.service.practice = None
 
@@ -39,22 +42,26 @@ class LiveStateTests(unittest.TestCase):
         first = self.service.snapshot()['live']
         self.assertEqual(self.service.live_revision(), first)
         with self.service.store.transaction():
-            self.service.store.connection.execute('INSERT INTO metadata VALUES(?,?)', ('test-live', 'updated'))
+            self.service.store.connection.execute(
+                'INSERT INTO metadata VALUES(?,?)', ('test-live', 'updated')
+            )
         second = self.service.snapshot()['live']
         self.assertEqual(second['epoch'], first['epoch'])
-        self.assertEqual(second['revision'], first['revision']+1)
+        self.assertEqual(second['revision'], first['revision'] + 1)
         self.assertEqual(self.service.live_revision(), second)
 
     def test_v2_socket_only_sends_notifications_and_idle_does_not_snapshot(self):
         with patch.object(self.service, 'snapshot', wraps=self.service.snapshot) as snapshot:
             with self.client.websocket_connect('ws://localhost/ws?protocol=2') as ws:
                 initial = ws.receive_json()
-                self.assertEqual(initial, dict(type='state_changed', **self.service.live_revision()))
-                time.sleep(.65)
+                self.assertEqual(
+                    initial, dict(type='state_changed', **self.service.live_revision())
+                )
+                time.sleep(0.65)
                 snapshot.assert_not_called()
                 self.service.capture['status'] = 'New status'
                 changed = ws.receive_json()
-                self.assertEqual(changed['revision'], initial['revision']+1)
+                self.assertEqual(changed['revision'], initial['revision'] + 1)
                 self.assertLess(len(str(changed)), 120)
                 snapshot.assert_not_called()
 
@@ -63,7 +70,7 @@ class LiveStateTests(unittest.TestCase):
             with self.client.websocket_connect('ws://localhost/ws') as ws:
                 first = ws.receive_json()
                 self.assertIn('practice', first)
-                time.sleep(.65)
+                time.sleep(0.65)
                 self.assertEqual(snapshot.call_count, 1)
                 self.service.capture['status'] = 'Changed'
                 second = ws.receive_json()
