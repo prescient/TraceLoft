@@ -1,5 +1,13 @@
 # TraceLoft architecture decisions
 
+## D60 — Relational domain state and compatible DTOs (2026-10-10)
+
+Schema 3 makes golfers, equipment/configuration/membership, contexts/tags/plans relational. Typed
+path/value rows retain drill-specific settings and ordered state/corrections without editable JSON;
+explicit views expose common join/filter fields. Frozen geometry/model artifacts and raw evidence
+retain JSON. Reconcile every session DTO during migration. Cosmetic rename, configuration change
+and physical replacement are distinct. Freeze session ownership; retain unknown inbound attribution.
+
 ## D59 — Readable source metrics and recalculable derived results (2026-10-10, stage 1 implemented)
 
 Prefer explicit core columns for common source-reported shot metrics and a separate wide,

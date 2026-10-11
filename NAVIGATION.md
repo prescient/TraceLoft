@@ -1,5 +1,14 @@
 # Current Relay navigation update — 2026-10-03
 
+## Golfer/equipment/tag paths — 2026-10-10
+
+Header golfer → select/create → Practice with that golfer's equipment/history. Active practice/Play
+blocks switching until end/abandon. Manage bags → Specifications/Replace → Save applies to future
+shots. Range live/review → select shots → Tags → add/remove with attempt/physical-shot scope →
+save → toast Undo; Cancel returns unchanged. Reviews/resume/corrections require the selected owner.
+Isolated iPad 1366×1024/phone 390×844 browser review covered create/spec save/demo/tag save/Undo/end.
+Physical iPad Safari remains unverified.
+
 ## Nine-hole round selection — 2026-10-03
 
 Play → course setup → Full 18 / Front 9 / Back 9 → Launch. Front starts at hole 1 and ends at 9;

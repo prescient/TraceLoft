@@ -2,6 +2,7 @@ import {resetShotMotion,shotMotion,observeShotMotion,motionControls,mountShotMot
 import {decorateCollection} from './collection.js';
 import {escape as esc} from './charts.js';
 import {equipmentControls,bindEquipment} from './equipment.js';
+import {tagDialog} from './golfers.js';
 import {recordingWarnings} from './recording.js';
 import {equipment,valid,included,format as n,cohort,point,summarize,rangeCsv,clubKey,clubColors,CLUB_METRICS,clubSummaries,sourceValue,scatterCohort,dispersionCircles} from './range-data.js';
 
@@ -124,6 +125,9 @@ export function renderRange(app,data,state,isReview,sessionNotice,context) {
 <p class="model-note">Reported and modeled flight results have different definitions. No modeled club delivery is presented as measured. <a href="/api/range-notices" target="_blank" rel="noopener">OpenGolfCoach license & model notes</a></p></div>`;
   mountShotMotion(app,app.querySelector('.shot-flight'),motion,motion?chartProjection(motion,v.flightView):null,redraw);
   bindDispersionHelp(app.querySelector('.range-view'),v);
+  const tagButton=document.createElement('button');tagButton.type='button';tagButton.className='btn quiet';tagButton.textContent='Tags';tagButton.disabled=!v.selected.size;
+  tagButton.onclick=()=>tagDialog(data.id,[...v.selected],async(path,body)=>{const r=await fetch(path,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw new Error(d.detail??'Tag request failed');return d;},context.notice);
+  app.querySelector('.range-selection-bar>div').append(tagButton);
   if(active)bindEquipment(app,context.equipment,context.select,context.current);
   app.querySelectorAll('[data-flight-view]').forEach(b=>b.onclick=()=>{v.flightView=b.dataset.flightView;redraw();});
   app.querySelectorAll('[data-distance]').forEach(b=>b.onclick=()=>{v.metric=b.dataset.distance;redraw();});

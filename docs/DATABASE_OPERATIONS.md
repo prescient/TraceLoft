@@ -1,5 +1,9 @@
 # Source separation update — 2026-10-03
 
+Schema 3 stores golfers/equipment/context/tags/plans and typed session state relationally. The upgrade
+backs up and reconciles every reconstructed session and original evidence. Legacy JSON is immutable
+evidence. See [current database guide](SHOT_DATABASE.md); restore accepts schema versions 1–3.
+
 The first [database redesign](DATABASE_REDESIGN.md) stage is implemented as schema 2: 18 named
 source columns including reported total, separate immutable derived results and readable views.
 See [shot database and upgrade](SHOT_DATABASE.md) for verified schema-1 backup, rollback, new CSV

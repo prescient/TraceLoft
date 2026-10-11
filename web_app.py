@@ -137,6 +137,28 @@ class ClubParams(BaseModel):
     model_config = ConfigDict(extra='forbid')
     id: str = Field(default='', max_length=32)
     label: str = Field(min_length=1, max_length=80)
+    make: str | None = Field(default=None,max_length=80)
+    model: str | None = Field(default=None,max_length=80)
+    loft_deg: float | None = Field(default=None,ge=0,le=90,allow_inf_nan=False)
+    shaft: str | None = Field(default=None,max_length=80)
+    settings: str | None = Field(default=None,max_length=80)
+
+
+class GolferParams(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    user_id: str | None = Field(default=None,max_length=80)
+    name: str | None = Field(default=None,min_length=1,max_length=80)
+    handedness: Literal['right_handed','left_handed'] = 'right_handed'
+
+
+class TagParams(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    keys: list[str] = Field(default_factory=list,max_length=1000)
+    name: str = Field(default='',max_length=80)
+    action: Literal['add','remove','undo'] = 'add'
+    scope: Literal['shot','attempt'] = 'attempt'
+    reason: str = Field(default='Manual tag',min_length=1,max_length=80)
+    batch_id: str | None = None
 
 
 class BagParams(BaseModel):
@@ -418,6 +440,21 @@ def create_app(service=None):
     async def add_bag(params: BagParams):
         service.edit_bag(params.revision, params.name)
         return service.snapshot()
+
+    @app.post('/api/golfers/select')
+    async def golfer(params: GolferParams):
+        service.change_golfer(params.user_id,params.name,params.handedness)
+        return service.snapshot()
+
+    @app.get('/api/sessions/{session_id}/tags')
+    async def session_tags(session_id: str):
+        return service.store.session_tags(session_id)
+
+    @app.post('/api/sessions/{session_id}/tags')
+    async def tag_shots(session_id: str, params: TagParams):
+        batch=service.store.edit_tags(session_id,params.keys,params.name,params.action,params.scope,params.reason,params.batch_id)
+        service.sessions_revision+=1
+        return dict(batch_id=batch,tags=service.store.session_tags(session_id))
 
     @app.put('/api/equipment/bags/{bag_id}')
     async def edit_bag(bag_id: str, params: BagParams):

@@ -1,4 +1,27 @@
-# Readable shot database — schema 2
+# Readable shot database — schema 3
+
+Schema 3 adds local golfers, relational equipment revisions/membership, immutable shot contexts,
+audited many-to-many tags, frozen collection plans and typed session/attempt state. The browser
+receives compatible JSON DTOs assembled from relational rows. Legacy payloads are immutable evidence.
+
+Use the header golfer button to create/select profiles; end/abandon active sessions before switching.
+Each golfer has independent bags/history. Existing single-player sessions and linked shots belong to
+My golfer; unassigned inbound history remains unassigned. Profiles do not add authentication.
+
+Manage bags → Specifications appends configurations; cosmetic rename keeps physical identity and
+configuration. Replace creates a new physical club. Old labels/configuration links and plans stay
+frozen. Unknown historical configuration lineage remains null. Range → select shots → Tags supports
+audited add/remove, physical-shot/attempt scope and Undo; tags never change analytical inclusion.
+
+Readable context views: `v_session_equipment`, `v_session_state`, `v_attempt_outcomes`, `v_shot_tags`.
+`session_fields`/`attempt_fields` retain variable drill settings, scalar outcomes and ordered
+correction history as typed leaves with readable paths, including empty/null/list distinctions.
+Frozen course geometry/model artifacts retain JSON; legacy payloads are not editable fallbacks.
+
+The v2 → v3 upgrade creates a verified snapshot, then backfills and compares every reconstructed
+session DTO and original evidence hashes transactionally. Failure rolls back; `schema_migration.v3`
+records the result. Restore accepts versions 1–3. CSV ZIP includes the new entity/context/plan/state/
+tag tables and equipment view. The schema-2 numerical design below remains in place.
 
 The first stage of the [database redesign](DATABASE_REDESIGN.md) is implemented. SQLite retains
 the same file, shot IDs, raw packets, observations, original typed metrics and saved game/drill
@@ -141,10 +164,6 @@ schema 2 with the older app. Backups remain local; Google Drive is still planned
 
 ## Remaining migration work
 
-Users and golfer selection; relational bags/clubs/configuration/membership; shot context and audited
-tags; normalized session plans/scalar outcomes/corrections; versioned bag-map/matrix cohorts and
-profile selection; SQL-backed Analyze filtering; full calculation lineage and recalculation UI remain
-tracked in [the backlog](../BACKLOG.md). Current editable equipment and session state still use the
-established metadata/session payloads. Those remain their authority until their own migration; this
-stage does not add a competing editable catalog. New source/derived numerical reads use the wide
-tables while preserved snapshots retain original evidence and compatibility.
+Versioned bag-map/matrix cohorts/profile selection, SQL-backed Analyze filtering and full calculation
+lineage/recalculation UI remain tracked in [the backlog](../BACKLOG.md). Core equipment, context and
+session authority are relational in schema 3; numerical storage retains the schema-2 layout.

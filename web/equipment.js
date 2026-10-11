@@ -73,7 +73,7 @@ async function manageBags(context, initial, create=false) {
   const dialog=document.createElement('dialog');dialog.id='bag-manager';dialog.className='confirm-dialog bag-manager';
   dialog.setAttribute('aria-labelledby','bag-manager-title');document.body.append(dialog);
   let selected=initial, revision;
-  const row=c=>`<div class="bag-club" data-club-id="${esc(c.id)}"><label class="field">Club name<input value="${esc(c.label)}" maxlength="80" required></label><button class="btn small quiet" type="button" data-remove-club aria-label="Remove ${esc(c.label)||'new club'}">Remove</button></div>`;
+  const row=c=>`<div class="bag-club" data-club-id="${esc(c.id)}"><label class="field">Club name<input name="label" value="${esc(c.label)}" maxlength="80" required></label><div><button class="btn small quiet" type="button" data-replace-club>Replace</button><button class="btn small quiet" type="button" data-remove-club aria-label="Remove ${esc(c.label)||'new club'}">Remove</button></div><details class="club-specs"><summary>Specifications</summary><p class="form-hint">Renaming keeps this physical club. Specification changes create a configuration; Replace creates a new physical club.</p><div class="form-grid">${['make','model','loft_deg','shaft','settings'].map(k=>`<label class="field">${{make:'Make',model:'Model',loft_deg:'Loft · °',shaft:'Shaft',settings:'Settings'}[k]}<input name="${k}" value="${esc(c[k]??'')}" ${k==='loft_deg'?'type="number" min="0" max="90" step="0.1"':'maxlength="80"'}></label>`).join('')}</div></details></div>`;
   function draw() {
     const catalog=context.catalog();revision=catalog.revision;
     const bag=catalog.bags.find(b=>b.id===selected)??catalog.bags[0];selected=bag.id;
@@ -81,10 +81,10 @@ async function manageBags(context, initial, create=false) {
     dialog.querySelector('[data-edit-bag]').onchange=e=>{selected=e.target.value;draw();};
     dialog.querySelectorAll('[data-close-bags]').forEach(b=>b.onclick=()=>dialog.close());
     dialog.querySelector('[data-add-club]').onclick=()=>{if(dialog.querySelectorAll('.bag-club').length>=50)return;dialog.querySelector('.bag-clubs').insertAdjacentHTML('beforeend',row({id:'',label:''}));dialog.querySelector('.bag-club:last-child input').focus();};
-    dialog.querySelector('.bag-clubs').onclick=e=>{if(e.target.closest('[data-remove-club]'))e.target.closest('.bag-club').remove();};
+    dialog.querySelector('.bag-clubs').onclick=e=>{const r=e.target.closest('.bag-club');if(e.target.closest('[data-remove-club]'))r.remove();if(e.target.closest('[data-replace-club]')){r.dataset.clubId='';r.querySelectorAll('.club-specs input').forEach(i=>i.value='');r.querySelector('.club-specs').open=true;e.target.textContent='New physical club';}};
     async function save(e,create) {
       e.preventDefault();const form=e.target, name=form.elements.name.value, before=context.catalog().bags.map(b=>b.id);
-      const body={revision,name};if(!create)body.clubs=[...dialog.querySelectorAll('.bag-club')].map(r=>({id:r.dataset.clubId,label:r.querySelector('input').value}));
+      const body={revision,name};if(!create)body.clubs=[...dialog.querySelectorAll('.bag-club')].map(r=>({id:r.dataset.clubId,label:r.querySelector('[name=label]').value,...Object.fromEntries([...r.querySelectorAll('.club-specs input')].map(i=>[i.name,i.value.trim()?i.name==='loft_deg'?Number(i.value):i.value.trim():null]))}));
       dialog.querySelectorAll('button,input,select').forEach(c=>c.disabled=true);
       try {await context.save(create?'/api/equipment/bags':`/api/equipment/bags/${selected}`,body,create?'POST':'PUT');if(create)selected=context.catalog().bags.find(b=>!before.includes(b.id)).id;draw();context.notice(create?'Bag created.':'Bag saved. Earlier shot tags are unchanged.');}
       catch(err){const p=dialog.querySelector('[data-bag-error]');p.hidden=false;p.textContent=err.message;dialog.querySelectorAll('button,input,select').forEach(c=>c.disabled=false);}

@@ -161,7 +161,7 @@ class ShotInput:
             seq=seq,captured_at=extension.get('CapturedAt',now()),result=result,vals=vals,
             source_configuration=extension.get('Source',dict(acquisition='open_connect',device=packet['DeviceID'])),
             raw_packet=copy.deepcopy(packet),**{k:context.get(k) for k in
-                ('practice_session_id','equipment_selection','range_context','collection_context','game_context')})
+                ('practice_session_id','user_id','equipment_selection','range_context','collection_context','game_context')})
         evidence=extension.get('Evidence',{})
         if not isinstance(evidence,dict):raise ValueError('Invalid source evidence.')
         event.update({k:copy.deepcopy(evidence[k]) for k in ('raw','count','latency','source_time','note','sent_fields','club') if k in evidence})

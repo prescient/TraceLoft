@@ -82,7 +82,8 @@ class ShotSchemaTests(unittest.TestCase):
         data,shot_id,observations,before = self.legacy_database()
         self.store = Store(self.path)
         c = self.store.connection
-        self.assertEqual(c.execute('PRAGMA user_version').fetchone()[0],2)
+        from storage import SCHEMA_VERSION
+        self.assertEqual(c.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
         self.assertEqual(evidence_manifest(c),before)
         self.assertEqual(self.store.load_session(data['id']),data)
         self.assertEqual(self.store.list_sessions(),[data])
@@ -111,7 +112,7 @@ class ShotSchemaTests(unittest.TestCase):
         self.store.close()
         self.store = Store(self.path)
         self.assertEqual(self.store.load_session(data['id']),data)
-        self.assertEqual(len(list((self.path.parent/'backups').glob('*.sqlite3'))),1)
+        self.assertEqual(len(list((self.path.parent/'backups').glob('*.sqlite3'))),2)
 
     def test_failed_migration_rolls_back_to_v1(self):
         data,_,_,before = self.legacy_database()
@@ -195,7 +196,8 @@ class ShotSchemaTests(unittest.TestCase):
             single = list(csv.DictReader(io.StringIO(archive.read('shots_source.csv').decode('utf-8-sig'))))
             self.assertEqual(len(single),1)
             self.assertEqual(single[0]['total_distance_yd'],'180.0')
-            self.assertEqual(json.loads(archive.read('manifest.json'))['schema'],2)
+            from storage import SCHEMA_VERSION
+            self.assertEqual(json.loads(archive.read('manifest.json'))['schema'],SCHEMA_VERSION)
 
 
 if __name__ == '__main__':

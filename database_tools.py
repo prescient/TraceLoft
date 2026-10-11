@@ -67,7 +67,7 @@ def restore_snapshot(snapshot, target):
     manifest = json.loads(snapshot.with_suffix('.manifest.json').read_text('utf-8'))
     if digest(snapshot.read_bytes()) != manifest['sha256']:
         raise ValueError('Backup checksum does not match its manifest.')
-    if manifest['schema'] not in (1, SCHEMA_VERSION):
+    if manifest['schema'] not in range(1, SCHEMA_VERSION+1):
         raise ValueError('Use the matching application version for this backup.')
     with contextlib.closing(sqlite3.connect(f'{snapshot.resolve().as_uri()}?mode=ro',uri=True)) as source:
         if source.execute('PRAGMA integrity_check').fetchone()[0] != 'ok' or source.execute('PRAGMA foreign_key_check').fetchall():
@@ -108,7 +108,7 @@ def main():
         with contextlib.closing(sqlite3.connect(f'{path.resolve().as_uri()}?mode=ro',uri=True)) as source:
             print(json.dumps(dict(dry_run=True,current_schema=source.execute('PRAGMA user_version').fetchone()[0],
                 target_schema=SCHEMA_VERSION,shots=source.execute('SELECT count(*) FROM shots').fetchone()[0],
-                stage='wide_source_and_derived_metrics'),indent=2))
+                stage='relational_golfers_equipment_sessions'),indent=2))
         return
     if args.command == 'restore':
         if not args.snapshot or not args.output:
@@ -135,7 +135,7 @@ def main():
         elif args.command == 'backup':
             print(store.backup(args.output))
         elif args.command == 'upgrade':
-            report = json.loads(store.connection.execute("SELECT value FROM metadata WHERE key='schema_migration.v2'").fetchone()[0])
+            report = json.loads(store.connection.execute('SELECT value FROM metadata WHERE key=?',('schema_migration.v'+str(SCHEMA_VERSION),)).fetchone()[0])
             print(json.dumps(report,indent=2))
         else:
             target = args.output or path.parent/'traceloft-export.zip'

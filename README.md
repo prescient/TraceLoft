@@ -3,6 +3,10 @@
 A local golf practice, play and analysis app with a source-neutral shot relay. The Python service
 records shots and sessions in SQLite and serves the pure-white Vector web interface.
 
+Schema 3 adds local golfers, relational equipment/configurations, shot context, tags, collection plans
+and session state. Use the header golfer button, Manage bags → Specifications/Replace, and Range's
+bulk Tags control. See the [database guide](docs/SHOT_DATABASE.md) for readable views and recovery.
+
 ## Start
 
 On this PC, double-click **Launch TraceLoft.cmd**. Open **http://localhost:8765**.

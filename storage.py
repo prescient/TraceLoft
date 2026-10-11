@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 FIELDS = {
     'ball_speed': ('ball.speed', 'mph', .44704),
     'launch_ang': ('ball.launch_angle', 'deg', 1),
@@ -201,6 +201,18 @@ class Store:
         else:
             self.connection.execute('PRAGMA journal_mode=WAL')
             self.connection.execute('PRAGMA synchronous=FULL')
+        if self.connection.execute('PRAGMA user_version').fetchone()[0] == 2:
+            lease = None
+            try:
+                if not new_database and not migration_lease_held:
+                    from database_tools import ServiceLease
+                    lease = ServiceLease(self.path)
+                self._upgrade_domain(backup=not new_database)
+            except BaseException:
+                self.connection.close()
+                raise
+            finally:
+                if lease: lease.close()
         self.profile = json.loads(self.connection.execute(
             "SELECT payload FROM mapping_versions WHERE id='golfdata.foresight_screen.parsed.v1'").fetchone()[0])
         self.extended_profile = json.loads((ROOT / 'data/metric_mapping.v2.json').read_text('utf-8'))['profiles'][0]
@@ -248,21 +260,119 @@ class Store:
         with self.transaction():
             return write_result(self.connection,*args,**kwargs)
 
-    def equipment_catalog(self):
-        from equipment import CATALOG_KEY, default_catalog
+    def _upgrade_domain(self, backup=True):
+        from domain_schema import DDL, backfill, read_session
+        from shot_schema import hydrate_session, evidence_manifest
+        snapshot = self.backup() if backup else None
+        evidence = evidence_manifest(self.connection)
+        originals = {r['id']:hydrate_session(self.connection,json.loads(r['payload_json']))
+                     for r in self.connection.execute('SELECT id,payload_json FROM sessions')}
+        try:
+            self.connection.executescript('BEGIN IMMEDIATE;\n'+DDL)
+            backfill(self.connection)
+            for sid,data in originals.items():
+                if read_session(self.connection,sid)!=data:
+                    raise ValueError(f'Relational migration changed session {sid}.')
+            if evidence_manifest(self.connection)!=evidence:
+                raise ValueError('Relational migration changed original evidence.')
+            report=dict(from_schema=2,to_schema=3,at=now(),backup=str(snapshot) if snapshot else None,
+                        evidence=evidence,sessions_reconciled=len(originals),stage='relational_golfers_equipment_sessions')
+            self.connection.execute('INSERT INTO metadata VALUES(?,?)',('schema_migration.v3',encoded(report)))
+            self.connection.execute('PRAGMA user_version=3')
+            self.connection.execute('COMMIT')
+        except BaseException:
+            if self.connection.in_transaction:self.connection.execute('ROLLBACK')
+            raise
+
+    def active_user(self):
+        from domain_schema import active_user
+        with self.lock:return active_user(self.connection)
+
+    def users(self):
+        with self.lock:
+            return [dict(r) for r in self.connection.execute('SELECT * FROM users WHERE archived_at IS NULL ORDER BY created_at,user_id')]
+
+    def create_user(self, name, handedness='right_handed'):
+        from equipment import text, default_catalog
+        from domain_schema import save_catalog
+        name=text(name,'Golfer name')
+        if handedness not in ('right_handed','left_handed'):raise ValueError('Choose a valid handedness.')
+        uid=uuid.uuid4().hex
         with self.transaction():
-            row = self.connection.execute('SELECT value FROM metadata WHERE key=?', (CATALOG_KEY,)).fetchone()
-            if row:
-                return json.loads(row[0])
-            catalog = default_catalog()
-            self.connection.execute('INSERT INTO metadata VALUES(?,?)', (CATALOG_KEY, encoded(catalog)))
-            return catalog
+            self.connection.execute('INSERT INTO users VALUES(?,?,?,?,?)',(uid,name,handedness,now(),None))
+            save_catalog(self.connection,default_catalog(),uid)
+            self._audit(uid,'create_golfer',dict(name=name,handedness=handedness))
+        return uid
+
+    def select_user(self, user_id):
+        with self.transaction():
+            if not self.connection.execute('SELECT 1 FROM users WHERE user_id=? AND archived_at IS NULL',(user_id,)).fetchone():
+                raise ValueError('Golfer not found.')
+            self.connection.execute('UPDATE golfer_selection SET user_id=? WHERE singleton=1',(user_id,))
+            self._audit(user_id,'select_golfer',{})
+
+    def session_owner(self, session_id):
+        with self.lock:
+            row=self.connection.execute('SELECT user_id FROM session_owners WHERE session_id=?',(session_id,)).fetchone()
+            return row[0] if row else None
+
+    def edit_tags(self, session_id, keys, name, action='add', scope='attempt', reason='Manual tag', batch_id=None):
+        """Append associations atomically; an attempt tag never leaks to other sessions."""
+        from equipment import text
+        if action not in ('add','remove','undo') or scope not in ('shot','attempt'):
+            raise ValueError('Choose a valid tag action and scope.')
+        with self.transaction():
+            user=self.active_user()
+            if self.session_owner(session_id)!=user:raise ValueError('Switch golfer before tagging this session.')
+            if action=='undo':
+                row=self.connection.execute("SELECT payload_json FROM audit_events WHERE entity_id=? AND action='tag_batch' AND id=?",(session_id,batch_id)).fetchone()
+                if not row:raise ValueError('Tag batch not found.')
+                items=json.loads(row[0])['items']
+                for item in items:
+                    last=self.connection.execute('SELECT batch_id FROM shot_tag_events WHERE tag_id=? AND shot_id=? AND session_id IS ? AND ordinal IS ? ORDER BY rowid DESC LIMIT 1',
+                        (item['tag_id'],item['shot_id'],item['session_id'],item['ordinal'])).fetchone()
+                    if not last or last[0]!=batch_id:raise ValueError('Tags changed since this batch; refresh before undoing.')
+            else:
+                name=text(name,'Tag');reason=text(reason,'Reason')
+                if not keys or len(keys)>1000 or len(set(keys))!=len(keys):raise ValueError('Select 1–1000 distinct shots.')
+                tag=self.connection.execute('SELECT tag_id FROM tags WHERE user_id=? AND name_key=?',(user,name.casefold())).fetchone()
+                tid=tag[0] if tag else uuid.uuid4().hex
+                if not tag:self.connection.execute('INSERT INTO tags VALUES(?,?,?,?,?)',(tid,user,name,name.casefold(),now()))
+                links={r['legacy_key']:r for r in self.connection.execute('SELECT * FROM session_attempts WHERE session_id=?',(session_id,))}
+                if any(k not in links for k in keys):raise ValueError('Selection includes a shot outside this session.')
+                items=[];seen=set()
+                for key in keys:
+                    link=links[key];sid=session_id if scope=='attempt' else None;ordinal=link['ordinal'] if scope=='attempt' else None
+                    if (link['shot_id'],sid,ordinal) in seen:continue
+                    seen.add((link['shot_id'],sid,ordinal))
+                    old=self.connection.execute('SELECT added FROM shot_tag_events WHERE tag_id=? AND shot_id=? AND session_id IS ? AND ordinal IS ? ORDER BY rowid DESC LIMIT 1',(tid,link['shot_id'],sid,ordinal)).fetchone()
+                    items.append(dict(tag_id=tid,shot_id=link['shot_id'],session_id=sid,ordinal=ordinal,scope=scope,before=bool(old and old[0]),after=action=='add'))
+            batch=uuid.uuid4().hex
+            for item in items:
+                self.connection.execute('INSERT INTO shot_tag_events VALUES(?,?,?,?,?,?,?,?,?,?)',
+                    (uuid.uuid4().hex,item['tag_id'],item['shot_id'],item['session_id'],item['ordinal'],item['scope'],int(item['before'] if action=='undo' else item['after']),batch,reason,now()))
+            self.connection.execute('INSERT INTO audit_events VALUES(?,?,?,?,?)',(batch,session_id,'tag_batch',now(),encoded(dict(action=action,items=items,undo_of=batch_id))))
+            return batch
+
+    def session_tags(self, session_id):
+        with self.lock:
+            if self.session_owner(session_id)!=self.active_user():raise ValueError('Switch golfer to view tags.')
+            rows=self.connection.execute('''SELECT a.legacy_key,t.tag_id,t.name,t.scope FROM session_attempts a
+                JOIN v_shot_tags t ON t.shot_id=a.shot_id AND (t.scope='shot' OR (t.session_id=a.session_id AND t.ordinal=a.ordinal))
+                WHERE a.session_id=? ORDER BY t.name,t.scope''',(session_id,))
+            result={}
+            for r in rows:result.setdefault(r['legacy_key'],[]).append(dict(tag_id=r['tag_id'],name=r['name'],scope=r['scope']))
+            return result
+
+    def equipment_catalog(self):
+        from domain_schema import read_catalog
+        with self.lock:return read_catalog(self.connection)
 
     def save_equipment_catalog(self, catalog):
-        from equipment import CATALOG_KEY
+        from domain_schema import save_catalog
         with self.transaction():
-            self.connection.execute('INSERT OR REPLACE INTO metadata VALUES(?,?)', (CATALOG_KEY, encoded(catalog)))
-            self._audit(CATALOG_KEY, 'edit_bags', {'revision':catalog['revision']})
+            save_catalog(self.connection,catalog,self.active_user())
+            self._audit(self.active_user(), 'edit_bags', {'revision':catalog['revision']})
 
     def _catalog(self):
         catalog = json.loads((ROOT / 'data/metric_catalog.v1.json').read_text('utf-8'))
@@ -352,6 +462,14 @@ class Store:
         if accepted:
             self.connection.execute('INSERT INTO shots VALUES(?,?,?,?,?)',
                 (shot_id, event_id, when, basis, event.get('club')))
+            owner=event.get('user_id')
+            sid=event.get('practice_session_id')
+            session_owner=self.session_owner(sid) if sid else None
+            if owner and session_owner and owner!=session_owner:
+                raise ValueError('Shot golfer conflicts with its frozen session.')
+            owner=session_owner or owner
+            if owner:
+                self.connection.execute('INSERT INTO shot_owners VALUES(?,?,?)',(shot_id,owner,'accepted_input_context'))
         observation_id = identity('observation:' + event_id)
         profile = self.generic_profile if event.get('mapping_id') in ('traceloft.normalized.v1','traceloft.normalized.v2') or {'club_speed','smash_factor','attack_angle','club_path'}.intersection(event.get('vals',{})) else self.extended_profile if EXTENDED_FIELDS.intersection(event.get('vals', {})) else self.profile
         mapping_id = profile['id']
@@ -388,14 +506,14 @@ class Store:
                                           (session_id, int(deleted))).fetchone()
             if not row:
                 raise FileNotFoundError('Session not found.')
-            from shot_schema import hydrate_session
-            return hydrate_session(self.connection,json.loads(row[0]))
+            from domain_schema import read_session
+            return read_session(self.connection,session_id)
 
     def list_sessions(self, deleted=False):
         with self.lock:
-            from shot_schema import hydrate_session
-            return [hydrate_session(self.connection,json.loads(r[0])) for r in self.connection.execute(
-                'SELECT payload_json FROM sessions WHERE (deleted_at IS NOT NULL)=? ORDER BY started DESC', (int(deleted),))]
+            from domain_schema import read_session
+            return [read_session(self.connection,r[0]) for r in self.connection.execute(
+                'SELECT id FROM sessions WHERE (deleted_at IS NOT NULL)=? ORDER BY started DESC', (int(deleted),)).fetchall()]
 
     def save_session(self, data, imported=False, deleted=False):
         with self.transaction():
@@ -408,7 +526,7 @@ class Store:
                     raise ValueError(f'Conflicting legacy copies of session {sid}.')
                 return
             self.connection.execute('INSERT INTO sessions VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET '
-                'started=excluded.started, ended=excluded.ended, drill=excluded.drill, revision=sessions.revision+1, payload_json=excluded.payload_json',
+                'started=excluded.started, ended=excluded.ended, drill=excluded.drill, revision=sessions.revision+1',
                 (sid, data['started'], data.get('ended'), data['drill'], now() if deleted else None, 1, encoded(data)))
             for ordinal, shot in enumerate(data['shots'], 1):
                 previous = self.connection.execute('SELECT * FROM session_attempts WHERE session_id=? AND legacy_key=?',
@@ -418,7 +536,7 @@ class Store:
                     if previous['excluded'] != int(shot['excluded']):
                         correction=shot.get('game_correction')
                         new_misread=(correction and correction['kind']=='misread'
-                            and not json.loads(previous['payload_json']).get('game_correction'))
+                            and not self.connection.execute("SELECT 1 FROM attempt_fields WHERE session_id=? AND ordinal=? AND path='/game_correction/kind'",(sid,ordinal)).fetchone())
                         self.connection.execute('INSERT INTO inclusion_decisions VALUES(?,?,?,?,?,?)',
                             (uuid.uuid4().hex,sid,shot['key'],int(shot['excluded']),
                              'game_misread' if new_misread else 'manual_session_only',now()))
@@ -453,15 +571,18 @@ class Store:
                         self.connection.execute('DELETE FROM shot_derived_metrics WHERE shot_id=?',(own_shot,))
                         write_source(self.connection,obs_id)
                         source_features(self.connection,linked_shot)
+                        self.connection.execute('DELETE FROM shot_owners WHERE shot_id=?',(own_shot,))
                         self.connection.execute('DELETE FROM shots WHERE id=?',(own_shot,))
                 self.connection.execute('INSERT INTO session_attempts VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(session_id,ordinal) DO UPDATE SET '
-                    'excluded=excluded.excluded,payload_json=excluded.payload_json',
+                    'excluded=excluded.excluded',
                     (sid,ordinal,shot['key'],shot_id,obs_id,shot.get('captured'),shot.get('target',data['target']),
                      int(shot['success']),int(shot['excluded']),encoded(shot)))
                 from shot_schema import write_source, save_attempt_results, source_features
                 write_source(self.connection,obs_id)
                 source_features(self.connection,shot_id)
                 save_attempt_results(self.connection,data,shot,ordinal,legacy=imported)
+            from domain_schema import write_session
+            write_session(self.connection,data,backfill=imported)
             self._audit(sid, 'import_session' if imported else 'save_session', {'shots':len(data['shots'])})
 
     def set_deleted(self, session_id, deleted):
@@ -513,9 +634,10 @@ class Store:
                                'bag_id','bag_name','club_id','catalog_revision','selection_mode',
                                'simulated','removed','cleanup_reason','corrected_equipment','flight']
             attempt_fields += distance_fields
-            contexts = {r['id']:json.loads(r['payload_json']) for r in self.connection.execute('SELECT id,payload_json FROM sessions')}
+            from domain_schema import read_session
+            contexts = {r[0]:read_session(self.connection,r[0]) for r in self.connection.execute('SELECT id FROM sessions').fetchall()}
             for attempt in attempts:
-                outcome = json.loads(attempt['payload_json'])
+                outcome = contexts[attempt['session_id']]['shots'][attempt['ordinal']-1]
                 context = contexts[attempt['session_id']]
                 for field in distance_fields:
                     attempt[field] = outcome.get(field)
@@ -540,11 +662,14 @@ class Store:
             field_sets = {'shots.csv':shot_fields,'metric_values.csv':metric_fields,'session_attempts.csv':attempt_fields}
             for table in ('shot_source_metrics','source_metric_quality','shot_primary_source',
                           'shot_derived_metrics','calculation_runs','calculation_inputs',
-                          'derived_metric_selection','attempt_derived_results','shot_trajectories'):
+                          'derived_metric_selection','attempt_derived_results','shot_trajectories',
+                          'users','session_owners','shot_owners','bags','clubs','bag_revisions','club_revisions',
+                          'bag_memberships','shot_contexts','context_selection','session_plans','session_plan_items',
+                          'session_fields','attempt_fields','tags','shot_tag_events'):
                 cursor = self.connection.execute(f'SELECT * FROM {table} ORDER BY rowid')
                 files[table+'.csv'] = [dict(r) for r in cursor]
                 field_sets[table+'.csv'] = [d[0] for d in cursor.description]
-            for view,name in (('v_shots_source','shots_source.csv'),('v_session_shots','session_shots_wide.csv')):
+            for view,name in (('v_shots_source','shots_source.csv'),('v_session_shots','session_shots_wide.csv'),('v_session_equipment','session_equipment.csv')):
                 cursor = self.connection.execute(f'SELECT * FROM {view} ORDER BY shot_id')
                 files[name] = [dict(r) for r in cursor]
                 field_sets[name] = [d[0] for d in cursor.description]

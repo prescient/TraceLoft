@@ -50,7 +50,15 @@ def edit_catalog(catalog, revision, name, bag_id=None, clubs=None):
             if cid in ids or label.casefold() in labels:
                 raise ValueError('Use distinct club names and identities within a bag.')
             ids.add(cid); labels.add(label.casefold())
-            result.append(dict(id=cid, label=label))
+            specs={k:c[k] for k in ('make','model','loft_deg','shaft','settings') if c.get(k) is not None}
+            if 'loft_deg' in specs:
+                import math
+                value=specs['loft_deg']
+                if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not 0<=value<=90:
+                    raise ValueError('Loft must be 0–90 degrees.')
+            for k in ('make','model','shaft','settings'):
+                if k in specs:specs[k]=text(specs[k],k)
+            result.append(dict(id=cid, label=label,**specs))
         bag.update(name=name, clubs=result)
     updated['revision'] += 1
     return updated, bag['id']

@@ -2,7 +2,8 @@
 
 Design and migration plan — 2026-10-10. Stage 1 (schema 2) implements wide source reports,
 separate immutable derived results, attempt pins, readable views and expanded CSV export.
-See [implemented shot database](SHOT_DATABASE.md). Remaining entities/workflows below are proposed.
+Schema 3 implements golfers/equipment/context/tags/plans and typed session state. See
+[implemented database](SHOT_DATABASE.md). Group analyses and batch recalculation remain proposed.
 This updates the earlier preference for long-form metric values as the main analytical interface.
 The user now prioritizes named columns and a separate, recalculable derived-metrics table.
 

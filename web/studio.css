@@ -1,4 +1,5 @@
 @charset "UTF-8";
+.bag-club .club-specs{grid-column:1/-1;width:100%}.club-specs summary{cursor:pointer;min-height:44px;display:flex;align-items:center}#golfer-picker{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:44px}@media(max-width:600px){#golfer-picker{max-width:130px;order:3}.topbar{flex-wrap:wrap}}
 .backup-status{color:var(--accent);overflow-wrap:anywhere;font-size:14px}
 .round-scorecard>summary{cursor:pointer;margin-bottom:0;min-height:56px}.round-scorecard>summary h2:after{content:' · View scorecard';font-size:12px;font-weight:500;color:var(--accent)}.round-scorecard[open]>summary{margin-bottom:20px}.round-scorecard[open]>summary h2:after{content:' · Hide scorecard'}
 :root{--bg:#fff;--surface:#fff;--surface-hi:#fff;--border:#cbd3df;--ink:#111b2e;--muted:#526178;--accent:#1455ed;--amber:#985000;--red:#b4233b;--success:#087b54;--band:#e8efff;--radius:0;--selection:#edf3ff;--grid:#dce3ec;--warning-border:#cf8b27;font-family:Inter,"Segoe UI",system-ui,sans-serif;font-size:14px;color:var(--ink);background:var(--bg);color-scheme:light;font-synthesis:none}

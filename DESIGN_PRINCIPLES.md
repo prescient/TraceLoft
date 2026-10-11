@@ -5,6 +5,10 @@ or changing interfaces, drills, games and analysis tools. They are design requir
 work, not a claim that every existing screen already meets them. Later user instructions can change
 the direction; update this document when a principle changes.
 
+Keep golfer selection compact in the header and freeze session ownership at launch. Configuration/
+replacement editing and bulk tags belong in secondary dialogs with explicit scope and Undo. Preserve
+original readings, recorded labels and played outcomes through these changes.
+
 ## 1. Design for the golfer standing at the putting setup
 
 The practice screen should answer three questions at a glance: what happened on my last putt,

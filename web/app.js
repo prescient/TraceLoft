@@ -11,6 +11,7 @@ import {renderDistanceSetup, distanceRunner} from './distance-ladder.js';
 import {bindEquipment, refreshSetupEquipment} from './equipment.js';
 import {recordingWarnings} from './recording.js';
 import {renderRangeSetup,renderRange} from './driving-range.js';
+import {bindGolferPicker} from './golfers.js';
 
 const app = document.querySelector('#app'), connection = document.querySelector('#connection');
 let state=null, drills=[], view='choose', selectedDrill=null, review=null, selectedShot=null, socket=null, renderKey='', online=false;
@@ -102,8 +103,11 @@ function navigation() {
 function update(next) {
   const previousSession=JSON.stringify([state?.practice?.id,state?.practice?.ended]);
   const sessionsChanged=state?.sessions_revision!==next.sessions_revision;
-  const equipmentChanged=state?.equipment?.revision!==next.equipment?.revision;
+  const golferChanged=state?.golfer_id!==next.golfer_id;
+  const equipmentChanged=golferChanged||state?.equipment?.revision!==next.equipment?.revision;
   state=next; navigation();
+  bindGolferPicker(state,async body=>{review=null;update(await api('/api/golfers/select',body));setView('choose');},notice);
+  if(golferChanged){review=null;renderKey='';}
   if (view==='relay') updateRelay();
   else if(view==='sessions'&&sessionsChanged)renderSessions();
   else if(view==='play'&&previousSession!==JSON.stringify([state.practice?.id,state.practice?.ended]))renderPlay(app,state,courses);

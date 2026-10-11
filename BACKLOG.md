@@ -528,12 +528,11 @@ Real-course sources/import enhancements remain optional deferred work.
   source-specific semantics still require verification when additional monitor profiles are connected.
 - [x] Implement schema-2 additive backed-up migration/backfill, availability/quality and separate
   immutable source/derived versions with attempt pins; preserve observations, original units and outcomes.
-- [ ] Complete typed session-state/outcome/correction schema and full dependency/batch lineage;
-  stage 1 retains existing session/equipment authority during their later relational migration.
-- [ ] Move equipment catalog/context/collection plans from JSON into readable relational tables;
-  retain historical IDs/labels and explicit physical-club identity. Add general shot tags and
-  reproducible group analyses/profile selection without changing existing cleanup scopes.
-- [ ] Implement local golfer profiles/selection and user ownership backfill/guards; preserve existing
+- [x] Complete typed session-state/outcome/correction storage and exact review/resume parity in schema 3.
+- [x] Move equipment/context/plans to relational tables; preserve physical IDs/labels/configurations
+  and immutable legacy evidence. Add audited many-to-many tags with physical-shot/attempt scope/Undo.
+- [ ] Add reproducible group analyses/profile selection without changing existing cleanup scopes.
+- [x] Implement local golfer profiles/selection and user ownership backfill/guards; preserve existing
   single-player history, flag ambiguous attribution and prevent cross-user bag/statistical mixing.
   Remote authentication/authorization remains a separate future feature.
 - [ ] Implement idempotent model runs, immutable results/input context, explicit analytical version
@@ -542,7 +541,7 @@ Real-course sources/import enhancements remain optional deferred work.
   retagging dependencies and historical review in isolation before production cutover.
 
 See [redesign](docs/DATABASE_REDESIGN.md) and [implemented schema 2](docs/SHOT_DATABASE.md).
-Stage 1 implements wide metrics and compatible reads/writes/export; broader migration remains pending.
+Schema 3 adds relational core state; group analyses and recalculation workflows remain pending.
 
 Status: core SQLite import/capture/practice persistence, typed registry, CSV export and verified local
 backup/restore implemented; cutover and verification are tracked in WORK_LOG.md.

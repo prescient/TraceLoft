@@ -84,6 +84,7 @@ class GolfService:
     def publish_context(self):
         active = self.practice and not self.practice.data['ended'] and not self.practice.data.get('demo')
         self.input_context = dict(practice_session_id=self.practice.data['id'] if active else None,
+            user_id=self.store.session_owner(self.practice.data['id']) if active and self.store else None,
             required_distance=self.practice.data.get('range_metric') if active else None,
             equipment_selection=copy.deepcopy(self.practice.data.get('equipment_selection')) if active else None,
             collection_context={'swing_label':self.practice.data.get('swing_label')} if active else None,
@@ -94,6 +95,8 @@ class GolfService:
 
     def load_session(self, session_id, deleted=False):
         if self.store:
+            if self.store.session_owner(session_id) not in (None,self.store.active_user()):
+                raise FileNotFoundError('Switch golfer to open this session.')
             return restore_model(PuttingSession.from_store(self.store, session_id, deleted))
         path = self.session_path(session_id)
         return restore_model(PuttingSession.load(path.parent / '.trash' / path.name if deleted else path))
@@ -103,6 +106,7 @@ class GolfService:
              practice=self.practice.data if self.practice else None, summary=self.practice.summary() if self.practice else None,
              practice_error=self.save_error, history=list(self.history), logs=list(self.logs), read=self.latest_read,
              access=self.access, sessions_revision=self.sessions_revision, equipment=self.equipment,
+             golfers=self.store.users() if self.store else [], golfer_id=self.store.active_user() if self.store else None,
              storage=dict(engine='sqlite' if self.store else 'legacy_test', path=str(self.store.path) if self.store else None,
                           backup='local_only')))
 
@@ -241,6 +245,19 @@ class GolfService:
         self.publish_context()
         self.sessions_revision += 1
         return self.practice.data
+
+    def change_golfer(self, user_id=None, name=None, handedness='right_handed'):
+        if not self.store:raise ValueError('Golfer profiles require SQLite.')
+        if self.practice and not self.practice.data['ended']:
+            raise ValueError('Finish or abandon the active session before changing golfer.')
+        self.flush_practice()
+        if self.pending:raise ValueError('Resolve pending saves before changing golfer.')
+        with self.store.transaction():
+            if name is not None:user_id=self.store.create_user(name,handedness)
+            self.store.select_user(user_id)
+        self.practice=None
+        self.equipment=self.store.equipment_catalog()
+        self.publish_context();self.sessions_revision+=1
 
     def edit_bag(self, revision, name, bag_id=None, clubs=None):
         updated, edited_id = edit_catalog(self.equipment, revision, name, bag_id, clubs)
@@ -540,6 +557,7 @@ class GolfService:
         result = []
         if self.store:
             for data in self.store.list_sessions(deleted):
+                if self.store.session_owner(data['id'])!=self.store.active_user():continue
                 session = self.load_session(data['id'], deleted)
                 result.append(dict(id=data['id'],started=data['started'],ended=data['ended'],drill=data['drill'],
                     random_pace=data.get('random_pace',False),abandoned=data.get('abandoned',False),practice_type=data.get('practice_type','putting'),demo=data.get('demo',False),session_kind=data.get('session_kind'),

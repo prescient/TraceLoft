@@ -1,5 +1,19 @@
 # TraceLoft work log
 
+## 2026-10-10 — Relational golfers, equipment, session state and tags
+
+- Added schema 3, verified v2 backup, transactional backfill/evidence reconciliation and exact DTO
+  reconstruction. Relational rows replace editable equipment/session JSON; frozen artifacts remain JSON.
+- Added golfer creation/selection and ownership guards, equipment configurations/membership, frozen
+  context/plans, typed session state and audited shot/attempt tags with Undo. Retained unknown attribution.
+- Added header golfer dialog, Manage bags Specifications/Replace and Range bulk Tags controls.
+- Verification: 156 Python tests and 49 JS tests passed; four new relational tests and 29 affected
+  storage/equipment/migration tests passed. Isolated real-data migration reconstructed all 47 sessions
+  exactly with evidence/foreign-key checks. iPad 1366×1024/phone 390×844 browser review verified golfer
+  creation, spec save, demo capture, tag save/Undo, end and golfer-dialog return; fixed submission CSS
+  selector caught in review. Physical iPad remains unverified. Production stays on schema 2 until the
+  analysis migration and final cutover checks.
+
 ## 2026-10-10 — Readable source/derived migration, stage 1
 
 - Released schema 2 with 18 core named source columns including reported total distance, all-report

@@ -1,5 +1,9 @@
 # TraceLoft storage and analytics proposal
 
+**Implemented update — 2026-10-10:** schema 3 adds relational golfers/equipment/context/tags/plans
+and typed session state. Legacy JSON is immutable evidence. Group analyses and recalculation UI
+remain next migration work. Later implemented updates take precedence over older proposal text below.
+
 **Design update — 2026-10-10:** the user prefers named columns for source-reported shot metrics
 and a separate, versioned derived-metrics table linked by shot ID. The
 [readable database redesign](docs/DATABASE_REDESIGN.md) supersedes the long-form-first recommendation
