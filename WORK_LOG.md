@@ -1,5 +1,18 @@
 # TraceLoft work log
 
+## 2026-10-11 — CLAUDE.md and codebase review
+
+- Added `CLAUDE.md` for Claude Code. It imports AGENTS.md and condenses DESIGN_PRINCIPLES.md,
+  the module map, live-data isolation, architectural invariants and code conventions. It notes
+  that the saved Relay choice is restored on restart (D48); §9 of the design principles still
+  says sending stays off on startup.
+- Documentation only; no application behavior changed. Checked the CLAUDE.md links and checked
+  its claims against `web_service.py`, `web_app.py`, `storage.py` and `shot_input.py`. Full suites
+  passed: **184 Python tests and 63 JavaScript tests**. `node` was not on this shell's PATH, so
+  `verify.py` could not run as written; the suites were run directly instead.
+- The maintainability/extensibility/reliability findings were reported to the user. They are not
+  yet in BACKLOG.md.
+
 ## 2026-10-10 — Repeatable verification and handoff
 
 - Added `python verify.py`: selects the project venv when present, runs Python discovery and all
