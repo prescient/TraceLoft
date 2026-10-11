@@ -1,3 +1,4 @@
+import { html } from './charts.js';
 // Presentation only. None of these paths or clocks participate in scoring.
 const finite = Number.isFinite;
 const clamp = x => Math.max(0, Math.min(1, x));
@@ -213,7 +214,7 @@ export function observeShotMotion(scope, shot, plan, live) {
   return !!clock.playing(performance.now());
 }
 export function motionControls(plan) {
-  return `<div class="shot-motion-controls"><span class="form-hint" data-motion-status>${plan ? 'Illustrative replay · roll timing estimated' : 'Flight unavailable · waiting for usable shot data'}</span><button class="btn small quiet" type="button" data-motion-replay ${plan ? '' : 'disabled'}>Replay ball</button><button class="btn small quiet" type="button" data-motion-skip hidden>Skip</button></div>`;
+  return html`<div class="shot-motion-controls"><span class="form-hint" data-motion-status>${plan ? 'Illustrative replay · roll timing estimated' : 'Flight unavailable · waiting for usable shot data'}</span><button class="btn small quiet" type="button" data-motion-replay ${plan ? '' : 'disabled'}>Replay ball</button><button class="btn small quiet" type="button" data-motion-skip hidden>Skip</button></div>`;
 }
 export function mountShotMotion(root, svg, plan, project, onFinish = () => {}) {
   if (frameId !== null) cancelAnimationFrame(frameId);
@@ -299,9 +300,9 @@ export function mountShotMotion(root, svg, plan, project, onFinish = () => {}) {
 
 export function motionChart(plan, view = 'side') {
   if (!plan)
-    return '<div class="range-flight-empty">Record carry / total or valid launch inputs to see the shot.</div>';
+    return html`<div class="range-flight-empty">Record carry / total or valid launch inputs to see the shot.</div>`;
   if (view === 'top' && !plan.directionKnown)
-    return '<div class="range-flight-empty">Top view needs offline or a valid flight estimate. Side view is available.</div>';
+    return html`<div class="range-flight-empty">Top view needs offline or a valid flight estimate. Side view is available.</div>`;
   const xmax = Math.max(1, ...plan.points.map(p => p.x)),
     zmax = Math.max(10, ...plan.points.map(p => p.z * 3)),
     side = Math.max(10, ...plan.points.map(p => Math.abs(p.y)));
@@ -312,7 +313,7 @@ export function motionChart(plan, view = 'side') {
   const path = plan.points.map((p, i) => `${i ? 'L' : 'M'}${project(p).join(',')}`).join(' ');
   const landing = project(motionFrame(plan, plan.airTime)),
     end = project(plan.points.at(-1));
-  return `<svg class="range-flight shot-flight" viewBox="0 0 515 ${view === 'top' ? 300 : 225}" role="img" aria-label="Illustrative ball flight and rollout"><path d="${path}" class="range-flight-path"/>${plan.airTime ? `<circle cx="${landing[0]}" cy="${landing[1]}" r="4" fill="white" stroke="var(--accent)"><title>Estimated landing at carry distance</title></circle>` : ''}<circle cx="${end[0]}" cy="${end[1]}" r="4" fill="var(--accent)"><title>Stopping distance</title></circle><text x="45" y="${view === 'top' ? 279 : 209}">0</text><text x="490" y="${view === 'top' ? 279 : 209}" text-anchor="end">${Math.round(xmax)} yd</text>${view === 'side' ? `<text x="45" y="32">${Math.round(zmax)} ft</text>` : '<text x="265" y="299" text-anchor="middle">Forward ↑ · right → (axes scaled independently)</text>'}</svg>`;
+  return html`<svg class="range-flight shot-flight" viewBox="0 0 515 ${view === 'top' ? 300 : 225}" role="img" aria-label="Illustrative ball flight and rollout"><path d="${path}" class="range-flight-path"/>${plan.airTime ? html`<circle cx="${landing[0]}" cy="${landing[1]}" r="4" fill="white" stroke="var(--accent)"><title>Estimated landing at carry distance</title></circle>` : ''}<circle cx="${end[0]}" cy="${end[1]}" r="4" fill="var(--accent)"><title>Stopping distance</title></circle><text x="45" y="${view === 'top' ? 279 : 209}">0</text><text x="490" y="${view === 'top' ? 279 : 209}" text-anchor="end">${Math.round(xmax)} yd</text>${view === 'side' ? html`<text x="45" y="32">${Math.round(zmax)} ft</text>` : html`<text x="265" y="299" text-anchor="middle">Forward ↑ · right → (axes scaled independently)</text>`}</svg>`;
 }
 export function chartProjection(plan, view) {
   const xmax = Math.max(1, ...plan.points.map(p => p.x)),

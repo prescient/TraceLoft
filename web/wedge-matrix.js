@@ -1,4 +1,4 @@
-import { escape as esc } from './charts.js';
+import { html } from './charts.js';
 import { robustSummary, equipment, included } from './range-data.js';
 const n = v => (Number.isFinite(v) ? v.toFixed(1) : '—');
 export function matrixCells(data) {
@@ -85,21 +85,19 @@ export function decorateMatrix(app, data, active, context) {
     full = cells.filter(c => c.count >= data.collection_samples).length;
   const panel = document.createElement('section');
   panel.className = 'card matrix-summary section-space';
-  panel.innerHTML = `<div class="chart-head"><div><p class="eyebrow">${esc(data.collection_plan[0].bag_name)} / ${esc(data.range_metric)} · YD</p><h2>Your wedge matrix</h2></div><strong>${full}/${cells.length} cells sampled</strong></div><p class="form-hint">${data.collection_samples} included readings per cell. Median / IQR · n = available readings. All included planned shots; independent of workspace filters. Swing labels describe your intent, not a fixed percentage of distance.</p><div class="table-wrap"><table class="wedge-grid"><thead><tr><th>Wedge</th>${data.swing_labels.map(l => `<th>${esc(l)}</th>`).join('')}</tr></thead><tbody>${data.collection_plan
-    .map(
-      eq =>
-        `<tr><th>${esc(eq.club_label)}</th>${data.swing_labels
-          .map(label => {
-            const c = cells.find(c => c.club_id === eq.club_id && c.label === label),
-              selected =
-                active && eq.club_id === data.equipment_selection?.club_id && label === data.swing_label;
-            return `<td><${active ? 'button' : 'div'} ${active ? 'type="button"' : ''} class="matrix-cell ${selected ? 'selected' : ''} ${c.count >= data.collection_samples ? 'sampled' : ''}" ${active ? `data-cell-club="${esc(eq.club_id)}" data-cell-swing="${esc(label)}" aria-pressed="${selected}" aria-label="Collect ${esc(eq.club_label)} ${esc(label)}"` : ''}><strong>${n(c.median)} <small>yd</small></strong><span>IQR ${n(c.iqr)} · n=${c.count}</span><small>${n(c.launch.median)}° launch · ${n(c.spin.median)} rpm</small>${selected ? '<small>● Next shot</small>' : ''}</${active ? 'button' : 'div'}></td>`;
-          })
-          .join('')}</tr>`
-    )
-    .join(
-      ''
-    )}</tbody></table></div><div class="matrix-suggest section-space"><label class="field">Find a shot for this distance · yd<input type="number" min="1" max="450" step="1" data-wedge-target placeholder="e.g. 75"></label><div data-wedge-suggestions aria-live="polite"><p class="form-hint">Suggestions use cells that meet your sample goal. They are estimates from this session, with no extrapolation.</p></div></div><div class="form-foot"><button class="btn quiet" data-matrix-export>Export matrix CSV</button><button class="btn quiet" data-matrix-print>Print reference</button><span class="form-hint">${full === cells.length ? 'Matrix sample goal reached. Finish when ready.' : 'Fill empty cells or keep collecting to improve coverage.'}</span></div>`;
+  const tagName = active ? 'button' : 'div';
+  const rows = data.collection_plan.map(
+    eq =>
+      html`<tr><th>${eq.club_label}</th>${data.swing_labels.map(label => {
+        const c = cells.find(c => c.club_id === eq.club_id && c.label === label),
+          selected = active && eq.club_id === data.equipment_selection?.club_id && label === data.swing_label;
+        const attributes = active
+          ? html`data-cell-club="${eq.club_id}" data-cell-swing="${label}" aria-pressed="${selected}" aria-label="Collect ${eq.club_label} ${label}"`
+          : '';
+        return html`<td><${tagName} ${active ? html`type="button"` : ''} class="matrix-cell ${selected ? 'selected' : ''} ${c.count >= data.collection_samples ? 'sampled' : ''}" ${attributes}><strong>${n(c.median)} <small>yd</small></strong><span>IQR ${n(c.iqr)} · n=${c.count}</span><small>${n(c.launch.median)}° launch · ${n(c.spin.median)} rpm</small>${selected ? html`<small>● Next shot</small>` : ''}</${tagName}></td>`;
+      })}</tr>`
+  );
+  panel.innerHTML = html`<div class="chart-head"><div><p class="eyebrow">${data.collection_plan[0].bag_name} / ${data.range_metric} · YD</p><h2>Your wedge matrix</h2></div><strong>${full}/${cells.length} cells sampled</strong></div><p class="form-hint">${data.collection_samples} included readings per cell. Median / IQR · n = available readings. All included planned shots; independent of workspace filters. Swing labels describe your intent, not a fixed percentage of distance.</p><div class="table-wrap"><table class="wedge-grid"><thead><tr><th>Wedge</th>${data.swing_labels.map(l => html`<th>${l}</th>`)}</tr></thead><tbody>${rows}</tbody></table></div><div class="matrix-suggest section-space"><label class="field">Find a shot for this distance · yd<input type="number" min="1" max="450" step="1" data-wedge-target placeholder="e.g. 75"></label><div data-wedge-suggestions aria-live="polite"><p class="form-hint">Suggestions use cells that meet your sample goal. They are estimates from this session, with no extrapolation.</p></div></div><div class="form-foot"><button class="btn quiet" data-matrix-export>Export matrix CSV</button><button class="btn quiet" data-matrix-print>Print reference</button><span class="form-hint">${full === cells.length ? 'Matrix sample goal reached. Finish when ready.' : 'Fill empty cells or keep collecting to improve coverage.'}</span></div>`;
   app.querySelector('.range-hero').insertAdjacentElement('afterend', panel);
   const choose = async (club_id, swing_label, b) => {
     b.disabled = true;
@@ -116,7 +114,7 @@ export function decorateMatrix(app, data, active, context) {
   if (active) {
     const tag = document.createElement('section');
     tag.className = 'card wedge-next';
-    tag.innerHTML = `<p class="eyebrow">SWING FOR NEXT SHOT</p><div class="wedge-swings">${data.swing_labels.map(l => `<button class="btn ${l === data.swing_label ? 'primary' : ''}" data-swing="${esc(l)}" aria-pressed="${l === data.swing_label}">${esc(l)}</button>`).join('')}</div><p class="form-hint">${esc(data.equipment_selection?.club_label || 'Choose a planned wedge')} · <strong>${esc(data.swing_label)}</strong>. Previous shots keep their labels.</p>`;
+    tag.innerHTML = html`<p class="eyebrow">SWING FOR NEXT SHOT</p><div class="wedge-swings">${data.swing_labels.map(l => html`<button class="btn ${l === data.swing_label ? 'primary' : ''}" data-swing="${l}" aria-pressed="${l === data.swing_label}">${l}</button>`)}</div><p class="form-hint">${data.equipment_selection?.club_label || 'Choose a planned wedge'} · <strong>${data.swing_label}</strong>. Previous shots keep their labels.</p>`;
     app.querySelector('.range-hero').insertAdjacentElement('beforebegin', tag);
     tag
       .querySelectorAll('[data-swing]')
@@ -125,8 +123,8 @@ export function decorateMatrix(app, data, active, context) {
   panel.querySelector('[data-wedge-target]').oninput = e => {
     const suggestions = matrixSuggestions(data, Number(e.target.value));
     panel.querySelector('[data-wedge-suggestions]').innerHTML = suggestions.length
-      ? `<div class="suggestion-list">${suggestions.map(c => `<div><strong>${esc(c.club_label)} / ${esc(c.label)}</strong><span>${n(c.median)} yd · ${n(Math.abs(c.error))} yd ${c.error < 0 ? 'short' : 'long'} · IQR ${n(c.iqr)} · n=${c.count}</span></div>`).join('')}</div>`
-      : '<p class="form-hint">Enter a target and complete at least one cell’s sample goal.</p>';
+      ? html`<div class="suggestion-list">${suggestions.map(c => html`<div><strong>${c.club_label} / ${c.label}</strong><span>${n(c.median)} yd · ${n(Math.abs(c.error))} yd ${c.error < 0 ? 'short' : 'long'} · IQR ${n(c.iqr)} · n=${c.count}</span></div>`)}</div>`
+      : html`<p class="form-hint">Enter a target and complete at least one cell’s sample goal.</p>`;
   };
   panel.querySelector('[data-matrix-export]').onclick = () => {
     const url = URL.createObjectURL(new Blob([matrixCsv(data)], { type: 'text/csv' })),

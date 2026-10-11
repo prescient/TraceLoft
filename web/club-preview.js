@@ -1,4 +1,4 @@
-import { escape as esc } from './charts.js';
+import { html } from './charts.js';
 import { format as fmt } from './range-data.js';
 
 const PREVIEW_BLUE = '#35c7ff';
@@ -95,25 +95,21 @@ export function previewSvg(points, position, aim, mode) {
   const color = PREVIEW_BLUE;
   const heat =
     mode === 'density'
-      ? densityGrid(points)
-          .map(
-            c =>
-              `<rect x="${round(c.forward)}" y="${round(c.right)}" width="${round(c.width + 0.015)}" height="${round(c.height + 0.015)}" fill="${color}" opacity="${round(0.92 * c.intensity)}"/>`
-          )
-          .join('')
+      ? densityGrid(points).map(
+          c =>
+            html`<rect x="${round(c.forward)}" y="${round(c.right)}" width="${round(c.width + 0.015)}" height="${round(c.height + 0.015)}" fill="${color}" opacity="${round(0.92 * c.intensity)}"/>`
+        )
       : '';
-  const ringShape = `cx="${round(center.forward)}" cy="${round(center.right)}" r="${round(center.radius ?? 0)}" fill="none" vector-effect="non-scaling-stroke"`;
+  const ringShape = html`cx="${round(center.forward)}" cy="${round(center.right)}" r="${round(center.radius ?? 0)}" fill="none" vector-effect="non-scaling-stroke"`;
   const ring =
     center.radius === null
       ? ''
-      : `<circle ${ringShape} stroke="#092b45" stroke-width="5" stroke-opacity=".85"/><circle ${ringShape} stroke="${color}" stroke-width="3"/>`;
-  const dots = points
-    .map(
-      p =>
-        `<circle cx="${round(p.forward)}" cy="${round(p.right)}" r=".9" fill="${color}" stroke="#102431" stroke-width=".35"/>`
-    )
-    .join('');
-  return `<g transform="translate(${position[1]} ${position[0]}) rotate(${bearing})" pointer-events="none">${heat}${ring}${dots}<path d="M ${center.forward - 2},${center.right} l2,-2 l2,2 l-2,2 Z" fill="#fff" stroke="#102431" stroke-width=".7"><title>Median mapped endpoint</title></path></g>`;
+      : html`<circle ${ringShape} stroke="#092b45" stroke-width="5" stroke-opacity=".85"/><circle ${ringShape} stroke="${color}" stroke-width="3"/>`;
+  const dots = points.map(
+    p =>
+      html`<circle cx="${round(p.forward)}" cy="${round(p.right)}" r=".9" fill="${color}" stroke="#102431" stroke-width=".35"/>`
+  );
+  return html`<g transform="translate(${position[1]} ${position[0]}) rotate(${bearing})" pointer-events="none">${heat}${ring}${dots}<path d="M ${center.forward - 2},${center.right} l2,-2 l2,2 l-2,2 Z" fill="#fff" stroke="#102431" stroke-width=".7"><title>Median mapped endpoint</title></path></g>`;
 }
 
 export function mountClubPreview(app, data, state, ctx, active) {
@@ -135,7 +131,7 @@ export function mountClubPreview(app, data, state, ctx, active) {
         : 'Putting · full-swing preview hidden',
       'Overlay off'
     );
-    host.innerHTML = `<p class="form-hint">${!active ? (data.game.holed ? 'Hole complete · planning preview is paused.' : 'Historical review · planning overlay is available in an active round.') : 'Putting · full-swing preview is hidden on the green.'}</p>`;
+    host.innerHTML = html`<p class="form-hint">${!active ? (data.game.holed ? 'Hole complete · planning preview is paused.' : 'Historical review · planning overlay is available in an active round.') : 'Putting · full-swing preview is hidden on the green.'}</p>`;
     return;
   }
   const equipment = data.equipment_selection ?? {};
@@ -163,7 +159,7 @@ export function mountClubPreview(app, data, state, ctx, active) {
       }
       if (!payload.profiles.length) {
         describe(equipment.club_label + ' · no matching mapping', 'Overlay off');
-        host.innerHTML = `<p class="form-hint">${(payload.warnings ?? []).map(esc).join(' ')} No compatible ${data.demo ? 'demo' : 'real'} mapping for ${esc(equipment.club_label)} yet. Collect paired distance and offline readings in <a href="#setup/bag-mapping">Bag mapping</a> or <a href="#setup/wedge-matrix">Wedge matrix</a>. Your round stays active.</p>`;
+        host.innerHTML = html`<p class="form-hint">${(payload.warnings ?? []).join(' ')} No compatible ${data.demo ? 'demo' : 'real'} mapping for ${equipment.club_label} yet. Collect paired distance and offline readings in <a href="#setup/bag-mapping">Bag mapping</a> or <a href="#setup/wedge-matrix">Wedge matrix</a>. Your round stays active.</p>`;
         return;
       }
       const draw = () => {
@@ -186,11 +182,11 @@ export function mountClubPreview(app, data, state, ctx, active) {
         );
         const disabledCarry = pref.source === 'reported',
           small = points.length < 20;
-        host.innerHTML = `<div class="preview-heading"><div><h3>Club dispersion <span class="preview-info"><button class="info-button" aria-label="About club dispersion" aria-expanded="false">i</button><span class="preview-help" role="tooltip">Historical paired endpoints from included mapping attempts, before lie reductions. Brighter shading means more nearby samples, not a future-shot probability. Dots below 5 samples; smoothing and a descriptive 80% radial outline from 5. Under 20 is a small sample. The white diamond is the median endpoint. Reused shots count once per mapping session. Aim rotates the cloud without stretching distance. Preview settings do not change shot tags or scoring.</span></span></h3><span class="form-hint">${esc(equipment.bag_name)} / ${esc(equipment.club_label)} · ${data.demo ? 'DEMO' : 'REAL'} PROFILE</span></div></div>
-      <div class="preview-controls"><label class="field">Mapping / swing profile<select data-preview="profile" aria-label="Mapping / swing profile">${payload.profiles.map(p => `<option value="${esc(p.id)}" ${p.id === profile.id ? 'selected' : ''}>${esc(p.label)}</option>`).join('')}</select></label><label class="field">Endpoint source<select data-preview="source" aria-label="Endpoint source"><option value="reported" ${pref.source === 'reported' ? 'selected' : ''}>${data.demo ? 'Synthetic' : 'Reported'} total + offline</option><option value="model" ${pref.source === 'model' ? 'selected' : ''}>OpenGolfCoach estimate</option></select></label></div>
-      <div class="preview-switches"><div class="segmented" role="group" aria-label="Preview distance">${['total', 'carry'].map(m => `<button class="btn small ${pref.metric === m ? 'primary' : ''}" data-preview-metric="${m}" aria-pressed="${pref.metric === m}" ${m === 'carry' && disabledCarry ? 'disabled title="Carry requires paired OpenGolfCoach endpoints"' : ''}>${m === 'total' ? 'Total' : 'Carry'}</button>`).join('')}</div><div class="segmented" role="group" aria-label="Dispersion display">${['density', 'outline', 'off'].map(m => `<button class="btn small ${pref.mode === m ? 'primary' : ''}" data-preview-mode="${m}" aria-pressed="${pref.mode === m}">${m[0].toUpperCase() + m.slice(1)}</button>`).join('')}</div></div>
+        host.innerHTML = html`<div class="preview-heading"><div><h3>Club dispersion <span class="preview-info"><button class="info-button" aria-label="About club dispersion" aria-expanded="false">i</button><span class="preview-help" role="tooltip">Historical paired endpoints from included mapping attempts, before lie reductions. Brighter shading means more nearby samples, not a future-shot probability. Dots below 5 samples; smoothing and a descriptive 80% radial outline from 5. Under 20 is a small sample. The white diamond is the median endpoint. Reused shots count once per mapping session. Aim rotates the cloud without stretching distance. Preview settings do not change shot tags or scoring.</span></span></h3><span class="form-hint">${equipment.bag_name} / ${equipment.club_label} · ${data.demo ? 'DEMO' : 'REAL'} PROFILE</span></div></div>
+      <div class="preview-controls"><label class="field">Mapping / swing profile<select data-preview="profile" aria-label="Mapping / swing profile">${payload.profiles.map(p => html`<option value="${p.id}" ${p.id === profile.id ? 'selected' : ''}>${p.label}</option>`)}</select></label><label class="field">Endpoint source<select data-preview="source" aria-label="Endpoint source"><option value="reported" ${pref.source === 'reported' ? 'selected' : ''}>${data.demo ? 'Synthetic' : 'Reported'} total + offline</option><option value="model" ${pref.source === 'model' ? 'selected' : ''}>OpenGolfCoach estimate</option></select></label></div>
+      <div class="preview-switches"><div class="segmented" role="group" aria-label="Preview distance">${['total', 'carry'].map(m => html`<button class="btn small ${pref.metric === m ? 'primary' : ''}" data-preview-metric="${m}" aria-pressed="${pref.metric === m}" ${m === 'carry' && disabledCarry ? html`disabled title="Carry requires paired OpenGolfCoach endpoints"` : ''}>${m === 'total' ? 'Total' : 'Carry'}</button>`)}</div><div class="segmented" role="group" aria-label="Dispersion display">${['density', 'outline', 'off'].map(m => html`<button class="btn small ${pref.mode === m ? 'primary' : ''}" data-preview-mode="${m}" aria-pressed="${pref.mode === m}">${m[0].toUpperCase() + m.slice(1)}</button>`)}</div></div>
       <div class="preview-readout" role="status"><strong>${fmt(stats.median)} yd <small>median down aim</small></strong><span>Middle 50%: ${fmt(stats.q1)}–${fmt(stats.q3)} yd</span><span>${points.length} plotted · ${profile.excluded} excluded · ${profile.removed} removed${view.missing ? ' · ' + view.missing + ' missing paired data' : ''}</span></div>
-      <p class="form-hint preview-context">${pref.mode === 'off' ? 'Overlay off. ' : points.length === 0 ? 'No compatible paired endpoints. ' : points.length < 5 ? 'Dots only · collect 5 paired endpoints for a heatmap. ' : small ? 'Small sample · descriptive spread only. ' : ''}Unadjusted mapped spread · lie reduction and extra variation are not applied.${pref.source === 'reported' ? ` ${esc(payload.geometry)} geometry; Carry needs OpenGolfCoach endpoints.` : ' OpenGolfCoach 0.3.0 · flat, no wind; uncalibrated.'}${view.date_from ? ` ${esc(view.date_from)} to ${esc(view.date_to)}.` : ''}</p>`;
+      <p class="form-hint preview-context">${pref.mode === 'off' ? 'Overlay off. ' : points.length === 0 ? 'No compatible paired endpoints. ' : points.length < 5 ? 'Dots only · collect 5 paired endpoints for a heatmap. ' : small ? 'Small sample · descriptive spread only. ' : ''}Unadjusted mapped spread · lie reduction and extra variation are not applied.${pref.source === 'reported' ? ` ${payload.geometry} geometry; Carry needs OpenGolfCoach endpoints.` : ' OpenGolfCoach 0.3.0 · flat, no wind; uncalibrated.'}${view.date_from ? ` ${view.date_from} to ${view.date_to}.` : ''}</p>`;
         layer.innerHTML = previewSvg(points, data.game.position, data.game.aim, pref.mode);
         if (!projectPoint({ forward: 0, right: 0 }, data.game.position, data.game.aim))
           host.querySelector('.preview-context').textContent =

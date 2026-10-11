@@ -1,4 +1,4 @@
-import { escape as esc } from './charts.js';
+import { html } from './charts.js';
 import { polygonPath } from './course-art.js';
 export const surfaceKinds = ['fairway', 'green', 'tee', 'sand', 'water', 'nature'];
 export const editsFrom = c =>
@@ -20,10 +20,10 @@ export function changeGeometry(edits, change) {
 }
 
 export function editorMarkup(c) {
-  return `<section class="course-edit-controls"><h3>Correct the map</h3><p class="form-hint">Choose a shape to inspect its vertices, or draw a missing surface. Tap vertices to select; use Move vertex then tap its destination. All distances are yards in this hole’s original map frame.</p>
-  <div class="form-grid"><label class="field">Shape<select id="edit-shape"><option value="">Choose a shape</option><option value="boundary:0">Game boundary</option>${surfaceKinds.flatMap(k => c.surfaces[k].map((p, i) => `<option value="${k}:${i}">${esc(k)} ${i + 1} · ${p.outer.length} vertices</option>`)).join('')}</select></label>
+  return html`<section class="course-edit-controls"><h3>Correct the map</h3><p class="form-hint">Choose a shape to inspect its vertices, or draw a missing surface. Tap vertices to select; use Move vertex then tap its destination. All distances are yards in this hole’s original map frame.</p>
+  <div class="form-grid"><label class="field">Shape<select id="edit-shape"><option value="">Choose a shape</option><option value="boundary:0">Game boundary</option>${surfaceKinds.flatMap(k => c.surfaces[k].map((p, i) => html`<option value="${k}:${i}">${k} ${i + 1} · ${p.outer.length} vertices</option>`))}</select></label>
   <label class="field">Map tool<select id="edit-tool"><option value="inspect">Inspect / select vertex</option><option value="move">Move selected vertex</option><option value="draw">Draw new surface</option><option value="boundary">Draw game boundary</option><option value="hole">Draw interior cutout</option><option value="tee">Place tee</option><option value="pin">Place pin</option></select></label>
-  <label class="field">New surface<select id="edit-kind">${surfaceKinds.map(k => `<option>${k}</option>`).join('')}</select></label><label class="field">Ring<select id="edit-ring"><option value="0">Outer boundary</option></select></label></div>
+  <label class="field">New surface<select id="edit-kind">${surfaceKinds.map(k => html`<option>${k}</option>`)}</select></label><label class="field">Ring<select id="edit-ring"><option value="0">Outer boundary</option></select></label></div>
   <div class="form-foot"><button type="button" class="btn" id="edit-finish">Finish drawn shape</button><button type="button" class="btn quiet" id="edit-cancel">Cancel drawing</button><button type="button" class="btn quiet" id="edit-undo">Undo map edit</button><button type="button" class="btn danger" id="edit-remove">Remove selected surface</button></div>
   <details class="details"><summary>Precise coordinates / keyboard editing</summary><div class="form-grid"><label class="field">Vertex<select id="edit-vertex"><option value="">Select a shape first</option></select></label><label class="field">Lateral · yd<input id="edit-x" type="number" step=".1" min="-5000" max="5000"></label><label class="field">Forward · yd<input id="edit-y" type="number" step=".1" min="-5000" max="5000"></label></div><div class="form-foot"><button type="button" class="btn" id="edit-point">Apply coordinate / add drawing point</button><button type="button" class="btn quiet" id="edit-insert">Insert after vertex</button><button type="button" class="btn quiet" id="edit-delete">Delete vertex</button></div></details>
   <p id="edit-status" role="status">Map corrections are drafts until published. Unknown ground plays as rough.</p></section>`;
@@ -58,22 +58,19 @@ export function bindEditor(panel, c, apply, undo, canUndo, notice, pendingChange
     pendingChanged(points.length > 0);
     const p = poly(),
       r = c.viewbox[2] / 170;
-    group.innerHTML =
-      (p
-        ? `<path d="${polygonPath(p)}" fill="none" stroke="#ffdc77" stroke-width="2" vector-effect="non-scaling-stroke"/>`
-        : '') +
-      vertices()
-        .map(
-          (v, i) =>
-            `<circle data-vertex="${i}" cx="${v[1]}" cy="${v[0]}" r="${r * 2}" fill="transparent" stroke="transparent"/><circle data-vertex="${i}" cx="${v[1]}" cy="${v[0]}" r="${r * 0.6}" fill="${i === vertex ? '#ffdc77' : '#fff'}" stroke="#142638" stroke-width=".4"/>`
-        )
-        .join('') +
-      (points.length
-        ? `<polyline points="${points.map(p => `${p[1]},${p[0]}`).join(' ')}" fill="#35c7ff22" stroke="#35c7ff" stroke-width="2" vector-effect="non-scaling-stroke"/>${points.map(p => `<circle cx="${p[1]}" cy="${p[0]}" r="${r * 0.6}" fill="#35c7ff"/>`).join('')}`
-        : '');
-    $('edit-vertex').innerHTML = vertices()
-      .map((_, i) => `<option value="${i}">Vertex ${i + 1}</option>`)
-      .join('');
+    const outline = p
+      ? html`<path d="${polygonPath(p)}" fill="none" stroke="#ffdc77" stroke-width="2" vector-effect="non-scaling-stroke"/>`
+      : '';
+    const handles = vertices().map(
+      (v, i) =>
+        html`<circle data-vertex="${i}" cx="${v[1]}" cy="${v[0]}" r="${r * 2}" fill="transparent" stroke="transparent"/><circle data-vertex="${i}" cx="${v[1]}" cy="${v[0]}" r="${r * 0.6}" fill="${i === vertex ? '#ffdc77' : '#fff'}" stroke="#142638" stroke-width=".4"/>`
+    );
+    const drawing = points.length
+      ? html`<polyline points="${points.map(p => `${p[1]},${p[0]}`).join(' ')}" fill="#35c7ff22" stroke="#35c7ff" stroke-width="2" vector-effect="non-scaling-stroke"/>${points.map(p => html`<circle cx="${p[1]}" cy="${p[0]}" r="${r * 0.6}" fill="#35c7ff"/>`)}`
+      : '';
+    group.innerHTML = html`${outline}${handles}${drawing}`;
+    $('edit-vertex').innerHTML =
+      html`${vertices().map((_, i) => html`<option value="${i}">Vertex ${i + 1}</option>`)}`;
     $('edit-vertex').value = vertex;
     $('edit-status').textContent = points.length
       ? `${points.length} drawing points · finish with at least 3. Changes are not applied until Finish drawn shape.`
@@ -101,10 +98,7 @@ export function bindEditor(panel, c, apply, undo, canUndo, notice, pendingChange
     vertex = 0;
     points = [];
     $('edit-ring').innerHTML =
-      '<option value="0">Outer boundary</option>' +
-      (poly()?.holes ?? [])
-        .map((_, i) => `<option value="${i + 1}">Interior cutout ${i + 1}</option>`)
-        .join('');
+      html`<option value="0">Outer boundary</option>${(poly()?.holes ?? []).map((_, i) => html`<option value="${i + 1}">Interior cutout ${i + 1}</option>`)}`;
     draw();
     pointFields();
   };

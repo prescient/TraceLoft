@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { changeGeometry, editsFrom, editorMarkup } from '../web/course-editor.js';
+import { changeGeometry, editsFrom, editorMarkup as editorMarkupMarkup } from '../web/course-editor.js';
+// Markup helpers return SafeHtml (a String object); compare their text.
+const editorMarkup = (...args) => String(editorMarkupMarkup(...args));
 const course = () => ({
   tee: [0, 0],
   pin: [0, 300],

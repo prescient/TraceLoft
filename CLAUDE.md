@@ -165,10 +165,13 @@ DESIGN_PRINCIPLES.md. Read the relevant section before changing those features.
   `.git-blame-ignore-revs`. Prettier leaves HTML template literals as written, so keep new
   templates readable by hand.
 - UI is built from template strings assigned to `innerHTML`. Golfer, bag, club, tag and course
-  names are user input. Write new or edited templates with the `html` tag from `web/charts.js`:
-  it escapes every interpolation unless the value is nested `html` output or explicitly
-  `raw()`. Older templates escape by hand with `esc()`/`escape()`, so keep doing that when you
-  touch them, or convert them to `html`. Use `textContent` for plain text. `.prettierrc.json`
+  names are user input. Every markup template uses the `html` tag from `web/charts.js`: it
+  escapes every interpolation unless the value is nested `html` output or explicitly `raw()`,
+  and joins arrays. Booleans render as text ("true"/"false", as `aria-pressed` needs), so write
+  optional fragments as `cond ? html`...` : ''`, never `cond && html`...``. An empty `html`
+  result is a truthy object; return `''` where "no markup" must be falsy, and compare with
+  `String(...)`. `tests/test_html_usage.mjs` enforces the tag, the ternary rule and no
+  hand-written `esc()`. Use `textContent` for plain text. `.prettierrc.json`
   disables embedded formatting so prettier never rewrites the markup inside `html` templates.
 - Request bodies are Pydantic models with `extra="forbid"` and explicit bounds. New endpoints follow
   the same pattern and the same-origin and local-host middleware in `web_app.py`.

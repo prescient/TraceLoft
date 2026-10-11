@@ -1,4 +1,4 @@
-import { escape as esc } from './charts.js';
+import { html } from './charts.js';
 
 export const categories = [
   ['full', 'Full swing', 'Explore your whole game.', ['driving-range', 'distance-ladder', 'bag-mapping']],
@@ -31,12 +31,10 @@ export function categorizedDrills(drills) {
   ];
 }
 export function categoryMarkup(drills) {
-  return categories
-    .map(([id, title, description, ids]) => {
-      const available = ids.map(id => drills.find(d => d.id === id)).filter(Boolean);
-      return `<section class="card practice-category"><h2><button class="category-toggle" data-category="${id}" aria-expanded="false" aria-controls="category-${id}"><span><strong>${title}</strong><small>${description}</small></span><span class="category-count">${available.length} ${available.length === 1 ? 'activity' : 'activities'} <span aria-hidden="true">＋</span></span></button></h2><div class="drill-grid category-content" id="category-${id}" hidden>${available.map(d => `<section class="drill-card"><h3>${esc(d.title)}</h3><p>${esc(d.description)}</p><button class="btn primary" data-action="choose" data-drill="${d.id}">Set up →</button></section>`).join('')}</div></section>`;
-    })
-    .join('');
+  return html`${categories.map(([id, title, description, ids]) => {
+    const available = ids.map(id => drills.find(d => d.id === id)).filter(Boolean);
+    return html`<section class="card practice-category"><h2><button class="category-toggle" data-category="${id}" aria-expanded="false" aria-controls="category-${id}"><span><strong>${title}</strong><small>${description}</small></span><span class="category-count">${available.length} ${available.length === 1 ? 'activity' : 'activities'} <span aria-hidden="true">＋</span></span></button></h2><div class="drill-grid category-content" id="category-${id}" hidden>${available.map(d => html`<section class="drill-card"><h3>${d.title}</h3><p>${d.description}</p><button class="btn primary" data-action="choose" data-drill="${d.id}">Set up →</button></section>`)}</div></section>`;
+  })}`;
 }
 export function bindCategories(app) {
   let expanded = [];

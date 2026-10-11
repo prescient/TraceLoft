@@ -17,9 +17,9 @@
   lock-free revisions, threaded backups); batched session reads; numbered migration steps;
   storage split; server-side drill registry; escape-by-default `html` templates; docs
   reorganized to current state. See WORK_LOG.
-- Remaining: freezing migration DDL as immutable per-version files; typed per-drill request
-  models and the browser feature lifecycle; converting older `innerHTML` templates to `html` as
-  they are edited; incremental live deltas and bounded detail reads.
+- Completed 2026-10-11 (follow-up): isolated instances leave `web_runtime.json` alone; frozen
+  per-version migration files; typed per-drill request models; every UI template on `html`.
+- Remaining: the browser feature lifecycle; incremental live deltas and bounded detail reads.
 - Future extensions: server-shared dynamic analysis views, provider contracts and operational
   receipt/save/calculation/backup diagnostics. Desktop/video remain future product features below.
 

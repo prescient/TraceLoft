@@ -1,9 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { courseLayers } from '../web/course-art.js';
-import { courseMap } from '../web/golf-sim.js';
+import { courseLayers as courseLayersMarkup } from '../web/course-art.js';
+import { courseMap as courseMapMarkup } from '../web/golf-sim.js';
 import { readFileSync } from 'node:fs';
 import { renderPlay } from '../web/golf-sim.js';
+// Markup helpers return SafeHtml (a String object); compare their text.
+const courseLayers = (...args) => String(courseLayersMarkup(...args));
+const courseMap = (...args) => String(courseMapMarkup(...args));
 
 test('original hole library selects each version and guards active sessions', () => {
   const ids = ['meadow-one-v2', 'willow-cove-155-v1', 'pine-bend-365-v1', 'meadow-reach-525-v1'];

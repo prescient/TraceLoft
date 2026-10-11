@@ -1,4 +1,4 @@
-import { escape as esc } from './charts.js';
+import { html } from './charts.js';
 
 export function equipmentControls(catalog, selected, setup = false, clubsOnly = false) {
   const bags = catalog?.bags ?? [],
@@ -7,20 +7,21 @@ export function equipmentControls(catalog, selected, setup = false, clubsOnly = 
     quick = bags.slice(0, 3);
   if (bag && !quick.includes(bag)) quick[2] = bag;
   const abbreviations = (bag?.clubs ?? []).map(c => shortClubLabel(c.label));
-  return `<div class="equipment-controls ${clubsOnly ? 'equipment-clubs-only' : ''}" data-setup="${setup}" data-clubs-only="${clubsOnly}"><input name="range_bag_id" type="hidden" value="${esc(bag?.id ?? '')}"><input name="range_club_id" type="hidden" value="${esc(club?.id ?? '')}">
-    <div class="equipment-fields">${clubsOnly ? '' : `<div class="bag-column"><div class="bag-column-head"><span class="eyebrow">BAGS</span></div><div class="bag-tabs" role="group" aria-label="Bags">${quick.map(b => `<button type="button" class="bag-tab ${b === bag ? 'selected' : ''}" data-bag-tab="${esc(b.id)}" aria-pressed="${b === bag}" title="${esc(b.name)}"><span>${esc(b.name)}</span>${b === bag ? '<span aria-hidden="true">✓</span>' : ''}</button>`).join('')}${Array.from({ length: Math.max(0, 3 - quick.length) }, (_, i) => `<button type="button" class="bag-tab add-bag" data-add-bag aria-label="Add bag to slot ${quick.length + i + 1}">＋ Add bag</button>`).join('')}</div>${bags.length > 3 ? '<button type="button" class="btn quiet small more-bags" data-more-bags>More bags…</button>' : ''}<button type="button" class="btn quiet bag-manage" data-manage-bags>Manage bags</button></div>`}
-    <div class="club-column"><div class="eyebrow club-heading">CLUB FOR NEXT SHOT${clubsOnly ? `<span class="game-bag-name">${esc(bag?.name ?? selected?.bag_name ?? 'No bag selected')}</span>` : ''}</div><div class="club-buttons" role="group" aria-label="Club for next shot">${(
-      bag?.clubs ?? []
-    )
-      .map((c, i) => {
-        const chosen = c.id === club?.id,
-          short = abbreviations[i],
-          duplicate = abbreviations.filter(s => s === short).length > 1;
-        return `<button type="button" class="club-button ${chosen ? 'selected' : ''}" data-club-pick="${esc(c.id)}" aria-label="Select ${esc(c.label)}" aria-pressed="${chosen}" title="${esc(c.label)}"><span class="club-short ${short.length > 4 ? 'long' : ''}">${esc(short)}</span>${duplicate ? `<small class="club-ordinal" aria-hidden="true">${abbreviations.slice(0, i + 1).filter(s => s === short).length}</small>` : ''}${chosen ? '<span class="club-check" aria-hidden="true">✓</span>' : ''}</button>`;
-      })
-      .join(
-        ''
-      )}</div><div class="equipment-foot"><p class="form-hint equipment-status" role="status">${club ? `${setup ? 'Starting club' : 'Next shot'}: <strong>${clubsOnly ? '' : esc(bag.name) + ' / '}${esc(club.label)}</strong>` : clubsOnly ? 'Choose a club' : 'Choose a club before hitting · untagged'}${clubsOnly ? '' : `<span>${setup ? 'You can switch clubs during the drill.' : 'Earlier shots keep their tags.'}</span>`}</p>${club ? '<button type="button" class="btn quiet small" data-clear-club>Clear club</button>' : ''}</div></div></div></div>`;
+  const bagColumn = html`<div class="bag-column"><div class="bag-column-head"><span class="eyebrow">BAGS</span></div><div class="bag-tabs" role="group" aria-label="Bags">${quick.map(b => html`<button type="button" class="bag-tab ${b === bag ? 'selected' : ''}" data-bag-tab="${b.id}" aria-pressed="${b === bag}" title="${b.name}"><span>${b.name}</span>${b === bag ? html`<span aria-hidden="true">✓</span>` : ''}</button>`)}${Array.from({ length: Math.max(0, 3 - quick.length) }, (_, i) => html`<button type="button" class="bag-tab add-bag" data-add-bag aria-label="Add bag to slot ${quick.length + i + 1}">＋ Add bag</button>`)}</div>${bags.length > 3 ? html`<button type="button" class="btn quiet small more-bags" data-more-bags>More bags…</button>` : ''}<button type="button" class="btn quiet bag-manage" data-manage-bags>Manage bags</button></div>`;
+  const clubButtons = (bag?.clubs ?? []).map((c, i) => {
+    const chosen = c.id === club?.id,
+      short = abbreviations[i],
+      duplicate = abbreviations.filter(s => s === short).length > 1;
+    return html`<button type="button" class="club-button ${chosen ? 'selected' : ''}" data-club-pick="${c.id}" aria-label="Select ${c.label}" aria-pressed="${chosen}" title="${c.label}"><span class="club-short ${short.length > 4 ? 'long' : ''}">${short}</span>${duplicate ? html`<small class="club-ordinal" aria-hidden="true">${abbreviations.slice(0, i + 1).filter(s => s === short).length}</small>` : ''}${chosen ? html`<span class="club-check" aria-hidden="true">✓</span>` : ''}</button>`;
+  });
+  const status = club
+    ? html`${setup ? 'Starting club' : 'Next shot'}: <strong>${clubsOnly ? '' : bag.name + ' / '}${club.label}</strong>`
+    : clubsOnly
+      ? 'Choose a club'
+      : 'Choose a club before hitting · untagged';
+  return html`<div class="equipment-controls ${clubsOnly ? 'equipment-clubs-only' : ''}" data-setup="${setup}" data-clubs-only="${clubsOnly}"><input name="range_bag_id" type="hidden" value="${bag?.id ?? ''}"><input name="range_club_id" type="hidden" value="${club?.id ?? ''}">
+    <div class="equipment-fields">${clubsOnly ? '' : bagColumn}
+    <div class="club-column"><div class="eyebrow club-heading">CLUB FOR NEXT SHOT${clubsOnly ? html`<span class="game-bag-name">${bag?.name ?? selected?.bag_name ?? 'No bag selected'}</span>` : ''}</div><div class="club-buttons" role="group" aria-label="Club for next shot">${clubButtons}</div><div class="equipment-foot"><p class="form-hint equipment-status" role="status">${status}${clubsOnly ? '' : html`<span>${setup ? 'You can switch clubs during the drill.' : 'Earlier shots keep their tags.'}</span>`}</p>${club ? html`<button type="button" class="btn quiet small" data-clear-club>Clear club</button>` : ''}</div></div></div></div>`;
 }
 
 function shortClubLabel(label) {
@@ -43,9 +44,9 @@ function shortClubLabel(label) {
   return standard[s.toLowerCase()] ?? (s.length <= 5 ? s : s.slice(0, 4) + '…');
 }
 
-const element = html => {
+const element = markup => {
   const t = document.createElement('template');
-  t.innerHTML = html;
+  t.innerHTML = markup;
   return t.content.firstElementChild;
 };
 
@@ -127,7 +128,7 @@ async function chooseBag(catalog, selected) {
   dialog.id = 'bag-picker';
   dialog.className = 'confirm-dialog';
   dialog.setAttribute('aria-labelledby', 'bag-picker-title');
-  dialog.innerHTML = `<h2 id="bag-picker-title">Choose a bag</h2><p>Choosing another bag clears the club choice for upcoming shots.</p><div class="bag-picker-list">${catalog.bags.map(b => `<button class="bag-tab ${b.id === selected ? 'selected' : ''}" type="button" data-choose-bag="${esc(b.id)}" aria-pressed="${b.id === selected}">${esc(b.name)}</button>`).join('')}</div><div class="confirm-actions"><button class="btn quiet" type="button" data-close-picker>Cancel</button></div>`;
+  dialog.innerHTML = html`<h2 id="bag-picker-title">Choose a bag</h2><p>Choosing another bag clears the club choice for upcoming shots.</p><div class="bag-picker-list">${catalog.bags.map(b => html`<button class="bag-tab ${b.id === selected ? 'selected' : ''}" type="button" data-choose-bag="${b.id}" aria-pressed="${b.id === selected}">${b.name}</button>`)}</div><div class="confirm-actions"><button class="btn quiet" type="button" data-close-picker>Cancel</button></div>`;
   dialog
     .querySelectorAll('[data-choose-bag]')
     .forEach(b => (b.onclick = () => dialog.close(b.dataset.chooseBag)));
@@ -150,13 +151,13 @@ async function manageBags(context, initial, create = false) {
   let selected = initial,
     revision;
   const row = c =>
-    `<div class="bag-club" data-club-id="${esc(c.id)}"><label class="field">Club name<input name="label" value="${esc(c.label)}" maxlength="80" required></label><div><button class="btn small quiet" type="button" data-replace-club>Replace</button><button class="btn small quiet" type="button" data-remove-club aria-label="Remove ${esc(c.label) || 'new club'}">Remove</button></div><details class="club-specs"><summary>Specifications</summary><p class="form-hint">Renaming keeps this physical club. Specification changes create a configuration; Replace creates a new physical club.</p><div class="form-grid">${['make', 'model', 'loft_deg', 'shaft', 'settings'].map(k => `<label class="field">${{ make: 'Make', model: 'Model', loft_deg: 'Loft · °', shaft: 'Shaft', settings: 'Settings' }[k]}<input name="${k}" value="${esc(c[k] ?? '')}" ${k === 'loft_deg' ? 'type="number" min="0" max="90" step="0.1"' : 'maxlength="80"'}></label>`).join('')}</div></details></div>`;
+    html`<div class="bag-club" data-club-id="${c.id}"><label class="field">Club name<input name="label" value="${c.label}" maxlength="80" required></label><div><button class="btn small quiet" type="button" data-replace-club>Replace</button><button class="btn small quiet" type="button" data-remove-club aria-label="Remove ${c.label || 'new club'}">Remove</button></div><details class="club-specs"><summary>Specifications</summary><p class="form-hint">Renaming keeps this physical club. Specification changes create a configuration; Replace creates a new physical club.</p><div class="form-grid">${['make', 'model', 'loft_deg', 'shaft', 'settings'].map(k => html`<label class="field">${{ make: 'Make', model: 'Model', loft_deg: 'Loft · °', shaft: 'Shaft', settings: 'Settings' }[k]}<input name="${k}" value="${c[k] ?? ''}" ${k === 'loft_deg' ? html`type="number" min="0" max="90" step="0.1"` : html`maxlength="80"`}></label>`)}</div></details></div>`;
   function draw() {
     const catalog = context.catalog();
     revision = catalog.revision;
     const bag = catalog.bags.find(b => b.id === selected) ?? catalog.bags[0];
     selected = bag.id;
-    dialog.innerHTML = `<div class="bag-manager-head"><h2 id="bag-manager-title">Manage bags</h2><button type="button" class="btn quiet" data-close-bags aria-label="Close bag manager">Close</button></div><p class="form-hint">Changes apply to upcoming shots. Saved shot tags stay intact.</p><label class="field">Bag to edit<select data-edit-bag>${catalog.bags.map(b => `<option value="${esc(b.id)}" ${b.id === selected ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label><form id="bag-edit"><label class="field section-space">Bag name<input name="name" value="${esc(bag.name)}" maxlength="80" required></label><div class="bag-clubs">${bag.clubs.map(row).join('')}</div><button class="btn small quiet" type="button" data-add-club>Add club</button><p class="session-error" data-bag-error role="alert" hidden></p><div class="confirm-actions"><button class="btn quiet" type="button" data-close-bags>Close</button><button class="btn primary" type="submit">Save bag</button></div></form><form id="bag-create" class="new-bag"><label class="field">New bag name<input name="name" maxlength="80" placeholder="e.g. Practice bag" required></label><button class="btn" type="submit">Create bag</button><p class="form-hint">Starts with common clubs; edit them to match your equipment.</p></form>`;
+    dialog.innerHTML = html`<div class="bag-manager-head"><h2 id="bag-manager-title">Manage bags</h2><button type="button" class="btn quiet" data-close-bags aria-label="Close bag manager">Close</button></div><p class="form-hint">Changes apply to upcoming shots. Saved shot tags stay intact.</p><label class="field">Bag to edit<select data-edit-bag>${catalog.bags.map(b => html`<option value="${b.id}" ${b.id === selected ? 'selected' : ''}>${b.name}</option>`)}</select></label><form id="bag-edit"><label class="field section-space">Bag name<input name="name" value="${bag.name}" maxlength="80" required></label><div class="bag-clubs">${bag.clubs.map(row)}</div><button class="btn small quiet" type="button" data-add-club>Add club</button><p class="session-error" data-bag-error role="alert" hidden></p><div class="confirm-actions"><button class="btn quiet" type="button" data-close-bags>Close</button><button class="btn primary" type="submit">Save bag</button></div></form><form id="bag-create" class="new-bag"><label class="field">New bag name<input name="name" maxlength="80" placeholder="e.g. Practice bag" required></label><button class="btn" type="submit">Create bag</button><p class="form-hint">Starts with common clubs; edit them to match your equipment.</p></form>`;
     dialog.querySelector('[data-edit-bag]').onchange = e => {
       selected = e.target.value;
       draw();

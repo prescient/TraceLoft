@@ -5,29 +5,27 @@ export function escape(value) {
   );
 }
 
-// Markup that is already safe. Produced by html`` or explicitly trusted with raw().
-class SafeHtml {
-  constructor(markup) {
-    this.markup = markup;
-  }
-  toString() {
-    return this.markup;
-  }
-}
+/**
+ * Markup that is already safe: produced by html`` or explicitly trusted with raw(). It extends
+ * String, so it works anywhere a string does (innerHTML, includes, template literals).
+ * Note that an empty SafeHtml object is truthy; return '' when "no markup" must be falsy.
+ */
+export class SafeHtml extends String {}
 
 /** Trust a markup string written by the app itself (never user, file or network text). */
 export const raw = markup => new SafeHtml(String(markup ?? ''));
 
 function interpolate(value) {
-  if (value instanceof SafeHtml) return value.markup;
+  if (value instanceof SafeHtml) return String(value);
   if (Array.isArray(value)) return value.map(interpolate).join('');
-  if (value === null || value === undefined || value === false) return '';
   return escape(value);
 }
 
 /**
  * Escape-by-default template tag for innerHTML. Every interpolated value is escaped unless
- * it is itself html`` output or raw(); arrays are joined; null/undefined/false render nothing.
+ * it is itself html`` output or raw(); arrays are joined; null/undefined render nothing.
+ * Booleans render like a plain template literal ("true"/"false", e.g. aria-pressed), so write
+ * optional fragments as `cond ? html`...` : ''`, never `cond && html`...``.
  * The result converts to a string, so `element.innerHTML = html`...`` works directly.
  */
 export function html(strings, ...values) {
@@ -77,27 +75,29 @@ export function trend(session, pace = true, distance = false) {
   const y = v => bottom - ((v - bounds.low) / (bounds.high - bounds.low)) * (bottom - top);
   const x = i => left + (i / Math.max(1, shots.length - 1)) * (right - left);
   const random = pace && (session.random_pace || session.drill === 'Putting ladder');
-  let bands = '',
-    grid = '',
-    targetLines = '',
-    series = '';
+  const bands = [],
+    grid = [],
+    targetLines = [];
+  let series = [];
   const band = (l, r, t) =>
-    `<rect class="band" x="${l}" y="${y(t + tolerance)}" width="${r - l}" height="${y(t - tolerance) - y(t + tolerance)}"/>`;
+    html`<rect class="band" x="${l}" y="${y(t + tolerance)}" width="${r - l}" height="${y(t - tolerance) - y(t + tolerance)}"/>`;
   const line = (l, r, t) =>
-    `<line class="target" stroke-dasharray="5 4" x1="${l}" x2="${r}" y1="${y(t)}" y2="${y(t)}"/>`;
+    html`<line class="target" stroke-dasharray="5 4" x1="${l}" x2="${r}" y1="${y(t)}" y2="${y(t)}"/>`;
   if (!random || !shots.length) {
-    bands = band(left, right, target);
-    targetLines = line(left, right, target);
+    bands.push(band(left, right, target));
+    targetLines.push(line(left, right, target));
   } else
     targets.forEach((t, i) => {
       const l = i ? (x(i - 1) + x(i)) / 2 : left,
         r = i === shots.length - 1 ? right : (x(i) + x(i + 1)) / 2;
-      bands += band(l, r, t);
-      targetLines += line(l, r, t);
+      bands.push(band(l, r, t));
+      targetLines.push(line(l, r, t));
     });
   for (let i = 0; i <= Math.round((bounds.high - bounds.low) / bounds.step); i++) {
     const value = bounds.low + i * bounds.step;
-    grid += `<line class="grid" x1="${left}" x2="${right}" y1="${y(value)}" y2="${y(value)}"/><text x="${left - 12}" y="${y(value) + 4}" text-anchor="end">${value.toFixed(1)}</text>`;
+    grid.push(
+      html`<line class="grid" x1="${left}" x2="${right}" y1="${y(value)}" y2="${y(value)}"/><text x="${left - 12}" y="${y(value) + 4}" text-anchor="end">${value.toFixed(1)}</text>`
+    );
   }
   let previous = null;
   shots.forEach((shot, i) => {
@@ -107,15 +107,19 @@ export function trend(session, pace = true, distance = false) {
     const scored = pace || !['Pace consistency', 'Putting ladder'].includes(session.drill);
     const miss = scored && Math.abs(values[i] - targets[i]) > tolerance + 1e-9;
     if (previous && !shot.excluded)
-      series += `<path class="series" d="M${previous[0]},${previous[1]} L${px},${py}"/>`;
+      series.push(html`<path class="series" d="M${previous[0]},${previous[1]} L${px},${py}"/>`);
     previous = shot.excluded ? null : [px, py];
-    series += `<g data-key="${escape(shot.key)}"><title>Putt ${i + 1}: ${values[i].toFixed(1)} ${distance ? 'estimated ft' : pace ? 'mph' : 'degrees'}, target ${targets[i].toFixed(1)}${shot.excluded ? ', excluded' : ''}</title><circle class="point${last ? ' latest' : ''}${last && miss ? ' miss' : ''}${shot.excluded ? ' excluded' : ''}" cx="${px}" cy="${py}" r="${last ? 7 : 4.5}"/>${shot.excluded ? `<path d="M${px - 4},${py - 4}L${px + 4},${py + 4}" stroke="#fff"/>` : ''}</g>`;
+    series.push(
+      html`<g data-key="${shot.key}"><title>Putt ${i + 1}: ${values[i].toFixed(1)} ${distance ? 'estimated ft' : pace ? 'mph' : 'degrees'}, target ${targets[i].toFixed(1)}${shot.excluded ? ', excluded' : ''}</title><circle class="point${last ? ' latest' : ''}${last && miss ? ' miss' : ''}${shot.excluded ? ' excluded' : ''}" cx="${px}" cy="${py}" r="${last ? 7 : 4.5}"/>${shot.excluded ? html`<path d="M${px - 4},${py - 4}L${px + 4},${py + 4}" stroke="#fff"/>` : ''}</g>`
+    );
     if (shots.length <= 15 || !i || last)
-      series += `<text x="${px}" y="${bottom + 22}" text-anchor="middle">${i + 1}</text>`;
+      series.push(html`<text x="${px}" y="${bottom + 22}" text-anchor="middle">${i + 1}</text>`);
   });
   if (!shots.length)
-    series = `<text x="${(left + right) / 2}" y="${(top + bottom) / 2}" text-anchor="middle">Your putts will appear here</text>`;
-  return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${distance ? 'Estimated travel in feet' : pace ? 'Ball speed in mph' : 'Launch direction in degrees'} by putt, with target zone and latest putt highlighted">${bands}${grid}${targetLines}${series}<text x="${(left + right) / 2}" y="${height - 5}" text-anchor="middle">Putt number</text></svg>`;
+    series = [
+      html`<text x="${(left + right) / 2}" y="${(top + bottom) / 2}" text-anchor="middle">Your putts will appear here</text>`
+    ];
+  return html`<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${distance ? 'Estimated travel in feet' : pace ? 'Ball speed in mph' : 'Launch direction in degrees'} by putt, with target zone and latest putt highlighted">${bands}${grid}${targetLines}${series}<text x="${(left + right) / 2}" y="${height - 5}" text-anchor="middle">Putt number</text></svg>`;
 }
 
 export function gauge(session) {
@@ -135,18 +139,19 @@ export function gauge(session) {
       : Math.abs(value) <= tolerance + 1e-9
         ? 'var(--accent)'
         : 'var(--amber)';
-  const ticks = [...new Set([-limit, -tolerance, 0, tolerance, limit])]
-    .map(
-      v =>
-        `<line x1="${x(v)}" x2="${x(v)}" y1="${cy - 20}" y2="${cy + 20}" stroke="${v === 0 ? 'var(--ink)' : 'var(--muted)'}"/>`
-    )
-    .join('');
-  return `<svg class="chart gauge" viewBox="0 0 600 132" role="img" aria-label="Latest start line ${shot ? direction(value) : 'waiting'}, target plus or minus ${tolerance} degrees"><text x="34" y="18">Left ${limit.toFixed(1)}°</text><text x="566" y="18" text-anchor="end">Right ${limit.toFixed(1)}°</text><rect x="${left}" y="${cy - 10}" width="${right - left}" height="20" rx="4" fill="var(--grid)"/><rect x="${x(-tolerance)}" y="${cy - 10}" width="${x(tolerance) - x(-tolerance)}" height="20" fill="#c4d5ff"/>${ticks}${shot ? `<text x="${x(value)}" y="${cy - 29}" text-anchor="middle" fill="${color}" class="${color === 'var(--amber)' ? 'miss-text' : 'latest-text'}">${direction(value)}</text><circle cx="${x(value)}" cy="${cy}" r="10" fill="${color}" stroke="var(--accent)" stroke-width="3"/>` : ''}<text x="${x(0)}" y="${cy + 35}" text-anchor="middle">0°</text></svg>`;
+  const ticks = [...new Set([-limit, -tolerance, 0, tolerance, limit])].map(
+    v =>
+      html`<line x1="${x(v)}" x2="${x(v)}" y1="${cy - 20}" y2="${cy + 20}" stroke="${v === 0 ? 'var(--ink)' : 'var(--muted)'}"/>`
+  );
+  const latest = shot
+    ? html`<text x="${x(value)}" y="${cy - 29}" text-anchor="middle" fill="${color}" class="${color === 'var(--amber)' ? 'miss-text' : 'latest-text'}">${direction(value)}</text><circle cx="${x(value)}" cy="${cy}" r="10" fill="${color}" stroke="var(--accent)" stroke-width="3"/>`
+    : '';
+  return html`<svg class="chart gauge" viewBox="0 0 600 132" role="img" aria-label="Latest start line ${shot ? direction(value) : 'waiting'}, target plus or minus ${tolerance} degrees"><text x="34" y="18">Left ${limit.toFixed(1)}°</text><text x="566" y="18" text-anchor="end">Right ${limit.toFixed(1)}°</text><rect x="${left}" y="${cy - 10}" width="${right - left}" height="20" rx="4" fill="var(--grid)"/><rect x="${x(-tolerance)}" y="${cy - 10}" width="${x(tolerance) - x(-tolerance)}" height="20" fill="#c4d5ff"/>${ticks}${latest}<text x="${x(0)}" y="${cy + 35}" text-anchor="middle">0°</text></svg>`;
 }
 
 export function progress(count, total, noun = 'putts') {
   const percent = Math.min(1, count / total) * 100;
-  return `<svg class="progress-track" viewBox="0 0 300 14" preserveAspectRatio="none" role="img" aria-label="${count} of ${total} ${noun} captured"><rect width="300" height="14" rx="7" fill="var(--grid)"/><rect width="${3 * percent}" height="14" rx="7" fill="var(--accent)"/></svg><span>${Math.round(percent)}%</span>`;
+  return html`<svg class="progress-track" viewBox="0 0 300 14" preserveAspectRatio="none" role="img" aria-label="${count} of ${total} ${noun} captured"><rect width="300" height="14" rx="7" fill="var(--grid)"/><rect width="${3 * percent}" height="14" rx="7" fill="var(--accent)"/></svg><span>${Math.round(percent)}%</span>`;
 }
 
 export function distanceTrend(session, errors = false) {
@@ -166,21 +171,25 @@ export function distanceTrend(session, errors = false) {
   const bounds = range(domain, target, tolerance, false);
   const x = i => left + (i / Math.max(1, shots.length - 1)) * (right - left);
   const y = v => bottom - ((v - bounds.low) / (bounds.high - bounds.low)) * (bottom - top);
-  let bands = '',
-    lines = '',
-    grid = '',
-    series = '',
+  const bands = [],
+    lines = [],
+    grid = [];
+  let series = [],
     previous = null;
   const windows = shots.length ? targets : [target];
   windows.forEach((t, i) => {
     const l = i ? (x(i - 1) + x(i)) / 2 : left,
       r = i === windows.length - 1 ? right : (x(i) + x(i + 1)) / 2;
-    bands += `<rect class="band" x="${l}" y="${y(t + tolerance)}" width="${r - l}" height="${y(t - tolerance) - y(t + tolerance)}"/>`;
-    lines += `<line class="target" x1="${l}" x2="${r}" y1="${y(t)}" y2="${y(t)}"/>`;
+    bands.push(
+      html`<rect class="band" x="${l}" y="${y(t + tolerance)}" width="${r - l}" height="${y(t - tolerance) - y(t + tolerance)}"/>`
+    );
+    lines.push(html`<line class="target" x1="${l}" x2="${r}" y1="${y(t)}" y2="${y(t)}"/>`);
   });
   for (let i = 0; i <= Math.round((bounds.high - bounds.low) / bounds.step); i++) {
     const v = bounds.low + i * bounds.step;
-    grid += `<line class="grid" x1="${left}" x2="${right}" y1="${y(v)}" y2="${y(v)}"/><text x="${left - 10}" y="${y(v) + 4}" text-anchor="end">${v.toFixed(0)}</text>`;
+    grid.push(
+      html`<line class="grid" x1="${left}" x2="${right}" y1="${y(v)}" y2="${y(v)}"/><text x="${left - 10}" y="${y(v) + 4}" text-anchor="end">${v.toFixed(0)}</text>`
+    );
   }
   shots.forEach((s, i) => {
     if (Number.isFinite(values[i])) {
@@ -188,13 +197,16 @@ export function distanceTrend(session, errors = false) {
         py = y(values[i]),
         last = i === shots.length - 1;
       if (previous && !s.excluded)
-        series += `<path class="series" d="M${previous[0]},${previous[1]}L${px},${py}"/>`;
+        series.push(html`<path class="series" d="M${previous[0]},${previous[1]}L${px},${py}"/>`);
       previous = s.excluded ? null : [px, py];
-      series += `<g data-key="${escape(s.key)}"><title>Shot ${i + 1}: ${values[i].toFixed(1)} yd${errors ? ' error' : `, target ${s.target_distance_yd} yd`}${s.excluded ? ', excluded' : ''}</title><circle class="point${last ? ' latest' : ''}${!s.success ? ' miss' : ''}${s.excluded ? ' excluded' : ''}" cx="${px}" cy="${py}" r="${last ? 7 : 4.5}"/></g>`;
+      series.push(
+        html`<g data-key="${s.key}"><title>Shot ${i + 1}: ${values[i].toFixed(1)} yd${errors ? ' error' : `, target ${s.target_distance_yd} yd`}${s.excluded ? ', excluded' : ''}</title><circle class="point${last ? ' latest' : ''}${!s.success ? ' miss' : ''}${s.excluded ? ' excluded' : ''}" cx="${px}" cy="${py}" r="${last ? 7 : 4.5}"/></g>`
+      );
     } else previous = null;
     if (shots.length <= 15 || i === 0 || i === shots.length - 1)
-      series += `<text x="${x(i)}" y="${bottom + 24}" text-anchor="middle">${i + 1}</text>`;
+      series.push(html`<text x="${x(i)}" y="${bottom + 24}" text-anchor="middle">${i + 1}</text>`);
   });
-  if (!shots.length) series = `<text x="315" y="155" text-anchor="middle">Your shots will appear here</text>`;
-  return `<svg class="chart distance-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${errors ? 'Distance error' : session.range_metric + ' versus target'} in yards by shot">${bands}${grid}${lines}${series}<text x="315" y="335" text-anchor="middle">Shot number</text></svg>`;
+  if (!shots.length)
+    series = [html`<text x="315" y="155" text-anchor="middle">Your shots will appear here</text>`];
+  return html`<svg class="chart distance-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${errors ? 'Distance error' : session.range_metric + ' versus target'} in yards by shot">${bands}${grid}${lines}${series}<text x="315" y="335" text-anchor="middle">Shot number</text></svg>`;
 }

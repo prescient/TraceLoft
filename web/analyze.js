@@ -1,4 +1,4 @@
-import { escape as esc } from './charts.js';
+import { html } from './charts.js';
 import { mountCalculations } from './calculations.js';
 import {
   finite,
@@ -42,13 +42,9 @@ let state = defaults(),
   observer;
 const fmt = v => (finite(v) ? (Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(1)) : '—');
 const options = (items, selected, empty = 'All') =>
-  (empty == null ? '' : `<option value="">${esc(empty)}</option>`) +
-  items
-    .map(
-      ([id, label]) =>
-        `<option value="${esc(id)}" ${id === selected ? 'selected' : ''}>${esc(label)}</option>`
-    )
-    .join('');
+  html`${empty == null ? '' : html`<option value="">${empty}</option>`}${items.map(
+    ([id, label]) => html`<option value="${id}" ${id === selected ? 'selected' : ''}>${label}</option>`
+  )}`;
 const metricOptions = (r, value) =>
   options(
     Object.entries(r.metrics).map(([id, m]) => [id, m.label + ' · ' + m.unit]),
@@ -101,10 +97,7 @@ export async function renderAnalyze(app, api, notice, isCurrent, golferId = 'loc
     draw(app, r, api, notice, isCurrent, golferId);
   } catch (e) {
     if (request !== ticket || !isCurrent()) return;
-    app.innerHTML =
-      '<div class="page-head"><h1>Analyze</h1><button class="btn quiet" data-action="home">← Practice</button></div><section class="card"><p role="alert">Could not load this selection. ' +
-      esc(e.message) +
-      '</p><button class="btn primary" data-retry>Retry</button><button class="btn quiet" data-reset>Reset filters</button></section>';
+    app.innerHTML = html`<div class="page-head"><h1>Analyze</h1><button class="btn quiet" data-action="home">← Practice</button></div><section class="card"><p role="alert">Could not load this selection. ${e.message}</p><button class="btn primary" data-retry>Retry</button><button class="btn quiet" data-reset>Reset filters</button></section>`;
     app.querySelector('[data-retry]').onclick = () => renderAnalyze(app, api, notice, isCurrent, golferId);
     app.querySelector('[data-reset]').onclick = () => {
       state = defaults();
@@ -146,10 +139,18 @@ function draw(app, r, api, notice, isCurrent, golferId) {
     selectedClubs = f.clubs?.split(',') ?? [],
     refresh = () => renderAnalyze(app, api, notice, isCurrent, golferId),
     label = m => r.metrics[m]?.label ?? m;
-  app.innerHTML = `<div class="analysis-workspace"><div class="page-head"><div><p class="eyebrow">YOUR SHOTS / YOUR QUESTIONS</p><h1>Analyze</h1></div><button class="btn quiet" data-action="home">← Practice</button></div>
-    <div class="analysis-view-tabs" role="group" aria-label="Analysis view">${['trends', 'explore', 'compare'].map(v => `<button class="btn quiet" data-view="${v}" aria-pressed="${state.view === v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>
+  const sessionPicks = r.options.sessions.map(
+    s =>
+      html`<label class="collection-option"><input type="checkbox" name="sessions" value="${s.id}" ${(f.sessions ?? '').split(',').includes(s.id) ? 'checked' : ''}>${s.started.slice(0, 10)} · ${s.drill} · ${s.id.slice(0, 6)}</label>`
+  );
+  const coverageRows = r.trend.map(
+    t =>
+      html`<tr><th>${t.started.slice(0, 10)}<small class="range-stat-detail">${t.drill}</small></th><td>${t.count}</td>${state.metrics.map(m => html`<td>${fmt(t.metrics[m].median)} / ${fmt(t.metrics[m].iqr)}<small class="range-stat-detail">n=${t.metrics[m].count}</small></td>`)}<td><a class="btn" href="#sessions/${t.id}">Review session</a></td></tr>`
+  );
+  app.innerHTML = html`<div class="analysis-workspace"><div class="page-head"><div><p class="eyebrow">YOUR SHOTS / YOUR QUESTIONS</p><h1>Analyze</h1></div><button class="btn quiet" data-action="home">← Practice</button></div>
+    <div class="analysis-view-tabs" role="group" aria-label="Analysis view">${['trends', 'explore', 'compare'].map(v => html`<button class="btn quiet" data-view="${v}" aria-pressed="${state.view === v}">${v[0].toUpperCase() + v.slice(1)}</button>`)}</div>
     <div class="analysis-identity" role="status"><strong>${f.mode === 'demo' ? 'SIMULATED DATA · Demo sessions only' : 'Recorded sessions'}</strong><span>${f.basis === 'flight' ? 'ESTIMATED · Selected analytical calculations; launch/club fields are source inputs' : 'Source-reported metrics'}</span><span>${r.count} selected / ${r.context_count ?? r.count} before numeric filters</span></div>
-    <details class="analysis-selection details" ${state.open ? 'open' : ''}><summary><strong>Selections & filters</strong><span class="analysis-scope">${esc(scopeSummary(r))}</span><span class="analysis-scope">${esc(state.metrics.map(label).join(' · '))}</span></summary>
+    <details class="analysis-selection details" ${state.open ? 'open' : ''}><summary><strong>Selections & filters</strong><span class="analysis-scope">${scopeSummary(r)}</span><span class="analysis-scope">${state.metrics.map(label).join(' · ')}</span></summary>
     <form id="analysis-filters"><div class="analysis-filters">
       <label class="field">Data<select name="mode">${options(
         [
@@ -169,7 +170,7 @@ function draw(app, r, api, notice, isCurrent, golferId) {
         f.kind,
         null
       )}</select></label>
-      <label class="field">From session date<input type="date" name="date_from" value="${esc(f.date_from)}"></label><label class="field">Through session date<input type="date" name="date_to" value="${esc(f.date_to)}"></label>
+      <label class="field">From session date<input type="date" name="date_from" value="${f.date_from}"></label><label class="field">Through session date<input type="date" name="date_to" value="${f.date_to}"></label>
       <label class="field">Bag<select name="bag">${options(Object.entries(r.options.bags), f.bag)}</select></label><label class="field">Swing intent<select name="swing">${options([['__unspecified', 'Unspecified / general practice'], ...r.options.swings.map(s => [s, s])], f.swing)}</select></label>
       <label class="field">Analysis scope<select name="inclusion">${options(
         [
@@ -190,20 +191,18 @@ function draw(app, r, api, notice, isCurrent, golferId) {
     </div><fieldset class="analysis-picks"><legend>Clubs · any selected (none means all)</legend><div class="analysis-club-picks">${clubPicks(r, f.bag, selectedClubs)}</div></fieldset>
     <fieldset class="analysis-picks"><legend>Metrics to display</legend><div class="analysis-metric-picks">${Object.entries(
       r.metrics
-    )
-      .map(
-        ([id, m]) =>
-          `<label class="collection-option"><input type="checkbox" data-metric="${id}" ${state.metrics.includes(id) ? 'checked' : ''}>${esc(m.label)} · ${esc(m.unit)}</label>`
-      )
-      .join('')}</div></fieldset>
-    <details class="details section-space"><summary>Sessions, configurations and tags</summary><div class="analysis-filters section-space"><label class="field">Configuration<select name="configuration">${options(Object.entries(r.options.configurations ?? {}), f.configuration)}</select></label><label class="field">Tags · comma separated<input name="tags" value="${esc(f.tags)}" placeholder="e.g. New grip, Wind"></label><label class="field">Tag matching<select name="tag_match">${options(
+    ).map(
+      ([id, m]) =>
+        html`<label class="collection-option"><input type="checkbox" data-metric="${id}" ${state.metrics.includes(id) ? 'checked' : ''}>${m.label} · ${m.unit}</label>`
+    )}</div></fieldset>
+    <details class="details section-space"><summary>Sessions, configurations and tags</summary><div class="analysis-filters section-space"><label class="field">Configuration<select name="configuration">${options(Object.entries(r.options.configurations ?? {}), f.configuration)}</select></label><label class="field">Tags · comma separated<input name="tags" value="${f.tags}" placeholder="e.g. New grip, Wind"></label><label class="field">Tag matching<select name="tag_match">${options(
       [
         ['any', 'Any selected tag'],
         ['all', 'Every selected tag']
       ],
       f.tag_match,
       null
-    )}</select></label></div><div class="analysis-session-picks">${r.options.sessions.map(s => `<label class="collection-option"><input type="checkbox" name="sessions" value="${esc(s.id)}" ${(f.sessions ?? '').split(',').includes(s.id) ? 'checked' : ''}>${esc(s.started.slice(0, 10))} · ${esc(s.drill)} · ${s.id.slice(0, 6)}</label>`).join('') || '<p>No sessions in this data/type scope.</p>'}</div><p class="form-hint">No checked sessions means all matching sessions. Available tags: ${esc((r.options.tags ?? []).join(', ') || 'None')}.</p></details>
+    )}</select></label></div><div class="analysis-session-picks">${sessionPicks.length ? sessionPicks : html`<p>No sessions in this data/type scope.</p>`}</div><p class="form-hint">No checked sessions means all matching sessions. Available tags: ${(r.options.tags ?? []).join(', ') || 'None'}.</p></details>
     <div class="form-foot"><button type="submit" class="btn primary">Apply / refresh</button><button type="button" class="btn quiet" data-reset>Reset filters</button></div></form>
     <div class="analysis-filters section-space"><label class="field">Trend resolution<select data-resolution>${options(
       [
@@ -220,16 +219,12 @@ function draw(app, r, api, notice, isCurrent, golferId) {
       '',
       'Choose a view'
     )}</select></label><button class="btn" data-load-view>Load</button><button class="btn quiet" data-delete-view>Remove saved view</button></div><p class="form-hint">Saves applied filters and layout for this golfer/browser. Reopening includes current matching shots; it is not a frozen analysis publication.</p></details></details>
-    <div class="analysis-active-ranges" aria-live="polite">${Object.entries(ranges())
-      .map(
-        ([m, b]) =>
-          `<button class="btn small" data-clear-range="${m}" aria-label="Clear ${esc(label(m))} filter">${esc(label(m))}: ${b.min == null ? '' : '>= ' + fmt(b.min)} ${b.max == null ? '' : '≤ ' + fmt(b.max)} ${esc(r.metrics[m].unit)} ×</button>`
-      )
-      .join(
-        ''
-      )}<button class="btn quiet" data-clear-numeric ${Object.keys(ranges()).length ? '' : 'hidden'}>Clear chart filters</button><a class="btn" href="/api/analysis?${esc(new URLSearchParams({ ...requestFilters(), format: 'csv' }).toString())}" download>Export selected shots CSV</a></div>
+    <div class="analysis-active-ranges" aria-live="polite">${Object.entries(ranges()).map(
+      ([m, b]) =>
+        html`<button class="btn small" data-clear-range="${m}" aria-label="Clear ${label(m)} filter">${label(m)}: ${b.min == null ? '' : '>= ' + fmt(b.min)} ${b.max == null ? '' : '≤ ' + fmt(b.max)} ${r.metrics[m].unit} ×</button>`
+    )}<button class="btn quiet" data-clear-numeric ${Object.keys(ranges()).length ? '' : 'hidden'}>Clear chart filters</button><a class="btn" href="/api/analysis?${new URLSearchParams({ ...requestFilters(), format: 'csv' }).toString()}" download>Export selected shots CSV</a></div>
     <p class="form-hint analysis-coverage">${r.excluded}/${r.eligible} excluded attempts in numeric selection · ${r.removed} removed in base scope. Manual exclusions are not automatic outliers.</p>
-    <div data-analysis-body></div><details class="card details section-space" data-shot-panel><summary>Shot workspace · ${r.count} selected attempts</summary><div data-shot-workspace></div></details><details class="card details section-space"><summary>Session review and metric coverage</summary><div class="table-wrap"><table><thead><tr><th>Session</th><th>Selected</th>${state.metrics.map(m => `<th>${esc(label(m))} · ${esc(r.metrics[m].unit)}</th>`).join('')}<th>Review</th></tr></thead><tbody>${r.trend.map(t => `<tr><th>${esc(t.started.slice(0, 10))}<small class="range-stat-detail">${esc(t.drill)}</small></th><td>${t.count}</td>${state.metrics.map(m => `<td>${fmt(t.metrics[m].median)} / ${fmt(t.metrics[m].iqr)}<small class="range-stat-detail">n=${t.metrics[m].count}</small></td>`).join('')}<td><a class="btn" href="#sessions/${t.id}">Review session</a></td></tr>`).join('') || '<tr><td>No matching sessions.</td></tr>'}</tbody></table></div><p class="form-hint">${esc(r.method)}</p></details></div>`;
+    <div data-analysis-body></div><details class="card details section-space" data-shot-panel><summary>Shot workspace · ${r.count} selected attempts</summary><div data-shot-workspace></div></details><details class="card details section-space"><summary>Session review and metric coverage</summary><div class="table-wrap"><table><thead><tr><th>Session</th><th>Selected</th>${state.metrics.map(m => html`<th>${label(m)} · ${r.metrics[m].unit}</th>`)}<th>Review</th></tr></thead><tbody>${coverageRows.length ? coverageRows : html`<tr><td>No matching sessions.</td></tr>`}</tbody></table></div><p class="form-hint">${r.method}</p></details></div>`;
   const root = app.querySelector('.analysis-workspace'),
     form = root.querySelector('#analysis-filters'),
     body = root.querySelector('[data-analysis-body]'),
@@ -375,8 +370,12 @@ function draw(app, r, api, notice, isCurrent, golferId) {
   };
   function rowsTable(rows) {
     const shown = rows.slice(0, 100);
+    const shotRows = shown.map(
+      s =>
+        html`<tr ${state.highlight === rowKey(s) ? html`class="analysis-highlight"` : ''}><th>${s.session_started.slice(0, 10)} · ${s.key}<small class="range-stat-detail">${s.bag_name} / ${s.club_label}${s.swing_label ? ' / ' + s.swing_label : ''} · config ${s.lineage.configuration_id?.slice(0, 6) ?? 'unknown'}${s.excluded ? ' · excluded' : ''}</small></th>${state.metrics.map(m => html`<td>${fmt(s.values[m])}</td>`)}<td>${s.lineage.report_id?.slice(0, 6) ?? '—'}<small class="range-stat-detail">${f.basis === 'flight' ? (s.lineage.flight_model_version ?? s.lineage.putting_model_version ?? 'No selected output') : 'Source reported'}</small></td><td><a class="btn" href="#sessions/${s.session_id}">Review session</a></td></tr>`
+    );
     root.querySelector('[data-shot-workspace]').innerHTML =
-      `<p class="form-hint">${shown.length}/${rows.length} attempts shown; CSV includes every selected attempt. Inspection never changes inclusion.</p><div class="table-wrap"><table><thead><tr><th>Shot / equipment</th>${state.metrics.map(m => `<th>${esc(label(m))} · ${esc(r.metrics[m].unit)}</th>`).join('')}<th>Source / calculation</th><th>Review</th></tr></thead><tbody>${shown.map(s => `<tr ${state.highlight === rowKey(s) ? 'class="analysis-highlight"' : ''}><th>${esc(s.session_started.slice(0, 10))} · ${esc(s.key)}<small class="range-stat-detail">${esc(s.bag_name)} / ${esc(s.club_label)}${s.swing_label ? ' / ' + esc(s.swing_label) : ''} · config ${esc(s.lineage.configuration_id?.slice(0, 6) ?? 'unknown')}${s.excluded ? ' · excluded' : ''}</small></th>${state.metrics.map(m => `<td>${fmt(s.values[m])}</td>`).join('')}<td>${esc(s.lineage.report_id?.slice(0, 6) ?? '—')}<small class="range-stat-detail">${f.basis === 'flight' ? esc(s.lineage.flight_model_version ?? s.lineage.putting_model_version ?? 'No selected output') : 'Source reported'}</small></td><td><a class="btn" href="#sessions/${s.session_id}">Review session</a></td></tr>`).join('') || '<tr><td>No matching shots.</td></tr>'}</tbody></table></div>`;
+      html`<p class="form-hint">${shown.length}/${rows.length} attempts shown; CSV includes every selected attempt. Inspection never changes inclusion.</p><div class="table-wrap"><table><thead><tr><th>Shot / equipment</th>${state.metrics.map(m => html`<th>${label(m)} · ${r.metrics[m].unit}</th>`)}<th>Source / calculation</th><th>Review</th></tr></thead><tbody>${shotRows.length ? shotRows : html`<tr><td>No matching shots.</td></tr>`}</tbody></table></div>`;
   }
   rowsTable(rs);
   observer?.disconnect();
@@ -392,11 +391,11 @@ function draw(app, r, api, notice, isCurrent, golferId) {
   if (state.view === 'trends') {
     const t = timeline(rs, state.metrics, state.resolution);
     if (!t.points.some(p => p.id === state.inspect)) state.inspect = '';
-    body.innerHTML = `<div class="analysis-inspection"><label class="field">Inspect shared interval<select data-inspect>${options(
+    body.innerHTML = html`<div class="analysis-inspection"><label class="field">Inspect shared interval<select data-inspect>${options(
       t.points.map(p => [p.id, p.label]),
       state.inspect,
       'All selected intervals'
-    )}</select></label><span class="form-hint">Median and type-7 middle 50% · independent units · n per metric${t.missingTime ? ' · ' + t.missingTime + ' attempts lack capture timestamps' : ''}</span></div>${legend(t.series)}<div class="analysis-trends ${state.grid ? 'analysis-grid' : ''}">${state.metrics.map(m => `<section class="analysis-panel"><div class="analysis-panel-head"><h2>${esc(label(m))}</h2><span data-trend-value="${m}" class="form-hint"></span></div><svg class="analysis-plot" data-trend="${m}" role="img" aria-label="${esc(label(m))} medians and middle 50 percent by ${state.resolution}"></svg></section>`).join('')}</div>`;
+    )}</select></label><span class="form-hint">Median and type-7 middle 50% · independent units · n per metric${t.missingTime ? ' · ' + t.missingTime + ' attempts lack capture timestamps' : ''}</span></div>${legend(t.series)}<div class="analysis-trends ${state.grid ? 'analysis-grid' : ''}">${state.metrics.map(m => html`<section class="analysis-panel"><div class="analysis-panel-head"><h2>${label(m)}</h2><span data-trend-value="${m}" class="form-hint"></span></div><svg class="analysis-plot" data-trend="${m}" role="img" aria-label="${label(m)} medians and middle 50 percent by ${state.resolution}"></svg></section>`)}</div>`;
     const inspect = id => {
       state.inspect = id;
       save();
@@ -433,7 +432,7 @@ function draw(app, r, api, notice, isCurrent, golferId) {
     if (!r.metrics[state.y]) state.y = 'carry';
     if (!r.metrics[state.distribution]) state.distribution = 'absolute_offline';
     const constraint = ranges()[state.distribution] ?? {};
-    body.innerHTML = `<div class="analysis-explore-controls"><label class="field">Horizontal axis<select data-axis="x">${metricOptions(r, state.x)}</select></label><label class="field">Vertical axis<select data-axis="y">${metricOptions(r, state.y)}</select></label><label class="field">Distribution / range metric<select data-distribution>${metricOptions(r, state.distribution)}</select></label><form data-range-form><label class="field">Minimum · ${esc(r.metrics[state.distribution].unit)}<input type="number" step="any" data-range-min value="${constraint.min ?? ''}"></label><label class="field">Maximum · ${esc(r.metrics[state.distribution].unit)}<input type="number" step="any" data-range-max value="${constraint.max ?? ''}"></label><button class="btn" type="submit">Apply range</button></form></div>${legend(cohorts(rs))}<div class="analysis-explore"><section class="analysis-panel"><h2>${esc(label(state.x))} × ${esc(label(state.y))}</h2><p class="form-hint" data-pairs></p><svg class="analysis-plot" data-scatter role="img" aria-label="${esc(label(state.x))} versus ${esc(label(state.y))}; faint dots are outside numeric selection"></svg><p class="form-hint" data-shot-detail aria-live="polite">Tap a selected dot to inspect; review its session in Shot workspace.</p></section><section class="analysis-panel"><h2>${esc(label(state.distribution))} distribution</h2><p class="form-hint" data-bin-count></p><svg class="analysis-plot" data-hist role="img" aria-label="Distribution; choose a range below to cross-filter all views"></svg><div data-bins class="analysis-bins"></div></section></div>`;
+    body.innerHTML = html`<div class="analysis-explore-controls"><label class="field">Horizontal axis<select data-axis="x">${metricOptions(r, state.x)}</select></label><label class="field">Vertical axis<select data-axis="y">${metricOptions(r, state.y)}</select></label><label class="field">Distribution / range metric<select data-distribution>${metricOptions(r, state.distribution)}</select></label><form data-range-form><label class="field">Minimum · ${r.metrics[state.distribution].unit}<input type="number" step="any" data-range-min value="${constraint.min ?? ''}"></label><label class="field">Maximum · ${r.metrics[state.distribution].unit}<input type="number" step="any" data-range-max value="${constraint.max ?? ''}"></label><button class="btn" type="submit">Apply range</button></form></div>${legend(cohorts(rs))}<div class="analysis-explore"><section class="analysis-panel"><h2>${label(state.x)} × ${label(state.y)}</h2><p class="form-hint" data-pairs></p><svg class="analysis-plot" data-scatter role="img" aria-label="${label(state.x)} versus ${label(state.y)}; faint dots are outside numeric selection"></svg><p class="form-hint" data-shot-detail aria-live="polite">Tap a selected dot to inspect; review its session in Shot workspace.</p></section><section class="analysis-panel"><h2>${label(state.distribution)} distribution</h2><p class="form-hint" data-bin-count></p><svg class="analysis-plot" data-hist role="img" aria-label="Distribution; choose a range below to cross-filter all views"></svg><div data-bins class="analysis-bins"></div></section></div>`;
     body.querySelectorAll('[data-axis]').forEach(
       s =>
         (s.onchange = () => {
@@ -462,13 +461,12 @@ function draw(app, r, api, notice, isCurrent, golferId) {
       bins = histogram(candidates, state.distribution);
     body.querySelector('[data-bin-count]').textContent =
       `${candidates.filter(s => finite(s.values[state.distribution])).length}/${candidates.length} available before this dimension’s range; other ranges apply. Tap a bin below.`;
-    body.querySelector('[data-bins]').innerHTML =
-      bins
-        .map(
+    body.querySelector('[data-bins]').innerHTML = bins.length
+      ? html`${bins.map(
           (b, i) =>
-            `<button class="btn" data-bin="${i}">${fmt(b.min)}–${fmt(b.max)} ${esc(r.metrics[state.distribution].unit)} · n=${b.count}</button>`
-        )
-        .join('') || '<p>No readings for this distribution.</p>';
+            html`<button class="btn" data-bin="${i}">${fmt(b.min)}–${fmt(b.max)} ${r.metrics[state.distribution].unit} · n=${b.count}</button>`
+        )}`
+      : html`<p>No readings for this distribution.</p>`;
     body.querySelectorAll('[data-bin]').forEach(
       b =>
         (b.onclick = () => {
@@ -522,18 +520,14 @@ function draw(app, r, api, notice, isCurrent, golferId) {
         tags: ''
       }
     };
-    body.innerHTML = `<form data-compare-form><div class="analysis-compare-scopes">${['a', 'b']
-      .map(k => {
-        const c = state.compare[k];
-        return `<fieldset><legend>${k === 'a' ? 'Baseline cohort' : 'Comparison cohort'}</legend><label class="field">Cohort name<input name="${k}_name" value="${esc(c.name)}" maxlength="60" required></label><label class="field">From date<input type="date" name="${k}_date_from" value="${esc(c.date_from)}"></label><label class="field">Through date<input type="date" name="${k}_date_to" value="${esc(c.date_to)}"></label><details class="details"><summary>Sessions, configuration and tags</summary><label class="field">Sessions<select name="${k}_sessions" multiple size="4">${options(
-          r.options.sessions.map(s => [s.id, s.started.slice(0, 10) + ' · ' + s.drill]),
-          null,
-          null
-        )}</select></label><label class="field">Configuration<select name="${k}_configuration">${options(Object.entries(r.options.configurations ?? {}), c.configuration, 'Use shared scope')}</select></label><label class="field">Tags · any<input name="${k}_tags" value="${esc(c.tags)}" placeholder="Use shared scope"></label></details></fieldset>`;
-      })
-      .join(
-        ''
-      )}</div><div class="form-foot"><button class="btn primary" type="submit">Compare cohorts</button><button class="btn quiet" type="button" data-reset-periods>Use first / second half</button></div></form><p class="form-hint">Cohorts inherit shared clubs, intent, inclusion and numeric ranges. Empty dates mean no date restriction. These dynamic queries describe differences, not significance or proof of improvement.</p><div data-compare-result role="status">Loading comparison…</div>`;
+    body.innerHTML = html`<form data-compare-form><div class="analysis-compare-scopes">${['a', 'b'].map(k => {
+      const c = state.compare[k];
+      return html`<fieldset><legend>${k === 'a' ? 'Baseline cohort' : 'Comparison cohort'}</legend><label class="field">Cohort name<input name="${k}_name" value="${c.name}" maxlength="60" required></label><label class="field">From date<input type="date" name="${k}_date_from" value="${c.date_from}"></label><label class="field">Through date<input type="date" name="${k}_date_to" value="${c.date_to}"></label><details class="details"><summary>Sessions, configuration and tags</summary><label class="field">Sessions<select name="${k}_sessions" multiple size="4">${options(
+        r.options.sessions.map(s => [s.id, s.started.slice(0, 10) + ' · ' + s.drill]),
+        null,
+        null
+      )}</select></label><label class="field">Configuration<select name="${k}_configuration">${options(Object.entries(r.options.configurations ?? {}), c.configuration, 'Use shared scope')}</select></label><label class="field">Tags · any<input name="${k}_tags" value="${c.tags}" placeholder="Use shared scope"></label></details></fieldset>`;
+    })}</div><div class="form-foot"><button class="btn primary" type="submit">Compare cohorts</button><button class="btn quiet" type="button" data-reset-periods>Use first / second half</button></div></form><p class="form-hint">Cohorts inherit shared clubs, intent, inclusion and numeric ranges. Empty dates mean no date restriction. These dynamic queries describe differences, not significance or proof of improvement.</p><div data-compare-result role="status">Loading comparison…</div>`;
     const cf = body.querySelector('[data-compare-form]');
     for (const k of ['a', 'b'])
       for (const o of cf.elements[k + '_sessions'].options)
@@ -563,10 +557,16 @@ function draw(app, r, api, notice, isCurrent, golferId) {
           table = comparison(enriched(a), enriched(b), state.metrics),
           overlap = new Set(a.rows.map(rowKey)),
           common = b.rows.filter(s => overlap.has(rowKey(s))).length;
-        host.innerHTML = `<div class="analysis-comparison-counts"><strong>${esc(state.compare.a.name)} · ${a.count} attempts</strong><strong>${esc(state.compare.b.name)} · ${b.count} attempts</strong><span>${common} attempts overlap between cohorts</span></div><div class="form-foot">${[a, b].map((report, i) => `<a class="btn" href="/api/analysis?${esc(new URLSearchParams({ ...report.filters, format: 'csv' }).toString())}" download>Export ${esc(state.compare[i ? 'b' : 'a'].name)} CSV</a>`).join('')}</div><div class="table-wrap"><table><thead><tr><th>Equipment / metric</th><th>${esc(state.compare.a.name)} median / IQR · n</th><th>${esc(state.compare.b.name)} median / IQR · n</th><th>Median change</th></tr></thead><tbody>${table.flatMap(c => c.metrics.map(m => `<tr><th><svg width="14" height="12" aria-hidden="true"><circle cx="5" cy="6" r="4" fill="${c.color}"/></svg>${esc(c.label)}<small class="range-stat-detail">${esc(label(m.metric))} · ${esc(r.metrics[m.metric].unit)}</small></th><td>${fmt(m.before.median)} / ${fmt(m.before.iqr)} · n=${m.before.count}</td><td>${fmt(m.after.median)} / ${fmt(m.after.iqr)} · n=${m.after.count}</td><td>${m.delta > 0 ? '+' : ''}${fmt(m.delta)} ${esc(r.metrics[m.metric].unit)}</td></tr>`)).join('') || '<tr><td>No matching readings. Change cohort dates or shared filters.</td></tr>'}</tbody></table></div><p class="form-hint">Same configurations/intents share a row; changed equipment uses separate rows. Missing counterparts stay unavailable.</p>`;
+        const rows = table.flatMap(c =>
+          c.metrics.map(
+            m =>
+              html`<tr><th><svg width="14" height="12" aria-hidden="true"><circle cx="5" cy="6" r="4" fill="${c.color}"/></svg>${c.label}<small class="range-stat-detail">${label(m.metric)} · ${r.metrics[m.metric].unit}</small></th><td>${fmt(m.before.median)} / ${fmt(m.before.iqr)} · n=${m.before.count}</td><td>${fmt(m.after.median)} / ${fmt(m.after.iqr)} · n=${m.after.count}</td><td>${m.delta > 0 ? '+' : ''}${fmt(m.delta)} ${r.metrics[m.metric].unit}</td></tr>`
+          )
+        );
+        host.innerHTML = html`<div class="analysis-comparison-counts"><strong>${state.compare.a.name} · ${a.count} attempts</strong><strong>${state.compare.b.name} · ${b.count} attempts</strong><span>${common} attempts overlap between cohorts</span></div><div class="form-foot">${[a, b].map((report, i) => html`<a class="btn" href="/api/analysis?${new URLSearchParams({ ...report.filters, format: 'csv' }).toString()}" download>Export ${state.compare[i ? 'b' : 'a'].name} CSV</a>`)}</div><div class="table-wrap"><table><thead><tr><th>Equipment / metric</th><th>${state.compare.a.name} median / IQR · n</th><th>${state.compare.b.name} median / IQR · n</th><th>Median change</th></tr></thead><tbody>${rows.length ? rows : html`<tr><td>No matching readings. Change cohort dates or shared filters.</td></tr>`}</tbody></table></div><p class="form-hint">Same configurations/intents share a row; changed equipment uses separate rows. Missing counterparts stay unavailable.</p>`;
       } catch (e) {
         if (current === ticket && host.isConnected)
-          host.innerHTML = '<p role="alert">Comparison unavailable: ' + esc(e.message) + '</p>';
+          host.innerHTML = html`<p role="alert">Comparison unavailable: ${e.message}</p>`;
       }
     };
     cf.onsubmit = e => {
@@ -601,7 +601,7 @@ function draw(app, r, api, notice, isCurrent, golferId) {
       .querySelector('.analysis-selection summary')
       .insertAdjacentHTML(
         'beforeend',
-        `<span class="analysis-scope">${esc(label(state.x))} × ${esc(label(state.y))} · Distribution: ${esc(label(state.distribution))}</span>`
+        html`<span class="analysis-scope">${label(state.x)} × ${label(state.y)} · Distribution: ${label(state.distribution)}</span>`
       );
   if (state.view === 'compare') {
     const note = body.querySelector(':scope > .form-hint');
@@ -623,7 +623,7 @@ function draw(app, r, api, notice, isCurrent, golferId) {
   }
   const method = document.createElement('details');
   method.className = 'details section-space';
-  method.innerHTML = `<summary>Counting, dates and analytical methods</summary><p class="form-hint">${esc(r.counting)} Date filters use recorded session start dates. Week/month groups aggregate underlying readings using those dates; weeks start Monday. Shot plots use capture time in UTC. Inspection highlights an interval/shot; CSV retains the applied query. ${esc(r.method)}</p>`;
+  method.innerHTML = html`<summary>Counting, dates and analytical methods</summary><p class="form-hint">${r.counting} Date filters use recorded session start dates. Week/month groups aggregate underlying readings using those dates; weeks start Monday. Shot plots use capture time in UTC. Inspection highlights an interval/shot; CSV retains the applied query. ${r.method}</p>`;
   root.append(method);
   observer = new ResizeObserver(() => {
     if (!root.isConnected) {
@@ -637,18 +637,22 @@ function draw(app, r, api, notice, isCurrent, golferId) {
   mountCalculations(app, requestFilters(), api, notice, isCurrent, refresh);
 }
 function clubPicks(r, bag, selected) {
-  return (
-    Object.entries(r.options.clubs)
-      .filter(([, c]) => !bag || c.bag === bag)
-      .map(
-        ([id, c]) =>
-          `<label class="collection-option"><input type="checkbox" name="clubs" value="${esc(id)}" ${selected.includes(id) ? 'checked' : ''}>${esc(r.options.bags[c.bag] ?? 'No bag')} / ${esc(c.label)}</label>`
-      )
-      .join('') || '<span class="form-hint">No tagged clubs in this scope.</span>'
-  );
+  const picks = Object.entries(r.options.clubs)
+    .filter(([, c]) => !bag || c.bag === bag)
+    .map(
+      ([id, c]) =>
+        html`<label class="collection-option"><input type="checkbox" name="clubs" value="${id}" ${selected.includes(id) ? 'checked' : ''}>${r.options.bags[c.bag] ?? 'No bag'} / ${c.label}</label>`
+    );
+  return picks.length ? html`${picks}` : html`<span class="form-hint">No tagged clubs in this scope.</span>`;
 }
+// Dashed stroke for every series after the first, so colors are not the only distinction.
+const dash = i => (i ? html`stroke-dasharray="${3 + i * 2} 3"` : '');
 function legend(series) {
-  return `<div class="analysis-legend">${series.map((c, i) => `<span><svg width="24" height="12" aria-hidden="true"><line x1="0" x2="24" y1="6" y2="6" stroke="${c.color}" stroke-width="2" ${i ? 'stroke-dasharray="' + (3 + i * 2) + ' 3"' : ''}/><circle cx="12" cy="6" r="3" fill="${c.color}"/></svg>${esc(c.label)}</span>`).join('') || '<span>No matching shots. Expand Selections & filters to change scope.</span>'}</div>`;
+  const items = series.map(
+    (c, i) =>
+      html`<span><svg width="24" height="12" aria-hidden="true"><line x1="0" x2="24" y1="6" y2="6" stroke="${c.color}" stroke-width="2" ${dash(i)}/><circle cx="12" cy="6" r="3" fill="${c.color}"/></svg>${c.label}</span>`
+  );
+  return html`<div class="analysis-legend">${items.length ? items : html`<span>No matching shots. Expand Selections & filters to change scope.</span>`}</div>`;
 }
 function chartDomain(values) {
   const valid = values.filter(finite);
@@ -683,16 +687,15 @@ function geometry(svg, xValues, yValues) {
 function frame(g, xLabel, yLabel, time = false) {
   const { W, H, L, R, T, B, xd, yd, x, y } = g,
     ticks = W < 550 ? 3 : 6;
-  return `${Array.from({ length: 4 }, (_, i) => {
+  return html`${Array.from({ length: 4 }, (_, i) => {
     const v = yLabel === 'Attempts · n' ? Math.round((yd.max * i) / 3) : yd.min + ((yd.max - yd.min) * i) / 3;
-    return `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="range-gridline"/><text x="${L - 10}" y="${y(v) + 4}" text-anchor="end">${yLabel === 'Attempts · n' ? v : fmt(v)}</text>`;
-  }).join('')}${Array.from({ length: ticks }, (_, i) => {
+    return html`<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="range-gridline"/><text x="${L - 10}" y="${y(v) + 4}" text-anchor="end">${yLabel === 'Attempts · n' ? v : fmt(v)}</text>`;
+  })}${Array.from({ length: ticks }, (_, i) => {
     const v = xd.min + ((xd.max - xd.min) * i) / (ticks - 1);
-    return `<text x="${x(v)}" y="${H - B + 22}" text-anchor="${i === 0 ? 'start' : i === ticks - 1 ? 'end' : 'middle'}">${time ? new Date(v).toISOString().slice(5, 10) : fmt(v)}</text>`;
-  }).join(
-    ''
-  )}<text x="${W / 2}" y="${H - 8}" text-anchor="middle">${esc(xLabel)}</text><text x="8" y="14">${esc(yLabel)}</text>`;
+    return html`<text x="${x(v)}" y="${H - B + 22}" text-anchor="${i === 0 ? 'start' : i === ticks - 1 ? 'end' : 'middle'}">${time ? new Date(v).toISOString().slice(5, 10) : fmt(v)}</text>`;
+  })}<text x="${W / 2}" y="${H - 8}" text-anchor="middle">${xLabel}</text><text x="8" y="14">${yLabel}</text>`;
 }
+// `markup` is html`` output.
 function finish(svg, g, markup) {
   svg.setAttribute('viewBox', `0 0 ${g.W} ${g.H}`);
   svg.innerHTML = markup;
@@ -715,21 +718,23 @@ function drawTrend(svg, t, m, r, inspect) {
     })
     .join(' / ');
   if (!valid.length) {
-    finish(svg, g, `<text x="20" y="90">No available ${esc(r.metrics[m].label)} readings.</text>`);
+    finish(svg, g, html`<text x="20" y="90">No available ${r.metrics[m].label} readings.</text>`);
     return;
   }
-  let marks = '';
+  const marks = [];
   t.series.forEach((c, index) => {
     let path = '',
       segment = [];
     const flush = () => {
       if (segment.length) {
-        marks += `<polygon points="${segment
-          .map(p => `${g.x(p.time)},${g.y(p.metrics[m].q1 ?? p.metrics[m].median)}`)
-          .concat(
-            [...segment].reverse().map(p => `${g.x(p.time)},${g.y(p.metrics[m].q3 ?? p.metrics[m].median)}`)
-          )
-          .join(' ')}" fill="${c.color}" fill-opacity=".08"/>`;
+        marks.push(
+          html`<polygon points="${segment
+            .map(p => `${g.x(p.time)},${g.y(p.metrics[m].q1 ?? p.metrics[m].median)}`)
+            .concat(
+              [...segment].reverse().map(p => `${g.x(p.time)},${g.y(p.metrics[m].q3 ?? p.metrics[m].median)}`)
+            )
+            .join(' ')}" fill="${c.color}" fill-opacity=".08"/>`
+        );
         segment = [];
       }
     };
@@ -743,32 +748,26 @@ function drawTrend(svg, t, m, r, inspect) {
       const prior = c.points[i - 1];
       path += `${!prior || !finite(prior.metrics[m].median) ? 'M' : 'L'}${g.x(p.time)},${g.y(s.median)} `;
       segment.push(p);
-      marks += `<circle cx="${g.x(p.time)}" cy="${g.y(s.median)}" r="${p.id === inspect ? 5 : 3}" fill="${c.color}"><title>${esc(c.label)} · ${esc(p.label)} · median ${fmt(s.median)} · IQR ${fmt(s.iqr)} · n=${s.count}</title></circle>`;
+      marks.push(
+        html`<circle cx="${g.x(p.time)}" cy="${g.y(s.median)}" r="${p.id === inspect ? 5 : 3}" fill="${c.color}"><title>${c.label} · ${p.label} · median ${fmt(s.median)} · IQR ${fmt(s.iqr)} · n=${s.count}</title></circle>`
+      );
     }
     flush();
-    marks += `<path d="${path}" fill="none" stroke="${c.color}" stroke-width="2" ${index ? 'stroke-dasharray="' + (3 + index * 2) + ' 3"' : ''}/>`;
+    marks.push(html`<path d="${path}" fill="none" stroke="${c.color}" stroke-width="2" ${dash(index)}/>`);
   });
   const focused = t.points.find(p => p.id === inspect);
-  finish(
-    svg,
-    g,
-    frame(
-      g,
-      state.resolution === 'shot'
-        ? 'Capture date · UTC'
-        : state.resolution === 'session'
-          ? 'Session date'
-          : state.resolution === 'week'
-            ? 'Week starting Monday'
-            : 'Month starting',
-      r.metrics[m].unit,
-      true
-    ) +
-      marks +
-      (focused
-        ? `<line x1="${g.x(focused.time)}" x2="${g.x(focused.time)}" y1="${g.T}" y2="${g.H - g.B}" stroke="var(--muted)" stroke-dasharray="3 4"/>`
-        : '')
-  );
+  const axis =
+    state.resolution === 'shot'
+      ? 'Capture date · UTC'
+      : state.resolution === 'session'
+        ? 'Session date'
+        : state.resolution === 'week'
+          ? 'Week starting Monday'
+          : 'Month starting';
+  const focusLine = focused
+    ? html`<line x1="${g.x(focused.time)}" x2="${g.x(focused.time)}" y1="${g.T}" y2="${g.H - g.B}" stroke="var(--muted)" stroke-dasharray="3 4"/>`
+    : '';
+  finish(svg, g, html`${frame(g, axis, r.metrics[m].unit, true)}${marks}${focusLine}`);
 }
 function drawScatter(svg, context, selected, xm, ym, r, highlight) {
   const pairs = context.filter(s => finite(s.values[xm]) && finite(s.values[ym])),
@@ -782,16 +781,14 @@ function drawScatter(svg, context, selected, xm, ym, r, highlight) {
     colors = new Map(cohorts(context).map(c => [c.id, c.color]));
   svg.parentElement.querySelector('[data-pairs]').textContent =
     `${selected.filter(s => finite(s.values[xm]) && finite(s.values[ym])).length}/${selected.length} selected pairs available · ${plot.length}/${pairs.length} context pairs drawn (up to 1,500)`;
+  const dots = plot.map(
+    s =>
+      html`<circle cx="${g.x(s.values[xm])}" cy="${g.y(s.values[ym])}" r="${rowKey(s) === highlight ? 7 : 4}" fill="${colors.get(cohortKey(s))}" fill-opacity="${chosen.has(rowKey(s)) ? 0.8 : 0.12}" stroke="${rowKey(s) === highlight ? 'var(--ink)' : 'none'}"><title>${s.bag_name + ' / ' + s.club_label} · ${fmt(s.values[xm])} / ${fmt(s.values[ym])}</title></circle>`
+  );
   finish(
     svg,
     g,
-    frame(g, r.metrics[xm].label + ' · ' + r.metrics[xm].unit, r.metrics[ym].unit) +
-      plot
-        .map(
-          s =>
-            `<circle cx="${g.x(s.values[xm])}" cy="${g.y(s.values[ym])}" r="${rowKey(s) === highlight ? 7 : 4}" fill="${colors.get(cohortKey(s))}" fill-opacity="${chosen.has(rowKey(s)) ? 0.8 : 0.12}" stroke="${rowKey(s) === highlight ? 'var(--ink)' : 'none'}"><title>${esc(s.bag_name + ' / ' + s.club_label)} · ${fmt(s.values[xm])} / ${fmt(s.values[ym])}</title></circle>`
-        )
-        .join('')
+    html`${frame(g, r.metrics[xm].label + ' · ' + r.metrics[xm].unit, r.metrics[ym].unit)}${dots}`
   );
 }
 function nearestPoint(rows, xm, ym, W, H, px, py, context) {
@@ -820,15 +817,9 @@ function drawHistogram(svg, bins, m, r) {
   );
   g.yd.min = 0;
   g.yd.max = Math.max(3, Math.ceil(g.yd.max / 3) * 3);
-  finish(
-    svg,
-    g,
-    frame(g, r.metrics[m].label + ' · ' + r.metrics[m].unit, 'Attempts · n') +
-      bins
-        .map(
-          b =>
-            `<rect x="${g.x(b.min)}" y="${g.y(b.count)}" width="${Math.max(0, g.x(b.max) - g.x(b.min) - 2)}" height="${Math.max(0, g.y(0) - g.y(b.count))}" fill="var(--accent)" fill-opacity=".65"><title>${fmt(b.min)}–${fmt(b.max)} · n=${b.count}</title></rect>`
-        )
-        .join('')
+  const bars = bins.map(
+    b =>
+      html`<rect x="${g.x(b.min)}" y="${g.y(b.count)}" width="${Math.max(0, g.x(b.max) - g.x(b.min) - 2)}" height="${Math.max(0, g.y(0) - g.y(b.count))}" fill="var(--accent)" fill-opacity=".65"><title>${fmt(b.min)}–${fmt(b.max)} · n=${b.count}</title></rect>`
   );
+  finish(svg, g, html`${frame(g, r.metrics[m].label + ' · ' + r.metrics[m].unit, 'Attempts · n')}${bars}`);
 }

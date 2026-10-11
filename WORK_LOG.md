@@ -1,5 +1,31 @@
 # TraceLoft work log
 
+## 2026-10-11 — Every UI template escapes by default
+
+- Converted the remaining `innerHTML` templates in all `web/*.js` modules to the `html` tag and
+  removed every hand-written `esc()` call. Chart helpers (`trend`, `gauge`, `progress`,
+  `distanceTrend`) return `html` and build lists from arrays instead of string concatenation.
+- `html` now renders booleans like a plain template literal ("true"/"false"). Rendering `false` as
+  nothing would have emptied `aria-pressed="false"` attributes; the DOM comparison below caught
+  it. Optional fragments therefore use ternaries (`cond ? html`…` : ''`) everywhere.
+- Fixed an existing bug: the empty putting log printed the literal text `${modeled?9:6}` as its
+  `colspan` value because that template was not a template literal.
+- Tests: `tests/test_html.mjs` covers the boolean and truthiness semantics.
+  `tests/test_html_usage.mjs` fails on any markup template without the `html` tag, any
+  `cond && html` fragment and any remaining `esc()`. The UI tests that match markup with regular
+  expressions convert the returned `SafeHtml` to a string.
+- Verified with a DOM regression comparison in an isolated instance (separate database,
+  input 9901, HTTP 8799). The same seeded data was rendered with the old and new web code at
+  1366×1024, and `#app` plus open dialogs were captured after rendering settled:
+  - 42 screens: every route, Sessions/Analyze/Calculations/Play/Equipment views, setup screens
+    and finished-session reviews. The old and new markup was byte-identical.
+  - 10 mutation states (restored from the same database snapshot): range cleanup/target/tag
+    dialogs, top-view inspection, course-import preview, empty putting and ladder runners,
+    a wedge demo after a shot, and the 2D golf preview and after-shot. Ids and timestamps were
+    normalized. The only differences were the colspan fix and the random demo shot's values in
+    the wedge demo (a structural comparison with numbers masked showed only data-driven changes).
+- Verified: `python verify.py` passed **217 Python** and **71 JavaScript** tests and lint.
+
 ## 2026-10-11 — Typed per-drill request models
 
 - Added `drill_params.py`: one Pydantic model per scorer (putting, distance ladder, range,
@@ -15,6 +41,7 @@
 - Tests (`tests/test_drills.py`): each scorer's fields equal what its session receives; the
   envelope is the union and rejects unknown keys; conflicts are rejected; bounds/defaults apply
   and other drills' fields are ignored; a direct launch equals an API launch.
+- Verified: `python verify.py` passed **217 Python** and **67 JavaScript** tests and lint.
 
 ## 2026-10-11 — Frozen per-version migrations
 

@@ -3,11 +3,16 @@ import assert from 'node:assert/strict';
 import {
   effectiveShot,
   latestPlayedShot,
-  correctionControls,
+  correctionControls as correctionControlsMarkup,
   correctionCounts,
-  correctionHistory
+  correctionHistory as correctionHistoryMarkup
 } from '../web/game-corrections.js';
-import { gameScoreboard, courseMap } from '../web/golf-sim.js';
+import { gameScoreboard as gameScoreboardMarkup, courseMap as courseMapMarkup } from '../web/golf-sim.js';
+// Markup helpers return SafeHtml (a String object); compare their text.
+const gameScoreboard = (...args) => String(gameScoreboardMarkup(...args));
+const courseMap = (...args) => String(courseMapMarkup(...args));
+const correctionControls = (...args) => String(correctionControlsMarkup(...args));
+const correctionHistory = (...args) => String(correctionHistoryMarkup(...args));
 const data = () => ({
   id: 'r',
   course: {

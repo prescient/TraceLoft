@@ -1,20 +1,18 @@
 import { decorateMatrix } from './wedge-matrix.js';
-import { escape as esc } from './charts.js';
+import { html } from './charts.js';
 import { robustSummary, equipment, included } from './range-data.js';
 const n = v => (Number.isFinite(v) ? v.toFixed(1) : '—');
 
 export function renderCollectionSetup(app, old, launch, notice, eq, wedge = false) {
   const catalog = eq.catalog();
-  app.innerHTML = `<div class="page-head"><div><p class="eyebrow">FULL SWING / KNOW YOUR BAG</p><h1>${wedge ? 'Wedge matrix' : 'Bag mapping'}</h1><p class="subtitle">${wedge ? 'Know your yardages for each wedge and swing.' : 'Build a reliable distance map, one club at a time.'}</p></div><button class="btn quiet" data-action="home">← Practice</button></div><form id="collection-setup"><div class="setup-columns"><section class="card"><h2>Your collection plan</h2><div class="form-grid"><label class="field">Bag<select name="range_bag_id">${catalog.bags.map(b => `<option value="${esc(b.id)}" ${b.id === old.equipment_selection?.bag_id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label><label class="field">Readings per ${wedge ? 'cell' : 'club'}<input name="collection_samples" type="number" min="2" max="100" value="${old.collection_samples ?? 5}" required></label><label class="field">Distance<select name="range_metric"><option value="carry">Carry · yd</option><option value="total" ${old.range_metric === 'total' ? 'selected' : ''}>Total · yd</option></select></label><label class="field">Handedness<select name="handedness"><option value="right_handed">Right-handed</option><option value="left_handed" ${old.handedness === 'left_handed' ? 'selected' : ''}>Left-handed</option></select></label></div>${wedge ? `<label class="field section-space">Swing labels · comma separated<input name="swing_labels" value="${esc((old.swing_labels ?? ['Half', 'Three-quarter', 'Full']).join(', '))}" maxlength="328" required></label>` : ''}<fieldset class="collection-clubs"><legend>Clubs to map</legend><div id="collection-clubs" class="collection-options"></div></fieldset></section><section class="card"><p class="eyebrow">${wedge ? 'YOUR WEDGES, YOUR SWING LABELS' : 'DISTANCE, NOT YOUR BEST SHOT'}</p><h2>${wedge ? 'A reference for scoring distances' : 'Find the gaps in your bag'}</h2><p>Collect a sample for each ${wedge ? 'wedge and swing label' : 'club'}. Compare median distances and the middle 50% of your shots.</p><p class="form-hint">Missing distances do not fill your sample. Excluded and removed shots stay out of your map. Genuine mishits stay included until you choose otherwise.</p><p class="form-hint">You control club changes and when to finish. Complete the sample or keep collecting for a clearer picture.</p></section></div><div class="form-foot"><button class="btn primary" type="submit" value="live">Start ${wedge ? 'wedge matrix' : 'bag mapping'} →</button><button class="btn" type="submit" value="demo">Launch demo ${wedge ? 'matrix' : 'mapping'}</button></div></form>`;
+  app.innerHTML = html`<div class="page-head"><div><p class="eyebrow">FULL SWING / KNOW YOUR BAG</p><h1>${wedge ? 'Wedge matrix' : 'Bag mapping'}</h1><p class="subtitle">${wedge ? 'Know your yardages for each wedge and swing.' : 'Build a reliable distance map, one club at a time.'}</p></div><button class="btn quiet" data-action="home">← Practice</button></div><form id="collection-setup"><div class="setup-columns"><section class="card"><h2>Your collection plan</h2><div class="form-grid"><label class="field">Bag<select name="range_bag_id">${catalog.bags.map(b => html`<option value="${b.id}" ${b.id === old.equipment_selection?.bag_id ? 'selected' : ''}>${b.name}</option>`)}</select></label><label class="field">Readings per ${wedge ? 'cell' : 'club'}<input name="collection_samples" type="number" min="2" max="100" value="${old.collection_samples ?? 5}" required></label><label class="field">Distance<select name="range_metric"><option value="carry">Carry · yd</option><option value="total" ${old.range_metric === 'total' ? 'selected' : ''}>Total · yd</option></select></label><label class="field">Handedness<select name="handedness"><option value="right_handed">Right-handed</option><option value="left_handed" ${old.handedness === 'left_handed' ? 'selected' : ''}>Left-handed</option></select></label></div>${wedge ? html`<label class="field section-space">Swing labels · comma separated<input name="swing_labels" value="${(old.swing_labels ?? ['Half', 'Three-quarter', 'Full']).join(', ')}" maxlength="328" required></label>` : ''}<fieldset class="collection-clubs"><legend>Clubs to map</legend><div id="collection-clubs" class="collection-options"></div></fieldset></section><section class="card"><p class="eyebrow">${wedge ? 'YOUR WEDGES, YOUR SWING LABELS' : 'DISTANCE, NOT YOUR BEST SHOT'}</p><h2>${wedge ? 'A reference for scoring distances' : 'Find the gaps in your bag'}</h2><p>Collect a sample for each ${wedge ? 'wedge and swing label' : 'club'}. Compare median distances and the middle 50% of your shots.</p><p class="form-hint">Missing distances do not fill your sample. Excluded and removed shots stay out of your map. Genuine mishits stay included until you choose otherwise.</p><p class="form-hint">You control club changes and when to finish. Complete the sample or keep collecting for a clearer picture.</p></section></div><div class="form-foot"><button class="btn primary" type="submit" value="live">Start ${wedge ? 'wedge matrix' : 'bag mapping'} →</button><button class="btn" type="submit" value="demo">Launch demo ${wedge ? 'matrix' : 'mapping'}</button></div></form>`;
   const form = app.querySelector('form');
   const clubs = () => {
     const bag = catalog.bags.find(b => b.id === form.elements.range_bag_id.value);
-    app.querySelector('#collection-clubs').innerHTML = bag.clubs
-      .map(
-        c =>
-          `<label class="collection-option"><input type="checkbox" name="collection_clubs" value="${esc(c.id)}" ${old.collection_plan ? (old.collection_plan.some(p => p.club_id === c.id) ? 'checked' : '') : (wedge ? /^(PW|GW|SW|LW)$|wedge|°/i.test(c.label) : c.label.toLowerCase() !== 'putter') ? 'checked' : ''}>${esc(c.label)}</label>`
-      )
-      .join('');
+    app.querySelector('#collection-clubs').innerHTML = html`${bag.clubs.map(
+      c =>
+        html`<label class="collection-option"><input type="checkbox" name="collection_clubs" value="${c.id}" ${old.collection_plan ? (old.collection_plan.some(p => p.club_id === c.id) ? 'checked' : '') : (wedge ? /^(PW|GW|SW|LW)$|wedge|°/i.test(c.label) : c.label.toLowerCase() !== 'putter') ? 'checked' : ''}>${c.label}</label>`
+    )}`;
   };
   form.elements.range_bag_id.onchange = clubs;
   clubs();
@@ -71,12 +69,12 @@ function intervalChart(rows) {
     H = Math.max(180, rows.length * 46 + 45),
     L = 145;
   const x = v => L + ((W - L - 65) * v) / max;
-  return `<svg class="mapping-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Club median distances and interquartile ranges in yards">${[0, 0.25, 0.5, 0.75, 1].map(f => `<line x1="${x(max * f)}" x2="${x(max * f)}" y1="10" y2="${H - 30}" class="range-gridline"/><text x="${x(max * f)}" y="${H - 6}" text-anchor="middle">${Math.round(max * f)}</text>`).join('')}${rows
-    .map((r, i) => {
+  return html`<svg class="mapping-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Club median distances and interquartile ranges in yards">${[0, 0.25, 0.5, 0.75, 1].map(f => html`<line x1="${x(max * f)}" x2="${x(max * f)}" y1="10" y2="${H - 30}" class="range-gridline"/><text x="${x(max * f)}" y="${H - 6}" text-anchor="middle">${Math.round(max * f)}</text>`)}${rows.map(
+    (r, i) => {
       const y = 30 + i * 46;
-      return `<text x="${L - 14}" y="${y + 5}" text-anchor="end">${esc(r.club_label)}</text>${r.median == null ? `<text x="${L + 15}" y="${y + 5}">No readings</text>` : `<line x1="${x(r.q1 ?? r.median)}" x2="${x(r.q3 ?? r.median)}" y1="${y}" y2="${y}" stroke="var(--accent)" stroke-width="12" stroke-opacity=".35"/><circle cx="${x(r.median)}" cy="${y}" r="6" fill="var(--accent)"/><text x="${x(r.q3 ?? r.median) + 12}" y="${y + 5}">${n(r.median)}</text>`}`;
-    })
-    .join('')}</svg>`;
+      return html`<text x="${L - 14}" y="${y + 5}" text-anchor="end">${r.club_label}</text>${r.median == null ? html`<text x="${L + 15}" y="${y + 5}">No readings</text>` : html`<line x1="${x(r.q1 ?? r.median)}" x2="${x(r.q3 ?? r.median)}" y1="${y}" y2="${y}" stroke="var(--accent)" stroke-width="12" stroke-opacity=".35"/><circle cx="${x(r.median)}" cy="${y}" r="6" fill="var(--accent)"/><text x="${x(r.q3 ?? r.median) + 12}" y="${y + 5}">${n(r.median)}</text>`}`;
+    }
+  )}</svg>`;
 }
 export function decorateCollection(app, data, active, context) {
   if (!data.collection_kind) return;
@@ -114,14 +112,12 @@ export function decorateCollection(app, data, active, context) {
     ?.replaceChildren(document.createTextNode('New collection / edit setup'));
   const panel = document.createElement('section');
   panel.className = 'card collection-summary section-space';
-  panel.innerHTML = `<div class="chart-head"><div><p class="eyebrow">${esc(data.collection_plan[0].bag_name)} / ${esc(data.range_metric)} · YD</p><h2>Bag map</h2></div><strong>${complete}/${rows.length} clubs sampled</strong></div><p class="form-hint">This map uses all included shots for the planned clubs, independent of workspace filters. Goal: ${data.collection_samples} readings per club. Dots show median; bands show Q1–Q3 (middle 50%). Gap is to the next shorter sampled club. Overlap describes these samples, not future-shot probability.</p><div class="mapping-layout"><div>${intervalChart(rows)}</div><div class="table-wrap"><table><thead><tr><th>Club</th><th>n / goal</th><th>Median / IQR · yd</th><th>Gap · yd</th>${active ? '<th>Collect</th>' : ''}</tr></thead><tbody>${rows
-    .map((r, i) => {
+  panel.innerHTML = html`<div class="chart-head"><div><p class="eyebrow">${data.collection_plan[0].bag_name} / ${data.range_metric} · YD</p><h2>Bag map</h2></div><strong>${complete}/${rows.length} clubs sampled</strong></div><p class="form-hint">This map uses all included shots for the planned clubs, independent of workspace filters. Goal: ${data.collection_samples} readings per club. Dots show median; bands show Q1–Q3 (middle 50%). Gap is to the next shorter sampled club. Overlap describes these samples, not future-shot probability.</p><div class="mapping-layout"><div>${intervalChart(rows)}</div><div class="table-wrap"><table><thead><tr><th>Club</th><th>n / goal</th><th>Median / IQR · yd</th><th>Gap · yd</th>${active ? html`<th>Collect</th>` : ''}</tr></thead><tbody>${rows.map(
+    (r, i) => {
       const next = rows.slice(i + 1).find(x => x.median != null);
-      return `<tr><th>${esc(r.club_label)}</th><td>${r.count}/${data.collection_samples}${r.count >= data.collection_samples ? ' ✓' : ''}</td><td>${n(r.median)} / ${n(r.iqr)}</td><td>${next && r.median != null ? n(r.median - next.median) : '—'}${next && r.q1 != null && next.q3 != null && r.q1 <= next.q3 ? '<small class="range-stat-detail">IQR overlap</small>' : ''}</td>${active ? `<td><button class="btn small" data-collect-club="${esc(r.club_id)}">${r.club_id === data.equipment_selection?.club_id ? 'Selected' : 'Select'}</button></td>` : ''}</tr>`;
-    })
-    .join(
-      ''
-    )}</tbody></table></div></div><div class="form-foot"><button class="btn quiet" data-mapping-csv>Export bag map CSV</button><span class="form-hint">${complete === rows.length ? 'Sample goal reached. Finish when you are ready.' : 'Small samples remain descriptive. Missing distance never counts as zero.'}</span></div>`;
+      return html`<tr><th>${r.club_label}</th><td>${r.count}/${data.collection_samples}${r.count >= data.collection_samples ? ' ✓' : ''}</td><td>${n(r.median)} / ${n(r.iqr)}</td><td>${next && r.median != null ? n(r.median - next.median) : '—'}${next && r.q1 != null && next.q3 != null && r.q1 <= next.q3 ? html`<small class="range-stat-detail">IQR overlap</small>` : ''}</td>${active ? html`<td><button class="btn small" data-collect-club="${r.club_id}">${r.club_id === data.equipment_selection?.club_id ? 'Selected' : 'Select'}</button></td>` : ''}</tr>`;
+    }
+  )}</tbody></table></div></div><div class="form-foot"><button class="btn quiet" data-mapping-csv>Export bag map CSV</button><span class="form-hint">${complete === rows.length ? 'Sample goal reached. Finish when you are ready.' : 'Small samples remain descriptive. Missing distance never counts as zero.'}</span></div>`;
   app.querySelector('.range-hero').insertAdjacentElement('afterend', panel);
   bindCollectionProfile(app, data, context);
   panel.querySelectorAll('[data-collect-club]').forEach(
@@ -156,7 +152,7 @@ function bindCollectionProfile(app, data, context) {
   box.className = 'form-foot';
   const snapshot = data.collection_analysis,
     ready = snapshot.rows.some(r => r.count >= data.collection_samples);
-  box.innerHTML = `<button class="btn quiet" data-publish-profile ${!ready || snapshot.selected_for_play ? 'disabled' : ''}>${snapshot.selected_for_play ? 'Selected for Play' : 'Use this collection in Play'}</button><span class="form-hint">Saved analysis ${esc(snapshot.analysis_id.slice(0, 8))} · ${esc(snapshot.counting)} Publishing replaces this bag’s ${data.collection_kind === 'wedge' ? 'wedge' : 'mapping'} reference in this data mode.</span>`;
+  box.innerHTML = html`<button class="btn quiet" data-publish-profile ${!ready || snapshot.selected_for_play ? 'disabled' : ''}>${snapshot.selected_for_play ? 'Selected for Play' : 'Use this collection in Play'}</button><span class="form-hint">Saved analysis ${snapshot.analysis_id.slice(0, 8)} · ${snapshot.counting} Publishing replaces this bag’s ${data.collection_kind === 'wedge' ? 'wedge' : 'mapping'} reference in this data mode.</span>`;
   panel.append(box);
   box.querySelector('button').onclick = async e => {
     e.target.disabled = true;

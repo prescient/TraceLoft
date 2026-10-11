@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gameScoreboard, aimReadout } from '../web/golf-sim.js';
+import { gameScoreboard as gameScoreboardMarkup, aimReadout as aimReadoutMarkup } from '../web/golf-sim.js';
+// Markup helpers return SafeHtml (a String object); compare their text.
+const gameScoreboard = (...args) => String(gameScoreboardMarkup(...args));
+const aimReadout = (...args) => String(aimReadoutMarkup(...args));
 
 const round = () => ({
   course: { par: 4, pin: [0, 350] },

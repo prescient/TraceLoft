@@ -17,11 +17,22 @@ test('nested html and raw are not escaped twice', () => {
   assert.equal(String(html`<p>${raw('<br>')}</p>`), '<p><br></p>');
 });
 
-test('arrays join and empty values render nothing', () => {
+test('arrays join, null/undefined render nothing, booleans render like template literals', () => {
   const items = ['x<', 'y'].map(item => html`<li>${item}</li>`);
   assert.equal(String(html`<ul>${items}</ul>`), '<ul><li>x&lt;</li><li>y</li></ul>');
-  assert.equal(String(html`${null}${undefined}${false}${''}`), '');
+  assert.equal(String(html`${null}${undefined}${''}`), '');
   assert.equal(String(html`${0}`), '0');
+  // aria-pressed="${selected}" must keep rendering "false", exactly as before the migration.
+  assert.equal(
+    String(html`<b aria-pressed="${false}" hidden-state="${true}">`),
+    '<b aria-pressed="false" hidden-state="true">'
+  );
+  assert.equal(`<b aria-pressed="${false}">`, String(html`<b aria-pressed="${false}">`));
+});
+
+test('an empty SafeHtml is truthy, so optional markup uses a ternary returning ""', () => {
+  assert.ok(html``);
+  assert.equal(String(html`${false ? html`<i>x</i>` : ''}`), '');
 });
 
 test('results work wherever a string is expected', () => {

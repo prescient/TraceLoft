@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { importMap } from '../web/course-import.js';
+import { importMap as importMapMarkup } from '../web/course-import.js';
 import { parseRoute, routeFor } from '../web/navigation.js';
+// Markup helpers return SafeHtml (a String object); compare their text.
+const importMap = (...args) => String(importMapMarkup(...args));
 test('import has stable route and explicit map boundaries', () => {
   assert.equal(parseRoute('#play/import').view, 'course-import');
   assert.equal(routeFor('course-import', {}), '#play/import');

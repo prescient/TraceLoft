@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { holeShots, reviewHoleData, roundScorecard } from '../web/round-ui.js';
-import { gameScoreboard, courseMap } from '../web/golf-sim.js';
+import { holeShots, reviewHoleData, roundScorecard as roundScorecardMarkup } from '../web/round-ui.js';
+import { gameScoreboard as gameScoreboardMarkup, courseMap as courseMapMarkup } from '../web/golf-sim.js';
 import { roundLabel } from '../web/round-ui.js';
+// Markup helpers return SafeHtml (a String object); compare their text.
+const roundScorecard = (...args) => String(roundScorecardMarkup(...args));
+const gameScoreboard = (...args) => String(gameScoreboardMarkup(...args));
+const courseMap = (...args) => String(courseMapMarkup(...args));
 const holes = Array.from({ length: 18 }, (_, i) => ({
   id: `h${i}`,
   hole_number: i + 1,
@@ -68,7 +72,8 @@ test('compact scorecard keeps reviewed-hole counts separate from the original ro
   const d = data(),
     reviewed = reviewHoleData(d, 0),
     before = structuredClone(d);
-  const html = roundScorecard(d, true, 0, true, gameScoreboard(reviewed, true));
+  // holeScore is markup: pass the html`` value, not its text.
+  const html = roundScorecard(d, true, 0, true, gameScoreboardMarkup(reviewed, true));
   assert.match(html, /Hole 1 · Par 4/);
   assert.match(html, /Total strokes<\/dt><dd>5/);
   assert.match(html, /<strong>7<\/strong>/);

@@ -1,4 +1,4 @@
-import { escape as esc } from './charts.js';
+import { html } from './charts.js';
 import { courseLayers } from './course-art.js';
 import { editorMarkup, bindEditor } from './course-editor.js';
 let draft = null,
@@ -20,10 +20,10 @@ if (typeof window !== 'undefined')
     }
   });
 export function importMap(c) {
-  return `<svg class="game-map import-map" viewBox="${c.viewbox.join(' ')}" role="img" aria-label="Imported hole preview and scoring boundaries">${courseLayers(c, { detailed: false, boundaries: true })}<polyline points="${(c.playing_line ?? [[0, 0], c.pin]).map(p => `${p[1]},${p[0]}`).join(' ')}" fill="none" stroke="#fff" stroke-dasharray="3 3" stroke-width=".8"/><circle cx="${c.tee?.[1] ?? 0}" cy="${c.tee?.[0] ?? 0}" r="3" fill="#fff"/><text x="${(c.tee?.[1] ?? 0) + 5}" y="${(c.tee?.[0] ?? 0) - 5}" font-size="6" fill="#fff">TEE</text><circle cx="${c.pin[1]}" cy="${c.pin[0]}" r="3" fill="#32e2bf"/><text x="${c.pin[1]}" y="${c.pin[0] - 6}" font-size="6" fill="#fff">PIN</text></svg>`;
+  return html`<svg class="game-map import-map" viewBox="${c.viewbox.join(' ')}" role="img" aria-label="Imported hole preview and scoring boundaries">${courseLayers(c, { detailed: false, boundaries: true })}<polyline points="${(c.playing_line ?? [[0, 0], c.pin]).map(p => `${p[1]},${p[0]}`).join(' ')}" fill="none" stroke="#fff" stroke-dasharray="3 3" stroke-width=".8"/><circle cx="${c.tee?.[1] ?? 0}" cy="${c.tee?.[0] ?? 0}" r="3" fill="#fff"/><text x="${(c.tee?.[1] ?? 0) + 5}" y="${(c.tee?.[0] ?? 0) - 5}" font-size="6" fill="#fff">TEE</text><circle cx="${c.pin[1]}" cy="${c.pin[0]}" r="3" fill="#32e2bf"/><text x="${c.pin[1]}" y="${c.pin[0] - 6}" font-size="6" fill="#fff">PIN</text></svg>`;
 }
 export function renderCourseImport(app, api, notice, published, current) {
-  app.innerHTML = `<div class="page-head"><div><p class="eyebrow">PLAY / COURSE LIBRARY</p><h1>Bring a hole into TraceLoft</h1><p class="subtitle">Load a hole. Correct its boundaries. Save a draft or publish a playable version.</p></div><button class="btn quiet" data-action="play">← Play</button></div>
+  app.innerHTML = html`<div class="page-head"><div><p class="eyebrow">PLAY / COURSE LIBRARY</p><h1>Bring a hole into TraceLoft</h1><p class="subtitle">Load a hole. Correct its boundaries. Save a draft or publish a playable version.</p></div><button class="btn quiet" data-action="play">← Play</button></div>
   <section class="card import-drafts"><div><p class="eyebrow">YOUR COURSE WORKBENCH</p><h2>Pick up where you left off</h2><p class="form-hint">Saved drafts stay on this server and are included in database backups. Publishing adds a fixed version to Play.</p></div><div class="form-grid"><label class="field">Saved draft<select id="draft-list"><option value="">Loading drafts…</option></select></label><div class="form-foot"><button class="btn" id="draft-open">Open draft</button><button class="btn quiet" id="draft-new">New import</button></div></div></section>
   <div class="import-layout"><section class="card"><p class="eyebrow">01 / SOURCE</p><h2>Start with a mapped course</h2><p>Download OpenStreetMap geometry, or open a GeoJSON / Overpass JSON export. Only the course identifier is sent to the public map service.</p><form id="course-download"><label class="field">OpenStreetMap course link or way ID<input name="way" placeholder="https://www.openstreetmap.org/way/…" required></label><div class="form-foot"><button class="btn primary" type="submit">Get mapped course</button><button class="btn quiet" type="button" id="course-pilot">Open Jackson Park example</button></div></form><p class="form-hint">Bundled Seattle example · map snapshot October 2, 2026. Works offline; incomplete geometry, not a verified reconstruction.</p><label class="field section-space">Or open a geometry file<input id="course-file" type="file" accept=".json,.geojson,application/json"></label><p class="form-hint">Geometry: maximum 2 MB · WGS84 coordinates · polygons plus golf=hole paths. Also accepts exported TraceLoft draft JSON (up to 4 MB). Export OSM multipolygon relations as GeoJSON.</p><p id="course-source-status" role="status"></p><details class="details"><summary>How to prepare a source</summary><p>Export golf=hole LineStrings and golf=green/fairway/tee/bunker polygons, with natural=water/wood areas. Each hole path runs from its tee to the green. GeoJSON properties keep those tags. Preview even incomplete holes, then draw missing surfaces or correct vertices in the map editor. Tee and pin must be inside the game boundary, and the pin must lie on a green before publication.</p><p>Use data you can reuse. Attribution follows the saved course. Artwork and elevation are separate steps.</p></details></section>
   <section class="card"><p class="eyebrow">02 / HOLE & SCALE</p><h2>Choose your pilot hole</h2><form id="course-settings"><div class="form-grid"><label class="field">Mapped hole<select name="hole_id" required></select></label><label class="field">Course / hole name<input name="name" value="Imported course" maxlength="100" required></label><label class="field">Par<input name="par" type="number" min="3" max="6" value="4" required></label><label class="field">Scorecard length · yd (optional)<input name="scorecard_yards" type="number" min="30" max="1000" step=".1"></label><label class="field">Tee label<input name="tee_label" value="Mapped tee · unverified" maxlength="80" required></label><label class="field">Source / scorecard link<input name="source_url" type="url" maxlength="500"></label></div><p class="form-hint">Scale comes from geographic coordinates. Scorecard yardage is a cross-check; it never stretches the map.</p><button class="btn primary section-space" type="submit" id="course-preview" disabled>Preview boundaries →</button></form></section></div>
@@ -33,9 +33,7 @@ export function renderCourseImport(app, api, notice, published, current) {
     panel = app.querySelector('#course-preview-panel');
   const showSource = () => {
     if (!inspection) return;
-    form.elements.hole_id.innerHTML = inspection.holes
-      .map(h => `<option value="${esc(h.id)}">${esc(h.label)}</option>`)
-      .join('');
+    form.elements.hole_id.innerHTML = html`${inspection.holes.map(h => html`<option value="${h.id}">${h.label}</option>`)}`;
     form.elements.par.value = Number(inspection.holes[0]?.par) || 4;
     app.querySelector('#course-preview').disabled = false;
     status.textContent = `${inspection.holes.length} mapped hole paths available. Preview before saving.`;
@@ -54,13 +52,13 @@ export function renderCourseImport(app, api, notice, published, current) {
     const c = draft,
       p = c.provenance;
     panel.hidden = false;
-    panel.innerHTML = `<div class="table-head"><div><p class="eyebrow">03 / CORRECT & REVIEW</p><h2>${esc(c.name)}</h2></div><span class="chip">${dirty ? 'UNSAVED CHANGES' : 'SAVED DRAFT'}</span></div><div class="import-preview-grid"><div>${importMap(c)}${editorMarkup(c)}<p class="game-boundary-key">White: fairway · lime: green/tee · gold: sand · cyan: water · purple: nature · pink: artificial game boundary</p><p class="form-hint">${esc(p.attribution)}</p></div><div><div class="game-score"><div><span>Playing-line length</span><strong>${p.route_yards} yd</strong></div><div><span>Straight tee → pin</span><strong>${p.straight_yards} yd</strong></div></div><p class="form-hint">${Object.entries(
+    panel.innerHTML = html`<div class="table-head"><div><p class="eyebrow">03 / CORRECT & REVIEW</p><h2>${c.name}</h2></div><span class="chip">${dirty ? 'UNSAVED CHANGES' : 'SAVED DRAFT'}</span></div><div class="import-preview-grid"><div>${importMap(c)}${editorMarkup(c)}<p class="game-boundary-key">White: fairway · lime: green/tee · gold: sand · cyan: water · purple: nature · pink: artificial game boundary</p><p class="form-hint">${p.attribution}</p></div><div><div class="game-score"><div><span>Playing-line length</span><strong>${p.route_yards} yd</strong></div><div><span>Straight tee → pin</span><strong>${p.straight_yards} yd</strong></div></div><p class="form-hint">${Object.entries(
       c.surfaces
     )
       .map(([k, v]) => `${v.length} ${k}`)
       .join(
         ' · '
-      )}</p><h3>Ready to publish?</h3>${c.blocking_issues?.length ? `<div class="import-blockers" role="status"><strong>Corrections needed</strong><ul>${c.blocking_issues.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : '<p class="import-valid">Geometry checks passed. Review the source and assumptions below.</p>'}<ul class="import-warnings">${c.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul><label class="field check"><input type="checkbox" id="course-reviewed">I checked the tee, pin, yardage and surface edges, and accept the game boundary and prototype rules.</label><button class="btn primary section-space" id="course-save" disabled>Publish hole to Play</button><div class="form-foot"><button class="btn" id="draft-save">Save draft</button><button class="btn quiet" id="draft-export">Export draft JSON</button></div><p id="draft-status" role="status">${dirty ? 'Local edits are not saved yet.' : 'Draft saved on this server.'}</p><p class="form-hint">Every geometry edit clears review approval. Saves a fixed version. Existing rounds keep their saved geometry. No session is started.</p></div></div>`;
+      )}</p><h3>Ready to publish?</h3>${c.blocking_issues?.length ? html`<div class="import-blockers" role="status"><strong>Corrections needed</strong><ul>${c.blocking_issues.map(w => html`<li>${w}</li>`)}</ul></div>` : html`<p class="import-valid">Geometry checks passed. Review the source and assumptions below.</p>`}<ul class="import-warnings">${c.warnings.map(w => html`<li>${w}</li>`)}</ul><label class="field check"><input type="checkbox" id="course-reviewed">I checked the tee, pin, yardage and surface edges, and accept the game boundary and prototype rules.</label><button class="btn primary section-space" id="course-save" disabled>Publish hole to Play</button><div class="form-foot"><button class="btn" id="draft-save">Save draft</button><button class="btn quiet" id="draft-export">Export draft JSON</button></div><p id="draft-status" role="status">${dirty ? 'Local edits are not saved yet.' : 'Draft saved on this server.'}</p><p class="form-hint">Every geometry edit clears review approval. Saves a fixed version. Existing rounds keep their saved geometry. No session is started.</p></div></div>`;
     const button = panel.querySelector('#course-save');
     panel.querySelector('#course-reviewed').onchange = e =>
       (button.disabled = !e.target.checked || Boolean(c.blocking_issues?.length));
@@ -222,10 +220,7 @@ export function renderCourseImport(app, api, notice, published, current) {
       const list = await api('/api/course-drafts');
       if (!current() || !app.querySelector('#draft-list')) return;
       app.querySelector('#draft-list').innerHTML =
-        '<option value="">Choose a saved draft</option>' +
-        list
-          .map(d => `<option value="${esc(d.id)}">${esc(d.name)} · revision ${d.revision}</option>`)
-          .join('');
+        html`<option value="">Choose a saved draft</option>${list.map(d => html`<option value="${d.id}">${d.name} · revision ${d.revision}</option>`)}`;
       if (draftId) app.querySelector('#draft-list').value = draftId;
     } catch (e) {
       notice(e.message);

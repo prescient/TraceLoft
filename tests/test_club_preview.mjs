@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { projectPoint, envelope, densityGrid, previewSvg } from '../web/club-preview.js';
+import { projectPoint, envelope, densityGrid, previewSvg as previewSvgMarkup } from '../web/club-preview.js';
+// Markup helpers return SafeHtml (a String object); compare their text.
+const previewSvg = (...args) => String(previewSvgMarkup(...args));
 
 test('rotation preserves short-club distance, lateral bias and ball translation', () => {
   const p = { forward: 100, right: 10 };

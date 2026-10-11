@@ -5,7 +5,7 @@ import { renderCourseImport } from './course-import.js';
 import { renderAnalyze } from './analyze.js';
 import { renderCollectionSetup } from './collection.js';
 import { categorizedDrills, categoryMarkup, bindCategories } from './practice-categories.js';
-import { escape as esc, html, direction, error, trend, gauge, progress } from './charts.js';
+import { html, direction, error, trend, gauge, progress } from './charts.js';
 import { parseRoute, routeFor } from './navigation.js';
 import { renderDistanceSetup, distanceRunner } from './distance-ladder.js';
 import { bindEquipment, refreshSetupEquipment } from './equipment.js';
@@ -38,7 +38,7 @@ let reviewRequest = 0;
 function notice(message, undo = null) {
   const box = document.querySelector('#notice');
   box.hidden = false;
-  const undoButton = undo && html`<button class="btn small" data-undo>Undo</button>`;
+  const undoButton = undo ? html`<button class="btn small" data-undo>Undo</button>` : '';
   box.innerHTML = html`<span>${message}</span>${undoButton}<button class="dismiss" aria-label="Dismiss message">×</button>`;
   box.querySelector('.dismiss').onclick = () => (box.hidden = true);
   if (undo)
@@ -110,9 +110,9 @@ async function api(path, body, method) {
   }
   return data;
 }
-// `extra` is trusted attribute markup written by this module; the label is always escaped.
+// `extra` is attribute markup: html`` or ''.
 const button = (text, action, kind = '', extra = '') =>
-  `<button class="btn ${kind}" data-action="${action}" ${extra}>${esc(text)}</button>`;
+  html`<button class="btn ${kind}" data-action="${action}" ${extra}>${text}</button>`;
 const date = value => new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 const shotWord = data => (data?.practice_type === 'full_swing' ? 'shots' : 'putts');
 const equipmentContext = {
@@ -247,8 +247,8 @@ function update(next) {
     }
     const feedback = app.querySelector('#recording-feedback');
     if (feedback) {
-      const html = recordingWarnings(state.capture, shotWord(review?.practice ?? state.practice));
-      if (feedback.innerHTML !== html) feedback.innerHTML = html;
+      const markup = String(recordingWarnings(state.capture, shotWord(review?.practice ?? state.practice)));
+      if (feedback.innerHTML !== markup) feedback.innerHTML = markup;
     }
   }
 }
@@ -352,7 +352,7 @@ function render() {
 }
 function renderChoose() {
   const ended = state.practice?.ended ? state.practice : !state.practice ? abandonedSession : null;
-  app.innerHTML = `<div class="page-head"><div><h1>Practice</h1><p class="subtitle">Choose your focus. Set your targets. Start practicing.</p></div>${state.practice && !state.practice.ended ? button('Return to active drill', 'return', 'primary') : ''}</div>${ended ? sessionNotice(ended) : ''}<div class="practice-categories">${categoryMarkup(drills)}</div><div class="section-space top-hint">Practice sessions save automatically. Review your results in Sessions.</div>`;
+  app.innerHTML = html`<div class="page-head"><div><h1>Practice</h1><p class="subtitle">Choose your focus. Set your targets. Start practicing.</p></div>${state.practice && !state.practice.ended ? button('Return to active drill', 'return', 'primary') : ''}</div>${ended ? sessionNotice(ended) : ''}<div class="practice-categories">${categoryMarkup(drills)}</div><div class="section-space top-hint">Practice sessions save automatically. Review your results in Sessions.</div>`;
   bindCategories(app);
 }
 function renderSetup() {
@@ -421,7 +421,7 @@ function renderSetup() {
     return;
   }
   const ladder = d.id === 'ladder';
-  app.innerHTML = `<div class="page-head"><div><h1>${esc(d.title)}</h1><p class="subtitle">Set your parameters, then launch your practice session.</p></div>${button('← Practice', 'home', 'quiet')}</div><section class="card setup-card"><h2>Session targets</h2><form id="setup-form"><div class="form-grid">
+  app.innerHTML = html`<div class="page-head"><div><h1>${d.title}</h1><p class="subtitle">Set your parameters, then launch your practice session.</p></div>${button('← Practice', 'home', 'quiet')}</div><section class="card setup-card"><h2>Session targets</h2><form id="setup-form"><div class="form-grid">
     <label class="field">Pace targets<select name="random_pace"><option value="false" ${!old.random_pace && !d.random_pace ? 'selected' : ''}>Fixed target</option><option value="true" ${(old.random_pace ?? d.random_pace) ? 'selected' : ''}>Random pace</option></select></label>
     <label class="field">Number of putts<input name="repetitions" type="number" min="1" max="1000" value="${old.repetitions ?? 10}" required></label>
     <label class="field" data-param="fixed">Target speed (mph)<input name="target" type="number" step="0.1" min="1" max="15" value="${old.target ?? 4}" required></label>
@@ -526,7 +526,7 @@ function sessionNotice(data, isReview = false) {
   const detail = data.ended
     ? `No more ${shotWord(data)} will be saved to this session.`
     : 'You are reviewing saved results. Return to Practice for the active drill.';
-  return `<section class="session-ended" role="alert" aria-label="${title}"><span class="ended-icon" aria-hidden="true">!</span><div><h2>${title}</h2><p>${detail}</p><span>${data.abandoned ? `Recorded ${shotWord(data)} are saved.` : `${data.shots.length} recorded ${shotWord(data)} saved.`}${isReview ? ' Exit review to return to your sessions.' : data.session_kind === 'golf_sim' ? ' Start a new round to record more.' : ' Start a new drill to record more.'}</span></div></section>`;
+  return html`<section class="session-ended" role="alert" aria-label="${title}"><span class="ended-icon" aria-hidden="true">!</span><div><h2>${title}</h2><p>${detail}</p><span>${data.abandoned ? `Recorded ${shotWord(data)} are saved.` : `${data.shots.length} recorded ${shotWord(data)} saved.`}${isReview ? ' Exit review to return to your sessions.' : data.session_kind === 'golf_sim' ? ' Start a new round to record more.' : ' Start a new drill to record more.'}</span></div></section>`;
 }
 async function exitSession() {
   if (review) {
@@ -685,33 +685,35 @@ function renderRunnerContent() {
       ? `Start line 0° ± ${data.angle_tolerance}°`
       : `${data.target.toFixed(1)} mph ± ${data.speed_tolerance}`;
   const status = excluded ? 'Excluded' : !latest ? 'Waiting' : good ? 'In window' : 'Outside window';
-  app.innerHTML = `<div class="page-head"><div><h1>${review ? 'Session review' : 'Putting practice'}</h1><p class="subtitle">${esc(data.drill)} <span class="chip ${data.random_pace ? 'accent' : ''}">${ladder ? (data.ladder_direction === 'descending' ? 'Descending ladder' : 'Ascending ladder') : data.random_pace ? 'Random pace' : distance ? 'Distance target' : 'Speed target'}</span>${data.abandoned ? ' · Abandoned' : review ? ' · Saved session' : data.ended ? ' · Complete' : ''}</p></div><div class="head-actions">${active ? button('Relay', 'relay', 'quiet') + button('End session', 'finish', 'danger') : ''}${review ? button('Practice selector', 'home', 'quiet') : ''}${button(review ? 'Exit review' : 'Exit session', 'exit-session', active ? 'quiet' : 'primary')}${!active ? button('⚙ Edit targets', 'edit', 'quiet') : ''}</div></div>
+  const logRows = shots
+    .map((s, i) => ({ s, i }))
+    .reverse()
+    .map(
+      ({ s, i }) =>
+        html`<tr data-key="${s.key}" tabindex="0" aria-label="Select putt ${i + 1}" class="${i === shots.length - 1 ? 'latest-row' : ''} ${s.excluded ? 'excluded' : ''} ${selectedShot === s.key ? 'selected' : ''}"><td>${i + 1}</td><td>${s.vals.ball_speed.toFixed(1)}</td><td>${(s.target ?? data.target).toFixed(1)}</td><td>${error(s.vals.ball_speed - (s.target ?? data.target))} mph</td><td>${direction(s.vals.launch_dir)}</td>${modeled ? html`<td>${s.estimated_distance_ft?.toFixed(1) ?? '—'}</td><td>${s.target_distance_ft?.toFixed(1) ?? '—'}</td><td>${s.distance_error_ft == null ? '—' : error(s.distance_error_ft)}</td>` : ''}<td class="${s.excluded ? '' : s.success ? 'success-text' : 'miss-text'}">${s.excluded ? 'Excluded' : s.success ? '● In window' : '● Outside window'}</td></tr>`
+    );
+  const statistics = ['pace_error', 'launch_dir', 'launch_ang']
+    .map(
+      (f, i) =>
+        `${['Pace error', 'Start line', 'Vertical launch'][i]} ${summary[f].mean === null ? '—' : `${summary[f].mean.toFixed(2)} ± ${summary[f].sd.toFixed(2)}`} ${i ? '°' : 'mph'}`
+    )
+    .join(' · ');
+  app.innerHTML = html`<div class="page-head"><div><h1>${review ? 'Session review' : 'Putting practice'}</h1><p class="subtitle">${data.drill} <span class="chip ${data.random_pace ? 'accent' : ''}">${ladder ? (data.ladder_direction === 'descending' ? 'Descending ladder' : 'Ascending ladder') : data.random_pace ? 'Random pace' : distance ? 'Distance target' : 'Speed target'}</span>${data.abandoned ? ' · Abandoned' : review ? ' · Saved session' : data.ended ? ' · Complete' : ''}</p></div><div class="head-actions">${active ? [button('Relay', 'relay', 'quiet'), button('End session', 'finish', 'danger')] : ''}${review ? button('Practice selector', 'home', 'quiet') : ''}${button(review ? 'Exit review' : 'Exit session', 'exit-session', active ? 'quiet' : 'primary')}${!active ? button('⚙ Edit targets', 'edit', 'quiet') : ''}</div></div>
     ${!active ? sessionNotice(data, !!review) : ''}
-    ${state.practice_error && own ? `<div class="session-error" role="alert">${esc(state.practice_error)}</div>` : ''}
-    ${active ? `<div id="recording-feedback">${recordingWarnings(state.capture, 'putts')}</div>` : ''}
+    ${state.practice_error && own ? html`<div class="session-error" role="alert">${state.practice_error}</div>` : ''}
+    ${active ? html`<div id="recording-feedback">${recordingWarnings(state.capture, 'putts')}</div>` : ''}
     <div class="heroes"><section class="card"><div class="eyebrow">LATEST PUTT</div><div class="latest-metrics ${modeled ? 'with-distance' : ''}">
       <div class="metric"><div class="metric-label">Ball speed</div><div class="metric-value">${latest ? speed.toFixed(1) : '—'}</div><div class="metric-unit">mph</div></div>
       <div class="metric"><div class="metric-label">${distance ? 'Distance error' : 'Pace error'}</div><div class="metric-value">${latest ? error(distance ? distanceError : paceError) : '—'}</div><div class="metric-unit">${distance ? 'ft · estimated' : 'mph'}${distance && latest ? (distanceError < -1e-9 ? ' · short' : distanceError > 1e-9 ? ' · long' : ' · on target') : ''}${data.drill === 'Start line' ? ' · not scored' : ''}</div></div>
-      ${modeled ? `<div class="metric"><div class="metric-label">Estimated travel</div><div class="metric-value">${travel == null ? '—' : travel.toFixed(1)}</div><div class="metric-unit">ft · Stimp ${data.stimp}</div></div>` : ''}
+      ${modeled ? html`<div class="metric"><div class="metric-label">Estimated travel</div><div class="metric-value">${travel == null ? '—' : travel.toFixed(1)}</div><div class="metric-unit">ft · Stimp ${data.stimp}</div></div>` : ''}
       <div class="metric"><div class="metric-label">Start line</div><div class="metric-value">${latest ? direction(hla) : '—'}</div><div class="metric-unit">at launch</div></div>
       <div class="metric"><div class="metric-label">Result</div><div class="result ${resultClass}"><span class="result-icon">${good ? '✓' : latest && !excluded ? '!' : '—'}</span>${status}</div></div>
     </div><div class="metric-foot">${latest ? `Putt ${shots.length} · ${excluded ? 'Excluded from score' : 'Saved automatically'}` : data.ended ? 'No validated putts in this session.' : recording ? 'Waiting for your next validated putt.' : 'Connect your shot source through Relay.'}</div></section>
-    <section class="card progress-card"><div class="eyebrow">SESSION PROGRESS</div><div class="progress-counts"><div><strong>${shots.length} / ${data.repetitions}</strong><span>putts</span></div><div><strong>${summary.successes} / ${summary.count}</strong><span>in window</span></div></div><div class="progress-row">${progress(shots.length, data.repetitions)}</div><div class="target-tile"><small>${data.abandoned ? 'SESSION ABANDONED' : data.ended ? 'SESSION COMPLETE' : data.random_pace || ladder ? 'NEXT TARGET' : 'SESSION TARGET'}</small><strong>${targetLine}</strong>${distance ? `<p>Required pace ≈ ${displayedSpeed.toFixed(2)} mph · estimated</p>` : ''}${ladder ? `<p>${active ? 'Rung' : 'Last rung'} ${rung} / ${data.ladder_targets_ft.length} · Round ${Math.min(Math.floor(ladderPosition / data.ladder_targets_ft.length) + 1, data.ladder_rounds)} / ${data.ladder_rounds}</p><p>${data.ladder_targets_ft.map((t, i) => `<span class="ladder-rung ${i + 1 === rung ? 'current' : ''}">${t.toFixed(1)} ft</span>`).join(' ')}</p>` : ''}<p>${ladder ? 'Start line measured · not scored' : data.drill !== 'Start line' ? `Start line 0° ± ${data.angle_tolerance}°${data.drill === 'Pace consistency' || ladder ? ' · not scored' : ''}` : 'Pace is measured, not scored.'}</p></div></section></div>
-    ${modeled ? `<p class="model-note">Estimated flat-green travel · Stimp ${data.stimp} · ${data.distance_model.id === 'fuse-flat-braking-v1' ? 'Fuse speed-dependent braking v1' : 'Stimp constant braking v1'}. Uncalibrated; no slope, skid or cup effects. ${distance ? 'Scores estimate windows, not holed putts.' : 'Distance is shown for context; scoring uses launch measurements.'}</p>` : `<p class="model-note">Distance unavailable: this historical session has no saved Stimp/model. Edit targets to launch a new session with distance estimates.</p>`}
+    <section class="card progress-card"><div class="eyebrow">SESSION PROGRESS</div><div class="progress-counts"><div><strong>${shots.length} / ${data.repetitions}</strong><span>putts</span></div><div><strong>${summary.successes} / ${summary.count}</strong><span>in window</span></div></div><div class="progress-row">${progress(shots.length, data.repetitions)}</div><div class="target-tile"><small>${data.abandoned ? 'SESSION ABANDONED' : data.ended ? 'SESSION COMPLETE' : data.random_pace || ladder ? 'NEXT TARGET' : 'SESSION TARGET'}</small><strong>${targetLine}</strong>${distance ? html`<p>Required pace ≈ ${displayedSpeed.toFixed(2)} mph · estimated</p>` : ''}${ladder ? html`<p>${active ? 'Rung' : 'Last rung'} ${rung} / ${data.ladder_targets_ft.length} · Round ${Math.min(Math.floor(ladderPosition / data.ladder_targets_ft.length) + 1, data.ladder_rounds)} / ${data.ladder_rounds}</p><p>${data.ladder_targets_ft.map((t, i) => [i ? ' ' : '', html`<span class="ladder-rung ${i + 1 === rung ? 'current' : ''}">${t.toFixed(1)} ft</span>`])}</p>` : ''}<p>${ladder ? 'Start line measured · not scored' : data.drill !== 'Start line' ? `Start line 0° ± ${data.angle_tolerance}°${data.drill === 'Pace consistency' || ladder ? ' · not scored' : ''}` : 'Pace is measured, not scored.'}</p></div></section></div>
+    ${modeled ? html`<p class="model-note">Estimated flat-green travel · Stimp ${data.stimp} · ${data.distance_model.id === 'fuse-flat-braking-v1' ? 'Fuse speed-dependent braking v1' : 'Stimp constant braking v1'}. Uncalibrated; no slope, skid or cup effects. ${distance ? 'Scores estimate windows, not holed putts.' : 'Distance is shown for context; scoring uses launch measurements.'}</p>` : html`<p class="model-note">Distance unavailable: this historical session has no saved Stimp/model. Edit targets to launch a new session with distance estimates.</p>`}
     <div class="graphs"><section class="card pace-card"><div class="eyebrow">${distance ? 'ESTIMATED DISTANCE (FT)' : 'PACE CHART'}</div><p class="graph-subtitle">${distance ? 'Travel vs target by putt · flat-green estimate' : 'Ball speed by putt'}${data.drill === 'Start line' ? ' · not scored' : ''}</p><div class="legend"><span><i class="swatch"></i>Target zone${data.random_pace || ladder ? ' (varies)' : ''}</span><span><i class="line-swatch"></i>${distance ? 'Distance target per putt' : data.random_pace ? 'Target per putt' : `Target (${data.target.toFixed(1)} mph)`}</span></div>${trend(data, true, distance)}</section>
     <section class="card"><div class="eyebrow">START LINE (LATEST PUTT)</div><p class="graph-subtitle">Direction at launch relative to target</p>${gauge(data)}<div class="legend"><span><i class="swatch"></i>In window (±${data.angle_tolerance}°)${data.drill === 'Pace consistency' || ladder ? ' · not scored' : ''}</span></div><div class="graph-divider"></div><div class="start-trend"><div class="eyebrow">START LINE TREND</div><p class="graph-subtitle">Direction by putt (right is positive)</p>${trend(data, false)}</div></section></div>
-    <section class="card"><div class="table-head"><div class="eyebrow">SHOT LOG</div><span class="top-hint">Latest first · select a row to review</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Speed (mph)</th><th>Target (mph)</th><th>Pace error</th><th>Start line</th>${modeled ? '<th>Est. travel (ft)</th><th>Distance target (ft)</th><th>Est. error (ft)</th>' : ''}<th>Result</th></tr></thead><tbody>${
-      shots.length
-        ? shots
-            .map((s, i) => ({ s, i }))
-            .reverse()
-            .map(
-              ({ s, i }) =>
-                `<tr data-key="${esc(s.key)}" tabindex="0" aria-label="Select putt ${i + 1}" class="${i === shots.length - 1 ? 'latest-row' : ''} ${s.excluded ? 'excluded' : ''} ${selectedShot === s.key ? 'selected' : ''}"><td>${i + 1}</td><td>${s.vals.ball_speed.toFixed(1)}</td><td>${(s.target ?? data.target).toFixed(1)}</td><td>${error(s.vals.ball_speed - (s.target ?? data.target))} mph</td><td>${direction(s.vals.launch_dir)}</td>${modeled ? `<td>${s.estimated_distance_ft?.toFixed(1) ?? '—'}</td><td>${s.target_distance_ft?.toFixed(1) ?? '—'}</td><td>${s.distance_error_ft == null ? '—' : error(s.distance_error_ft)}</td>` : ''}<td class="${s.excluded ? '' : s.success ? 'success-text' : 'miss-text'}">${s.excluded ? 'Excluded' : s.success ? '● In window' : '● Outside window'}</td></tr>`
-            )
-            .join('')
-        : '<tr><td colspan="${modeled?9:6}" class="empty">No recorded putts yet.</td></tr>'
-    }</tbody></table></div><div class="table-actions">${button('Exclude / include selected', 'exclude', 'small', !selectedShot ? 'disabled' : '')}${active ? button('Abandon session', 'abandon', 'danger quiet small') : button('Delete session', 'delete-review', 'danger quiet small')}${review ? button('Practice selector', 'home', 'quiet small') : ''}${button(review ? 'Exit review' : 'Exit session', 'exit-session', 'quiet small')}</div><details class="details"><summary>Session statistics</summary><p>${summary.count} included putts · ${summary.successes} in window<br>${['pace_error', 'launch_dir', 'launch_ang'].map((f, i) => `${['Pace error', 'Start line', 'Vertical launch'][i]} ${summary[f].mean === null ? '—' : `${summary[f].mean.toFixed(2)} ± ${summary[f].sd.toFixed(2)}`} ${i ? '°' : 'mph'}`).join(' · ')}${summary.distance_error_ft?.count ? `<br>Estimated distance error ${summary.distance_error_ft.mean.toFixed(2)} ± ${summary.distance_error_ft.sd.toFixed(2)} ft · ${summary.distance_error_ft.short} short / ${summary.distance_error_ft.long} long` : modeled ? '<br>No distance estimates yet.' : ''}<br>Mean ± population standard deviation. Excluded putts remain in the log.</p></details></section>`;
+    <section class="card"><div class="table-head"><div class="eyebrow">SHOT LOG</div><span class="top-hint">Latest first · select a row to review</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Speed (mph)</th><th>Target (mph)</th><th>Pace error</th><th>Start line</th>${modeled ? html`<th>Est. travel (ft)</th><th>Distance target (ft)</th><th>Est. error (ft)</th>` : ''}<th>Result</th></tr></thead><tbody>${shots.length ? logRows : html`<tr><td colspan="${modeled ? 9 : 6}" class="empty">No recorded putts yet.</td></tr>`}</tbody></table></div><div class="table-actions">${button('Exclude / include selected', 'exclude', 'small', !selectedShot ? html`disabled` : '')}${active ? button('Abandon session', 'abandon', 'danger quiet small') : button('Delete session', 'delete-review', 'danger quiet small')}${review ? button('Practice selector', 'home', 'quiet small') : ''}${button(review ? 'Exit review' : 'Exit session', 'exit-session', 'quiet small')}</div><details class="details"><summary>Session statistics</summary><p>${summary.count} included putts · ${summary.successes} in window<br>${statistics}${summary.distance_error_ft?.count ? html`<br>Estimated distance error ${summary.distance_error_ft.mean.toFixed(2)} ± ${summary.distance_error_ft.sd.toFixed(2)} ft · ${summary.distance_error_ft.short} short / ${summary.distance_error_ft.long} long` : modeled ? html`<br>No distance estimates yet.` : ''}<br>Mean ± population standard deviation. Excluded putts remain in the log.</p></details></section>`;
 }
 
 async function renderSessions() {
@@ -736,7 +738,11 @@ async function renderSessions() {
               ? 'Ended early'
               : 'Complete'
             : 'Unfinished';
-    app.innerHTML = `<div class="page-head"><div><h1>Sessions</h1><p class="subtitle">Your saved practice, ready to review.</p></div></div><div class="range-session-mode"><label class="field">Session data<select id="session-mode"><option value="all" ${sessionMode === 'all' ? 'selected' : ''}>All sessions</option><option value="real" ${sessionMode === 'real' ? 'selected' : ''}>Real sessions</option><option value="demo" ${sessionMode === 'demo' ? 'selected' : ''}>Demo sessions only</option></select></label></div><div class="session-list">${visible.length ? visible.map(s => `<section class="card session-entry"><div><h2>${s.demo ? 'DEMO · ' : ''}${esc(courseLabel(s.summary?.course_name ?? s.drill))}${s.summary?.round_selection === 'front' ? ' · Front 9' : s.summary?.round_selection === 'back' ? ' · Back 9' : ''}${s.random_pace ? ' / Random pace' : ''}</h2><p>${esc(date(s.started))} · ${s.summary.count} included · ${s.session_kind === 'golf_sim' ? `${s.summary.strokes} strokes · ${s.summary.hole_count ? `${s.summary.holes_completed}/${s.summary.hole_count} holes complete` : s.summary.holed ? 'hole complete' : 'partial round'}` : `${s.summary.successes} in window`} · <span class="${s.abandoned ? 'miss-text' : ''}">${label(s)}</span></p>${active(s) ? '<p class="top-hint">Finish or abandon this session before deleting.</p>' : ''}</div><div class="session-actions">${button(active(s) ? 'Return to active drill →' : 'Review session →', 'review', '', `data-id="${s.id}"`)}${button('Delete', 'delete-session', 'danger quiet', `data-id="${s.id}" ${active(s) ? 'disabled' : ''}`)}</div></section>`).join('') : '<section class="card empty">No saved sessions. Choose a drill in Practice to get started.</section>'}</div><details id="deleted-sessions" class="details deleted-sessions" ${deletedWasOpen ? 'open' : ''}><summary>Recently deleted (${deleted.length})</summary><p>Deleted sessions stay here until you restore them.</p><div class="session-list">${deleted.length ? deleted.map(s => `<section class="card session-entry"><div><h2>${s.demo ? 'DEMO · ' : ''}${esc(s.drill)}</h2><p>${esc(date(s.started))} · ${s.captured} recorded ${shotWord(s)}</p></div>${button('Restore session', 'restore-session', '', `data-id="${s.id}"`)}</section>`).join('') : '<p>No deleted sessions.</p>'}</div></details>`;
+    const entry = s =>
+      html`<section class="card session-entry"><div><h2>${s.demo ? 'DEMO · ' : ''}${courseLabel(s.summary?.course_name ?? s.drill)}${s.summary?.round_selection === 'front' ? ' · Front 9' : s.summary?.round_selection === 'back' ? ' · Back 9' : ''}${s.random_pace ? ' / Random pace' : ''}</h2><p>${date(s.started)} · ${s.summary.count} included · ${s.session_kind === 'golf_sim' ? `${s.summary.strokes} strokes · ${s.summary.hole_count ? `${s.summary.holes_completed}/${s.summary.hole_count} holes complete` : s.summary.holed ? 'hole complete' : 'partial round'}` : `${s.summary.successes} in window`} · <span class="${s.abandoned ? 'miss-text' : ''}">${label(s)}</span></p>${active(s) ? html`<p class="top-hint">Finish or abandon this session before deleting.</p>` : ''}</div><div class="session-actions">${button(active(s) ? 'Return to active drill →' : 'Review session →', 'review', '', html`data-id="${s.id}"`)}${button('Delete', 'delete-session', 'danger quiet', html`data-id="${s.id}" ${active(s) ? 'disabled' : ''}`)}</div></section>`;
+    const deletedEntry = s =>
+      html`<section class="card session-entry"><div><h2>${s.demo ? 'DEMO · ' : ''}${s.drill}</h2><p>${date(s.started)} · ${s.captured} recorded ${shotWord(s)}</p></div>${button('Restore session', 'restore-session', '', html`data-id="${s.id}"`)}</section>`;
+    app.innerHTML = html`<div class="page-head"><div><h1>Sessions</h1><p class="subtitle">Your saved practice, ready to review.</p></div></div><div class="range-session-mode"><label class="field">Session data<select id="session-mode"><option value="all" ${sessionMode === 'all' ? 'selected' : ''}>All sessions</option><option value="real" ${sessionMode === 'real' ? 'selected' : ''}>Real sessions</option><option value="demo" ${sessionMode === 'demo' ? 'selected' : ''}>Demo sessions only</option></select></label></div><div class="session-list">${visible.length ? visible.map(entry) : html`<section class="card empty">No saved sessions. Choose a drill in Practice to get started.</section>`}</div><details id="deleted-sessions" class="details deleted-sessions" ${deletedWasOpen ? 'open' : ''}><summary>Recently deleted (${deleted.length})</summary><p>Deleted sessions stay here until you restore them.</p><div class="session-list">${deleted.length ? deleted.map(deletedEntry) : html`<p>No deleted sessions.</p>`}</div></details>`;
     app.querySelector('#session-mode').onchange = e => {
       sessionMode = e.target.value;
       renderSessions();
@@ -748,11 +754,11 @@ async function renderSessions() {
 
 function renderRelay() {
   const relay = state.relay;
-  app.innerHTML = `<div class="page-head"><div><p class="eyebrow">CONNECT / RECORD / FORWARD</p><h1>Relay</h1><p class="subtitle">Incoming shots save automatically. Choose where they go next.</p></div><span class="chip accent">Always listening · TCP ${state.input.port}</span></div>
+  app.innerHTML = html`<div class="page-head"><div><p class="eyebrow">CONNECT / RECORD / FORWARD</p><h1>Relay</h1><p class="subtitle">Incoming shots save automatically. Choose where they go next.</p></div><span class="chip accent">Always listening · TCP ${state.input.port}</span></div>
   <div class="capture-grid"><section class="card"><h2>Incoming shots</h2><div id="relay-source" class="section-space"></div><p class="form-hint">Point your shot source at <strong>127.0.0.1:${state.input.port}</strong> using GSPro Open Connect.</p><div class="table-wrap section-space" id="relay-read"></div></section>
   <section class="card"><h2>Send shots to</h2><label class="field section-space">Destination<select id="relay-destination"><option value="off">Off · record only</option><option value="gspro">GSPro</option><option value="infinite_tees">Infinite Tees</option></select></label><p class="form-hint">Saved automatically. Direct connection; no adapter app required.</p><div id="relay-output" class="section-space" role="status"></div><details class="details section-space"><summary>Connection details</summary><form id="relay-connection"><label class="field">Simulator port<input name="port" type="number" min="1" max="65535" value="${relay.port}" required></label><p class="form-hint">Localhost · GSPro defaults to 921; Infinite Tees to 999.</p><button class="btn" type="submit">Save port</button></form></details></section></div>
   <section class="card section-space"><h2>Data & backups</h2><p class="form-hint">Shots and sessions save to SQLite, even when forwarding is off or the simulator is disconnected.</p><div class="form-foot"><a class="btn" href="/api/exports/csv" download>Export CSV</a>${button('Back up database', 'backup-database', 'quiet')}</div><p id="database-backup-status" class="backup-status" role="status"></p></section>
-  <details class="card section-space"><summary>Access & diagnostics</summary><p>${state.access.addresses.map(url => `<a href="${esc(url)}">${esc(url)}</a>`).join(' · ')}</p><pre id="relay-logs" class="diagnostic-log"></pre></details>`;
+  <details class="card section-space"><summary>Access & diagnostics</summary><p>${state.access.addresses.map((url, i) => [i ? ' · ' : '', html`<a href="${url}">${url}</a>`])}</p><pre id="relay-logs" class="diagnostic-log"></pre></details>`;
   const select = app.querySelector('#relay-destination');
   select.value = relay.destination;
   const save = async settings => {
@@ -779,10 +785,10 @@ function renderRelay() {
 function updateRelay() {
   const source = app.querySelector('#relay-source');
   if (!source) return;
-  source.innerHTML = `<strong>${esc(state.capture.status)}</strong><p>${esc(state.input.device || 'No source connected')} · ${state.input.received} records stored this run</p>${state.input.error ? `<p class="session-error">${esc(state.input.error)}</p>` : ''}`;
+  source.innerHTML = html`<strong>${state.capture.status}</strong><p>${state.input.device || 'No source connected'} · ${state.input.received} records stored this run</p>${state.input.error ? html`<p class="session-error">${state.input.error}</p>` : ''}`;
   const relay = state.relay;
   app.querySelector('#relay-output').innerHTML =
-    `<strong>${esc(relay.status)}</strong><p>${relay.sent} shots sent this run</p>${relay.enabled && !relay.connected ? '<p class="form-hint">Open the selected simulator. Relay reconnects automatically; earlier shots are not replayed.</p>' : ''}`;
+    html`<strong>${relay.status}</strong><p>${relay.sent} shots sent this run</p>${relay.enabled && !relay.connected ? html`<p class="form-hint">Open the selected simulator. Relay reconnects automatically; earlier shots are not replayed.</p>` : ''}`;
   const select = app.querySelector('#relay-destination');
   if (!select.disabled) select.value = relay.destination;
   app.querySelector('#relay-logs').textContent = state.logs.join('\n');
@@ -810,15 +816,13 @@ function updateRelay() {
   };
   const vals = state.read?.vals;
   app.querySelector('#relay-read').innerHTML = vals
-    ? `<h2>Latest measurements</h2><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${Object.entries(
+    ? html`<h2>Latest measurements</h2><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${Object.entries(
         vals
-      )
-        .map(
-          ([k, v]) =>
-            `<tr><td>${esc(k.replaceAll('_', ' '))}${units[k] ? ' · ' + units[k] : ''}</td><td>${esc(v ?? '—')}</td></tr>`
-        )
-        .join('')}</tbody></table>`
-    : '<p class="form-hint">Waiting for the first shot.</p>';
+      ).map(
+        ([k, v]) =>
+          html`<tr><td>${k.replaceAll('_', ' ')}${units[k] ? ' · ' + units[k] : ''}</td><td>${v ?? '—'}</td></tr>`
+      )}</tbody></table>`
+    : html`<p class="form-hint">Waiting for the first shot.</p>`;
 }
 
 document.addEventListener('click', async event => {
