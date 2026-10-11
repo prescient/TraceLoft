@@ -355,13 +355,19 @@ change the route. Finish/abandon/review and new-matrix setup reuse lifecycle gua
 Isolated checks cover custom-label setup, two sampled cells, target suggestion, End, review and
 390 px no page overflow. Shared cleanup, delete/restore and label freezing also have API coverage.
 
-## Analyze — 2026-10-02
+## Analyze — updated 2026-10-10
 
-`#analyze` opens filters and comparisons; Apply refreshes the saved cohort. Mode/type changes reset
-dependent filters. Session Review opens `#sessions/<id>`; the persistent Analyze navigation returns
-to its filters. Practice and other global tabs remain available. Empty/error states provide reset.
-CSV exports the current applied filters. No route changes session/capture ownership. Browser verified
-real-empty/demo, club/metric/inclusion/session filters, review and return; API verified filtered CSV.
+`#analyze` opens Trends / Explore / Compare in place. Selections & filters expands/collapses without
+changing membership; Apply refreshes the common query. Mode/type changes reset dependent filters.
+Trends → shared interval inspection → detail rows; Explore → bins/ranges → linked views/rows/CSV;
+Compare → named dates/session/config/tag scopes → paired results and independent cohort CSV.
+Saved views → Save/Load/Remove stores dynamic browser queries, not frozen publications.
+Shot workspace or Session coverage → Review opens `#sessions/<id>`; persistent Analyze returns
+to applied choices. Practice and other global tabs remain available. Empty/error states provide
+reset/retry. No route changes session/input ownership. See [Analyze guide](docs/ANALYZE.md).
+Isolated browser checks verified real-empty/demo, multi-club/metric selection, shared inspection,
+numeric filters/clear, saved-view restore, comparison recovery, review and Analyze return, plus
+expanded/collapsed iPad and phone layouts. API tests verify exact selected CSV membership.
 
 ## Meadow One — 2026-10-02
 

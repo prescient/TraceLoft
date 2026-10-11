@@ -183,3 +183,18 @@ Keep source reports and historical drill/game pins immutable. Analytical publica
 statistics and invalidate dependent Play profiles, but never rescore old sessions. Preserve old results,
 publication history and model lineage in readable views and CSV. Analyze defaults to reported metrics,
 including total distance; estimates require explicit selection and labels.
+
+## D63 — Shared Analyze query and compact exploratory views (2026-10-10)
+
+Use one authoritative SQL-backed attempt selection for multi-club OR filters and inclusive numeric
+AND predicates, charts/detail/export and recalculation inputs. Preserve pre-numeric inclusion-scoped
+context separately. Displaying a missing metric does not discard the attempt; a range on it does.
+Keep medians/type-7 IQR/n, independent units, configuration/intent/version cohorts and real/demo/
+source/estimate identity explicit. Date buckets use recorded session starts; shot plots use UTC.
+
+Selections & filters collapses without changing query membership. Inspecting an interval/shot only
+changes highlighting/displayed detail; range filters change the query and CSV. Compare replaces
+common date bounds with named cohort dates, inherits common equipment/inclusion/numeric scope and
+shows overlap. Browser-local saved views store dynamic queries/layouts per golfer, never frozen
+publication. Shared views, frozen comparisons and advanced brushing/normalization remain future.
+See [Analyze operation](docs/ANALYZE.md).

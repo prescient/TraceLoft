@@ -158,7 +158,7 @@ function render() {
   else if(view==='runner') renderRunner();
   else if(view==='relay') renderRelay();
   else if(view==='sessions') renderSessions();
-  else if(view==='analyze')renderAnalyze(app,api,notice,()=>view==='analyze');
+  else if(view==='analyze')renderAnalyze(app,api,notice,()=>view==='analyze',state?.golfer_id);
   else if(view==='play') renderPlay(app,state,courses);
   else if(view==='course-import')renderCourseImport(app,api,notice,async()=>{courses=await api('/api/courses');},()=>view==='course-import');
 }

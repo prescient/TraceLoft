@@ -32,5 +32,6 @@ corrected v2 layouts, fixed pixel probes and iPad boundary evidence.
 generation prompts, finished-art boundary review and iPad view.
 # Analyze exploration
 
-[Trends, Explore and Compare](analyze-exploration/README.md) propose selectable time-series metrics,
-linked chart filters and named cohorts in the Vector interface. Concept preview only; no app changes.
+[Trends, Explore and Compare](analyze-exploration/README.md) records the approved design and
+implemented multi-metric workspace with collapsible filters. See [operation](../docs/ANALYZE.md)
+for current scope; advanced visualization and frozen comparison ideas remain future work.

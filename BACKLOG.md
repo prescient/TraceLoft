@@ -189,7 +189,7 @@ TraceCapture acquisition/history scraping is private and outside this repository
 Remaining: genuine putt and full-swing direct simulator verification; more unit profiles and explicit
 source mapping adapters; stronger per-shot simulator acknowledgements if supported upstream; review
 licenses/assets and package the public release. No GitHub publication yet. Google Drive backups,
-automatic outlier trends, and multi-club Analyze comparison remain planned.
+automatic outlier trends remain planned. Multi-club Analyze comparison is implemented (2026-10-10).
 
 Vector styling, fixed bag rail and summarized practice diagnostics are implemented. Keep source
 errors in source diagnostics, with a short actionable practice warning. Retain all existing drills,
@@ -227,24 +227,19 @@ median/IQR trends, equipment comparisons, reported dispersion and filtered CSV. 
 Manual exclusions have denominators; automatic outlier/mishit classification, crop evidence, global
 cleanup and benchmarked strokes impact remain pending. See [research and scope](docs/ANALYTICS_RESEARCH.md).
 
-**Pending — Analyze club multi-select (requested 2026-10-02; backlog only):** the current
-single-club selector limits targeted Equipment and swing comparisons. Allow selecting several
-clubs together, with distinct, consistent colors and a labeled legend across comparison charts
-and distributions. Keep bag/club identities and wedge swing intents separate; retain per-group
-median/IQR and sample counts. Apply the selected club set consistently to summaries, session
-comparisons and CSV, while respecting date, inclusion and real/demo filters. Provide clear
-selected-club controls suitable for iPad touch. Do not implement until prioritized by the user.
+**Implemented — Analyze workspace (2026-10-10):** multi-club OR selection with stable bag/club
+colors; selectable native-unit Trends with session/week/month/shot buckets and robust per-metric
+coverage; linked Explore bin/numeric AND filters shared with rows and CSV; named date/session/
+configuration/tag Compare cohorts with exact configuration/intent/version pairing and cohort exports.
+Selections & filters expands/collapses, retaining applied values and visible scope/basis/coverage.
+Browser-local dynamic saved queries, shared inspection, detail review and existing calculation
+management are available. Filters never exclude, retag or rescore shots.
+See [current operation](docs/ANALYZE.md) and [design scope](designs/analyze-exploration/README.md).
 
-**Proposed — Analyze redesign (2026-10-10; concepts only):** selectable metric panels over a shared
-timeline, linked chart/range cross-filtering, and named period/equipment/tag cohorts. Recommended
-workspace: Trends → Explore → Compare, with common multi-club scope, metric-specific coverage,
-reported/estimated identity and a shared query for charts, rows and CSV. Filters never exclude or
-retag shots. Implement in that order only after concept selection; current Analyze remains unchanged.
-See [concepts and query semantics](designs/analyze-exploration/README.md).
-
-Refinement: selection/filter controls expand/collapse, defaulting compact with a visible active-scope
-summary. Preserve values and expanded state; collapsing changes layout only. Included in the updated
-concepts; production implementation remains pending.
+**Future Analyze refinements:** drag brushing, comparison distribution overlays, explicit baseline
+normalization, independently selected bag/club/intent in each comparison cohort, server-shared saved
+views and frozen comparison publications. Browser-local dynamic queries are not frozen publications.
+Automatic outlier trends, global cleanup and benchmarked strokes impact remain separate work.
 
 ### 4. Web-based GSPro remote (requested 2026-10-01)
 Phone/tablet-friendly controls served by a local background companion on the GSPro PC. The companion

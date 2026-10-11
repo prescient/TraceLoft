@@ -693,3 +693,33 @@ Implemented SQL metric/context reads, tag any/all and config filters, immutable 
   chart context. No source, inclusion, session or calculation selection is changed by filtering.
 - Eleven focused Python checks passed, including SQL endpoint/CSV parity, context lineage,
   missingness, exclusions and invalid range rejection. UI integration and live cutover follow.
+
+## 2026-10-10 — Implemented Analyze workspace
+
+- Replaced single-metric analysis with Trends / Explore / Compare, native collapsible selections,
+  multiple metrics/clubs, stable bag/club colors, configuration/intent/version separation, robust
+  native-unit coverage, shared inspection, linked numeric filters and exact-query CSV exports.
+- Added shot detail/review, named comparison dates/session/config/tag overrides, overlap counts,
+  cohort exports and browser-local dynamic saved views. Kept source reported total, missingness,
+  real/demo/inclusion identity and reviewed calculation management. No source/history changes.
+- Verified 17 affected Python tests and all 55 JavaScript tests. New presentation tests cover raw
+  bucket aggregation, unavailable readings, histogram-edge partitioning, configuration/version
+  pairing, native deltas and stable colors. API tests cover selection/CSV/context lineage.
+- Isolated synthetic service review: five panels/two clubs, numeric AND filters (11/72 selected),
+  histogram bin selection, shared capture-time inspection, Save/Load/Remove dynamic views,
+  comparison date-error recovery and scope/exports. Reviewed 1366×1024, 1376×1032, 1366×900 and
+  390×844, expanded/collapsed controls and internal table scrolling without outer overflow.
+  Fixed a queued disclosure-state issue and histogram count axes found during review.
+- Updated principles, navigation, design scope, operating guide, README, D63 and backlog. Physical
+  iPad Safari/touch and LAN acceptance remain unverified. Live cutover verification follows.
+
+### Analyze live cutover
+
+- Gracefully restarted the normal service on 8765 after committing the workspace. Exact before/after
+  active-session DTO and equipment equality: session 1b8a1f0f37334e1b94700c59ec8896e6 remains unfinished
+  with 40 shots. SQLite/input 900 health is ready; real full-swing selection returns 6 attempts and
+  matching pre-numeric context. No new test shots or calculation publications in production.
+- Reviewed a fresh live browser tab: all three views, collapsed selections, real/source identity,
+  available/missing readings, no outer overflow and no console warnings/errors. Existing user tab
+  could not be controlled; it needs a normal reload to load the new JavaScript. QA screenshots and
+  before/after verification remain outside Git at `%USERPROFILE%/GolfData/analyze-workspace-qa`.

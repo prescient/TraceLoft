@@ -1,8 +1,8 @@
 # Analyze exploration concepts
 
-Proposed 2026-10-10. These are design concepts, not implemented Analyze behavior or an approved
-replacement. Keep the current app and active sessions intact until the user selects a direction.
-The conversation preview uses deterministic synthetic data, not the golfer's recorded history.
+Proposed and approved 2026-10-10; core Trends / Explore / Compare and the collapsible selections
+drawer are now implemented. The original conversation preview uses deterministic synthetic data.
+The [Analyze guide](../../docs/ANALYZE.md) distinguishes shipped behavior from remaining concepts.
 
 ## Recommended composition
 
@@ -71,8 +71,11 @@ Real/demo data remain separate; local golfer ownership applies everywhere. Inclu
 excluded/removed counts remain visible. Manual exclusion rates are not automatic outlier rates.
 Source-reported total remains a core metric. Estimates are explicitly labeled, missing values stay
 unavailable, historical scores keep their original pins and filters never rewrite source data.
-Default date semantics, cohort pairing, baseline normalization and saved-view freshness need final
-product decisions before implementation. This proposal introduces no production routes.
+Implemented decisions: session-start date buckets, UTC shot timestamps, exact configuration/intent/
+selected-version cohort pairing, independent native units and browser-local dynamic saved queries.
+No new top-level route. Baseline normalization, drag brushing, distribution overlays, independent
+equipment/intent choices per comparison cohort, shared saved views and frozen comparisons remain
+future work. Published bag/wedge cohorts and calculation management retain their existing authority.
 
 ## Concept verification
 
@@ -81,3 +84,12 @@ axis changes, cross-filtered shot rows and period boundaries. Selecting the 10�
 selected 26 of 216 synthetic shots. Browser review at 1366×1024 and 390×844 showed no outer horizontal
 overflow or console warnings/errors. The preview iframe's inner widths were 1319/343 px. Physical
 iPad Safari and production query performance were not verified. Live app and database are unchanged.
+
+## Implementation verification
+
+The implemented app was reviewed against this concept in an isolated service: five metric panels,
+two colored clubs, week/month/shot/session resolution, linked range/bin filters, detail inspection,
+named comparisons/error recovery, matching exports, saved-query restore and review return. Checked
+expanded/collapsed controls at 1366×1024, 1376×1032, 1366×900 and 390×844 without outer horizontal
+overflow; wide tables scroll internally. Physical iPad Safari remains unverified. See WORK_LOG for
+live cutover evidence; the concept-only verification above describes the earlier preview.

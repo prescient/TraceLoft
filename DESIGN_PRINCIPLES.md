@@ -155,7 +155,9 @@ layout and every control. Earlier dark studio and alternate layouts are historic
 Analyze selection and filter controls must expand/collapse to preserve chart space. A collapsed
 summary keeps active bag/clubs, date range, metric choices and constraints visible. Retain query
 choices when collapsing or returning; collapsing must never change inclusion or erase selections.
-This is a requirement for the proposed Analyze redesign, not current implementation status.
+Implemented in the [Analyze workspace](docs/ANALYZE.md). Keep real/demo, source/estimate identity,
+coverage and removable numeric filters visible outside the drawer. Inspection and query filters
+must remain distinct; dynamic browser-saved views must not be presented as frozen publications.
 
 - Primary device: **13-inch / 12.9-inch iPad Pro in landscape**. Design and verify at CSS viewports
   1376 × 1032 and 1366 × 1024, plus reduced height (1366 × 900) for browser chrome. CSS pixels,

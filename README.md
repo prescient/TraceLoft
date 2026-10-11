@@ -34,8 +34,12 @@ Windows launch scripts are the verified distribution path.
   optionally forward documented Open Connect fields directly to a simulator.
 - **Practice**: range, distance/putting ladders, bag mapping, wedge matrix and putting drills.
 - **Play**: lightweight 2D golf, registered course artwork, terrain and historical dispersion preview.
-- **Analyze**: session/date/equipment filters, robust summaries, trends and CSV export.
+- **Analyze**: multi-metric Trends, linked Explore filters and named Compare cohorts, with
+  collapsible selections, multi-club colors, robust coverage and matching CSV exports.
 - **Sessions**: review, end/abandon, recoverable deletion and restoration.
+
+See the [Analyze guide](docs/ANALYZE.md) for chart selection, browser-saved dynamic views, source
+versus calculation basis, cohort dates and inspection/export semantics.
 
 Play uses a [map-first iPad layout](designs/play-map-first/README.md): a compact scorecard and
 club row above the full-width course, with distance/lie/putting pace on the map. Expand Club
