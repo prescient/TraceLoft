@@ -9,72 +9,7 @@ from pathlib import Path
 from importlib.metadata import distribution
 from shot_schema import SOURCE_FIELDS, DERIVED_COLUMNS, identity, encoded, timestamp, write_result
 from domain_schema import active_user, read_session
-from analysis_schema import read_rows, report, save_collection, QUERY
-
-DDL = '''
-CREATE TABLE recalculation_batches(batch_id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(user_id),
- model_family TEXT NOT NULL,model_version TEXT NOT NULL,code_hash TEXT NOT NULL,parameters_json TEXT NOT NULL,
- created_at TEXT NOT NULL,status TEXT NOT NULL CHECK(status IN ('staging','complete','error','published','cancelled')));
-CREATE TABLE recalculation_inputs(batch_id TEXT NOT NULL REFERENCES recalculation_batches(batch_id), ordinal INTEGER NOT NULL,
- shot_id TEXT NOT NULL REFERENCES shots(id),report_id TEXT NOT NULL,calculation_context_id TEXT NOT NULL,
- session_id TEXT NOT NULL,attempt_ordinal INTEGER NOT NULL,equipment_context_id TEXT REFERENCES shot_contexts(context_id),
- excluded INTEGER NOT NULL,removed INTEGER NOT NULL,handedness TEXT NOT NULL,stimp_ft REAL,target_distance_ft REAL,
- putting_model TEXT,PRIMARY KEY(batch_id,ordinal),
- FOREIGN KEY(report_id,shot_id) REFERENCES shot_source_metrics(report_id,shot_id),
- FOREIGN KEY(equipment_context_id,session_id,attempt_ordinal,shot_id) REFERENCES shot_contexts(context_id,session_id,ordinal,shot_id),
- FOREIGN KEY(session_id,attempt_ordinal,shot_id) REFERENCES session_attempts(session_id,ordinal,shot_id));
-CREATE TABLE recalculation_outputs(batch_id TEXT NOT NULL,ordinal INTEGER NOT NULL,result_id TEXT NOT NULL REFERENCES shot_derived_metrics(result_id),
- PRIMARY KEY(batch_id,ordinal),FOREIGN KEY(batch_id,ordinal) REFERENCES recalculation_inputs(batch_id,ordinal));
-CREATE TABLE calculation_lineage(result_id TEXT NOT NULL REFERENCES shot_derived_metrics(result_id),
- batch_id TEXT NOT NULL,ordinal INTEGER NOT NULL,PRIMARY KEY(result_id,batch_id,ordinal),
- FOREIGN KEY(batch_id,ordinal) REFERENCES recalculation_inputs(batch_id,ordinal));
-CREATE TABLE calculation_attempt_contexts(session_id TEXT NOT NULL,ordinal INTEGER NOT NULL,model_family TEXT NOT NULL,
- context_id TEXT NOT NULL,PRIMARY KEY(session_id,ordinal,model_family),
- FOREIGN KEY(session_id,ordinal) REFERENCES session_attempts(session_id,ordinal));
-CREATE TABLE calculation_publications(publication_id TEXT PRIMARY KEY,batch_id TEXT NOT NULL REFERENCES recalculation_batches(batch_id),published_at TEXT NOT NULL);
-CREATE TABLE calculation_publication_items(publication_id TEXT NOT NULL REFERENCES calculation_publications(publication_id),
- ordinal INTEGER NOT NULL,previous_result_id TEXT REFERENCES shot_derived_metrics(result_id),result_id TEXT NOT NULL REFERENCES shot_derived_metrics(result_id),
- PRIMARY KEY(publication_id,ordinal));
-CREATE TRIGGER batch_spec_immutable BEFORE UPDATE ON recalculation_batches
- WHEN OLD.batch_id IS NOT NEW.batch_id OR OLD.user_id IS NOT NEW.user_id OR OLD.model_family IS NOT NEW.model_family
- OR OLD.model_version IS NOT NEW.model_version OR OLD.code_hash IS NOT NEW.code_hash OR OLD.parameters_json IS NOT NEW.parameters_json
- OR OLD.created_at IS NOT NEW.created_at BEGIN SELECT RAISE(ABORT,'Batch specification is immutable'); END;
-CREATE TRIGGER batch_inputs_immutable BEFORE UPDATE ON recalculation_inputs BEGIN SELECT RAISE(ABORT,'Batch inputs are immutable'); END;
-CREATE TRIGGER batch_outputs_immutable BEFORE UPDATE ON recalculation_outputs BEGIN SELECT RAISE(ABORT,'Batch outputs are immutable'); END;
-CREATE TRIGGER lineage_immutable BEFORE UPDATE ON calculation_lineage BEGIN SELECT RAISE(ABORT,'Lineage is immutable'); END;
-CREATE TRIGGER batch_output_scope BEFORE INSERT ON recalculation_outputs BEGIN
- SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM recalculation_inputs i JOIN recalculation_batches b USING(batch_id)
- JOIN shot_derived_metrics d ON d.shot_id=i.shot_id AND d.model_family=b.model_family AND d.context_id=i.calculation_context_id
- JOIN calculation_inputs source ON source.result_id=d.result_id AND source.report_id=i.report_id
- WHERE i.batch_id=NEW.batch_id AND i.ordinal=NEW.ordinal AND d.result_id=NEW.result_id)
- THEN RAISE(ABORT,'Calculation output scope mismatch') END; END;
-CREATE VIEW v_calculation_history AS SELECT d.*,r.model_version,r.code_hash,r.parameters_json,r.provenance,
- l.batch_id,i.session_id,i.attempt_ordinal,i.report_id,i.equipment_context_id,i.handedness,i.stimp_ft input_stimp_ft,
- i.target_distance_ft input_target_distance_ft,i.putting_model,
- CASE WHEN selected.result_id=d.result_id THEN 1 ELSE 0 END selected_for_analysis
- FROM shot_derived_metrics d JOIN calculation_runs r USING(run_id)
- LEFT JOIN calculation_lineage l USING(result_id) LEFT JOIN recalculation_inputs i USING(batch_id,ordinal)
- LEFT JOIN derived_metric_selection selected ON selected.result_id=d.result_id;
-'''
-
-# Everyday wide view: one row per session attempt, named source and selected-derived columns.
-# Historical outcomes remain in v_session_shots, which uses the immutable attempt pins.
-DDL += (
-    '''CREATE VIEW v_session_current_metrics AS SELECT rows.session_id,rows.ordinal,rows.legacy_key,rows.shot_id,
- rows.user_id,users.display_name golfer,rows.captured,rows.drill,rows.deleted_at,rows.simulated,
- rows.bag_name,rows.club_label,rows.configuration_id,rows.context_id,rows.excluded,rows.removed,rows.swing_label,
- rows.report_id,'''
-    + ','.join('rows.' + col for col, _, _ in SOURCE_FIELDS.values())
-    + ''',
- rows.flight_result_id,rows.flight_model_version,rows.flight_status,
- rows.model_carry_distance_yd,rows.model_total_distance_yd,rows.model_ball_offline_yd,
- rows.model_ball_apex_ft,rows.model_ball_descent_angle_deg,rows.model_hang_time_s,
- rows.putting_result_id,rows.putting_model_version,rows.estimated_distance_ft,rows.distance_error_ft,
- rows.features_result_id,rows.calculated_smash_factor,rows.source_rollout_yd
- FROM ('''
-    + QUERY.split(' WHERE o.user_id=? AND s.deleted_at IS NULL')[0]
-    + ''') rows JOIN users USING(user_id);'''
-)
+from analysis_schema import read_rows, report, save_collection
 
 
 def specification(family, putting_model):

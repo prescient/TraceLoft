@@ -228,7 +228,10 @@ class ShotSchemaTests(unittest.TestCase):
 
     def test_failed_migration_rolls_back_to_v1(self):
         data, _, _, before = self.legacy_database()
-        with patch('shot_schema.backfill', side_effect=RuntimeError('interrupted upgrade')):
+        with patch(
+            'migrations.v0002_wide_metrics.backfill',
+            side_effect=RuntimeError('interrupted upgrade'),
+        ):
             with self.assertRaises(RuntimeError):
                 Store(self.path)
         with contextlib.closing(sqlite3.connect(self.path)) as c:

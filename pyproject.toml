@@ -8,6 +8,8 @@ extend-exclude = ["third_party"]
 [tool.ruff.format]
 # Avoid a quote-normalization diff across modules that intentionally mix quote styles.
 quote-style = "preserve"
+# Released migration steps are frozen (hash-pinned in tests/test_migrations.py).
+exclude = ["migrations/v0*.py"]
 
 [tool.ruff.lint]
 # Correctness only: undefined/unused names, syntax errors and likely bugs.

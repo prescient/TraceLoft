@@ -95,7 +95,8 @@ The database is SQLite **schema 5**. It holds:
 - staged recalculation with explicit publication.
 
 Existing IDs, raw evidence, sessions and game scores are preserved, and historical outcomes stay
-pinned. Each upgrade creates a verified pre-upgrade backup (`migrations.py`). Start with the
+pinned. Each upgrade creates a verified pre-upgrade backup; the frozen, numbered upgrade steps
+and their SQL live in `migrations/`. Start with the
 [readable shot database guide](docs/SHOT_DATABASE.md) and its ERD for SQL, exports and recovery.
 The [redesign plan](docs/DATABASE_REDESIGN.md) records the design rationale and remaining proposals.
 

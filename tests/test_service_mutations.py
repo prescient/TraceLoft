@@ -6,7 +6,9 @@ from unittest.mock import patch
 from web_service import GolfService
 
 
-PUTTING = dict(drill='Pace consistency', target=4, speed_tolerance=0.3, angle_tolerance=1, repetitions=5)
+PUTTING = dict(
+    drill='Pace consistency', target=4, speed_tolerance=0.3, angle_tolerance=1, repetitions=5
+)
 
 
 class MutationRollbackTests(unittest.TestCase):

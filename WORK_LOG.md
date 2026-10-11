@@ -1,5 +1,28 @@
 # TraceLoft work log
 
+## 2026-10-11 — Frozen per-version migrations
+
+- `migrations.py` became the `migrations/` package:
+  - `sql/0001_base.sql` (schema 1, which Store creates for a new database) and
+    `sql/0002…0005_*.sql` hold each step's DDL, rendered exactly as the code executed it
+    (generated views from `SOURCE_FIELDS` and the analysis query included). The script asserted
+    each file equals the previous constant.
+  - `v0002…v0005_*.py` hold each step's prepare/backfill/reconcile code, with frozen copies of
+    the backfill entry functions.
+  - `__init__.py` holds the runner and `STEPS`.
+- Removed the now-duplicated `DDL`/`SCHEMA` constants, the two DDL-only column constants and the
+  moved `backfill()` functions from `storage.py` and the schema modules, so each schema
+  version's DDL exists once. `storage.SCHEMA` loads the frozen base file.
+- Tests: `tests/test_migrations.py` pins the SHA-256 (LF-normalized) of every released step and
+  SQL file, requires every file to be pinned and each step to target `version + 1`, and checks
+  the base schema loads from its file. `pyproject.toml` excludes released steps from formatting.
+  The existing v1→v5 upgrade and rollback tests (now patching the frozen v2 backfill) exercise
+  the real steps.
+- Limit: backfills call shared writers (`write_source`, `write_session`, `save_collection`, …).
+  A future change to one of them that breaks an old step fails the v1 upgrade test; the fix is
+  to freeze a copy of the old writer inside that step.
+- Verified: `python verify.py` passed **212 Python** and **67 JavaScript** tests and lint.
+
 ## 2026-10-11 — Isolated instances leave web_runtime.json alone
 
 - Fixed the follow-up from the browser QA entry. `web_app.main()` wrote `web_runtime.json` for

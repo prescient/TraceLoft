@@ -19,7 +19,7 @@ Screen capture/OCR lives in the separate private TraceCapture app and never belo
 | Service authority: active session, mutations, live revision | `web_service.py` (`GolfService`) |
 | Shot input and simulator relay | `shot_input.py`, `open_connect.py` |
 | SQLite store: writer transactions, snapshot reads, backup | `storage.py` |
-| Numbered schema upgrades (1→5) | `migrations.py` (`STEPS`) |
+| Frozen schema upgrades (1→5) | `migrations/` (`sql/000N_*.sql`, `v000N_*.py`, `STEPS`) |
 | CSV/ZIP export; pre-SQLite import; offline CLI | `storage_export.py`, `legacy_import.py`, `database_tools.py` |
 | Schema layers (DDL, backfill, readers) | `shot_schema.py`, `domain_schema.py`, `analysis_schema.py`, `recalculation.py` |
 | Drill registry (catalog, creation, restore) | `drills.py` |
@@ -97,10 +97,17 @@ verified upgrade. Helper tests do not verify the interface in a real browser.
   in-memory state on any exception. Call `self._require_saved(message)` first so queued shots
   save before state changes. `ValueError` messages become HTTP 409 text shown to the golfer, so
   write them as user-facing guidance.
-- **Schema changes are migrations.** Bump `SCHEMA_VERSION`, take a verified backup, run inside
-  `BEGIN IMMEDIATE`, and reconcile evidence counts/manifests before `COMMIT`. Append a step to
-  `migrations.STEPS`; `migrations._apply` provides the backup, transaction and report. Never edit
-  a released step.
+- **Schema changes are migrations.** To change the schema:
+  - Add `migrations/sql/000N_<stage>.sql` and `migrations/v000N_<stage>.py`.
+  - Append the step to `migrations.STEPS` and bump `SCHEMA_VERSION`.
+  - Pin both new files' hashes in `tests/test_migrations.py`.
+
+  The runner provides the verified backup, `BEGIN IMMEDIATE`, evidence reconciliation, report
+  and rollback. Released steps and their SQL are hash-pinned and excluded from formatting, so
+  never edit them. Schema DDL lives only in these files, not in the schema modules. Writers
+  that released backfills call must stay compatible with old versions; the v1 upgrade test
+  in `tests/test_shot_schema.py` catches breakage. If one must change, freeze a copy of the
+  old writer inside that step.
 - **Deletion is recoverable.** Sessions are soft-deleted with Restore and Undo. Finish, abandon,
   exclusion and deletion are distinct. Backups, crops and training data sit outside the session
   lifecycle.

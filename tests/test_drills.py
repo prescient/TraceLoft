@@ -53,7 +53,11 @@ class DrillCatalogTests(unittest.TestCase):
         cases = [
             (dict(session_kind='golf_sim'), 'golf_sim', GolfSimSession),
             (dict(session_kind='driving_range'), 'driving_range', DrivingRangeSession),
-            (dict(session_kind='driving_range', collection_kind='wedge'), 'collection', CollectionSession),
+            (
+                dict(session_kind='driving_range', collection_kind='wedge'),
+                'collection',
+                CollectionSession,
+            ),
             (dict(practice_type='full_swing'), 'distance_ladder', DistanceLadderSession),
             (dict(practice_type='putting'), 'putting', PuttingSession),
             ({}, 'putting', PuttingSession),

@@ -74,8 +74,10 @@ venv selection, both suites, nonzero failure exit and external logs/report inclu
 tree state. This supplements controller/backend regressions and manual browser/device checks;
 it does not claim to automate every browser journey.
 
-Migrations are now numbered steps in `migrations.py` (`STEPS`, one shared backup/transaction/
-reconciliation runner), replacing four copy-pasted blocks in `Store.__init__`. The steps still
-import their DDL and backfill code from the schema modules, so freezing them as immutable
-per-version files remains pending. Export and legacy import moved to `storage_export.py` and
+Migrations are frozen per-version files in `migrations/`: `sql/0001_base.sql` … `0005_*.sql`
+(DDL rendered exactly as the code ran it, including generated views) and `v0002_*.py` …
+`v0005_*.py` (frozen backfill entry points plus prepare/reconcile). One runner handles backup,
+transaction, report and rollback. The DDL constants and backfill functions were removed from the
+schema modules. Tests pin each released file's SHA-256, and the formatter skips released steps.
+Backfills still call shared writers; the v1→v5 upgrade test guards their compatibility. Export and legacy import moved to `storage_export.py` and
 `legacy_import.py`.
