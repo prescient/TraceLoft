@@ -1,20 +1,23 @@
 # Readable shot data and versioned calculations
 
-Design proposal — 2026-10-10. No production schema/data migration is implemented by this document.
+Design and migration plan — 2026-10-10. Stage 1 (schema 2) implements wide source reports,
+separate immutable derived results, attempt pins, readable views and expanded CSV export.
+See [implemented shot database](SHOT_DATABASE.md). Remaining entities/workflows below are proposed.
 This updates the earlier preference for long-form metric values as the main analytical interface.
 The user now prioritizes named columns and a separate, recalculable derived-metrics table.
 
 ## Why change
 
-Read-only inspection of the current schema-v1 database found 1,305 physical shots, 2,429
+Read-only inspection of the pre-migration schema-v1 database found 1,305 physical shots, 2,429
 observations, 32,406 metric-value rows, 47 sessions and 1,089 attempts. Counts are a point-in-time
 inventory, not migration acceptance targets. 1,089 shots have multiple observations; these often
 include ingestion and practice evidence. No shots currently appear in multiple sessions, but the
 schema permits it. A migration cannot assume one observation equals one physical shot.
 
-Today `shots` stores identity/time/source club code. Numbers require joins through `observations`,
+Before stage 1, `shots` stored identity/time/source club code. Numbers required joins through `observations`,
 `metric_values` and definitions. OpenGolfCoach and putting results are frozen in session/attempt
-JSON, rather than a queryable derived-metrics table. Export is readable; direct SQL is harder.
+JSON, rather than a queryable derived-metrics table. Stage 1 addresses those numerical storage/SQL
+limitations while preserving the original evidence and outcomes.
 
 ## Recommended layout
 
@@ -121,7 +124,7 @@ representations. Moving core tables does not require deleting raw source JSON or
 The metric tables are only one part of the database. Equipment/context describes what was hit;
 bag maps and wedge matrices summarize groups of shots. Neither belongs inside a sensor-metric row.
 
-### Where these live today
+### Original schema-v1 locations (equipment/session authority remains during stage 1)
 
 | Feature | Implemented schema-v1 location |
 | --- | --- |
@@ -246,10 +249,10 @@ a TraceLoft/OpenGolfCoach carry estimate belongs in the derived table. Preserve 
 [Foresight launch and flight definitions](https://help.foresightsports.com/hc/en-us/articles/47144162581523-Ball-Launch-Data-Measurements-Ball-Flight-Results).
 
 The user confirmed **17 labels** (four club and thirteen ball/flight fields). Use all 17; do not
-drop a field to force the earlier count of 16. Retain total distance as an eighteenth optional
-compatibility column because TraceLoft already captures/uses it. The current ball/flight import uses
+drop a field to force the earlier count of 16. Include reported total distance as the eighteenth core
+source column because TraceLoft already captures/uses it. The current ball/flight import uses
 14 fields. The normalized Open Connect mapping additionally reserves six club fields, but inspection
-found no available club values. Source smash factor is not currently mapped; adding its column
+found no available club values. Source smash factor was not previously mapped; v2 adds a supplied-value mapping, but its column
 does not establish that it arrives in the packet. GC3 documentation lists the four requested club
 metrics; a supported display/export is not proof our input currently supplies them.
 [GC3 ball/club list](https://www.foresightsports.com/products/gc3).
@@ -259,24 +262,24 @@ the source's units/definitions still need verification for each actual input pro
 
 | Current field | Proposed column | Notes |
 | --- | --- | --- |
-| `club_speed` | `club_speed_mph` | Club Head Speed; reserved normalized input, no available readings in inspected data |
-| Not mapped yet | `smash_factor` | Source-reported Smash Factor; dimensionless |
+| `club_speed` | `club_head_speed_mph` | Club Head Speed; reserved normalized input, no available readings in inspected data |
+| `smash_factor` | `smash_factor` | Source-reported Smash Factor; dimensionless |
 | `club_path` | `club_path_deg` | Club Path; reserved normalized input |
-| `attack_angle` | `attack_angle_deg` | Angle of Attack; reserved normalized input |
+| `attack_angle` | `angle_of_attack_deg` | Angle of Attack; reserved normalized input |
 | `carry` | `carry_distance_yd` | Carry Distance; provider flight calculation |
 | `ball_speed` | `ball_speed_mph` | Initial speed |
 | `total_spin` | `total_spin_rpm` | Preserve provider value |
-| `launch_ang` | `launch_angle_deg` | Vertical launch |
-| `launch_dir` | `launch_direction_deg` | Target-relative, right positive |
-| `spin_axis` | `spin_axis_deg` | Preserve provider sign/frame lineage |
-| `back_spin` | `backspin_rpm` | Provider component |
-| `side_spin` | `sidespin_rpm` | Provider component/sign lineage |
-| `peak_height` | `apex_height_ft` | Explicit feet |
-| `descent_ang` | `descent_angle_deg` | Provider landing-angle definition |
-| `offline` | `offline_distance_yd` | Endpoint semantics currently unverified; do not silently rename carry-side |
-| `curve` | `curve_distance_yd` | Definition/frame retained |
-| `hang_time` | `flight_time_s` | Provider flight duration |
-| `total` | `total_distance_yd` | Additional optional compatibility field; not in the user's 17-label list |
+| `launch_ang` | `vertical_launch_angle_deg` | Vertical launch |
+| `launch_dir` | `horizontal_launch_angle_deg` | Target-relative, right positive |
+| `spin_axis` | `spin_tilt_axis_deg` | Preserve provider sign/frame lineage |
+| `back_spin` | `back_spin_rpm` | Provider component |
+| `side_spin` | `side_spin_rpm` | Provider component/sign lineage |
+| `peak_height` | `ball_apex_ft` | Explicit feet |
+| `descent_ang` | `ball_descent_angle_deg` | Provider landing-angle definition |
+| `offline` | `ball_offline_yd` | Endpoint semantics currently unverified; do not silently rename carry-side |
+| `curve` | `ball_curve_yd` | Definition/frame retained |
+| `hang_time` | `hang_time_s` | Provider flight duration |
+| `total` | `total_distance_yd` | Core reported source field; used for scoring, analysis and rollout |
 
 Store a supplied Smash Factor in the source table. If TraceLoft calculates ball speed / club speed,
 store it separately as `calculated_smash_factor` in the derived table, under that methodology's
@@ -287,7 +290,9 @@ Face angle/dynamic loft/lie must not be presented as GC3 capabilities simply bec
 protocol accommodates them. Other monitors can use nullable additional columns or an extension
 table with typed definitions; core metrics should stay wide and easy to query.
 
-Columns are optional: absence is `NULL`, not zero. Keep source-report ID, source/device/profile,
+All 18 named columns are part of the core schema. Missing/invalid evidence is `NULL`, not zero;
+reported total is never substituted with a modeled value. Ordinary Open Connect packets and some
+legacy/putting history lack distance, so source recording must preserve their absence honestly. Keep source-report ID, source/device/profile,
 mapping revision and per-field availability/quality evidence. A companion quality table can distinguish
 not supplied, unavailable and invalid without forcing JSON parsing for basic numerical queries.
 Preserve raw input separately. Unit normalization is a documented mapping operation, not a new
@@ -396,9 +401,9 @@ analysis revision at an explicit save/refresh/publication boundary rather than o
 
 ### Compatibility details that need deliberate work
 
-- **The 17 requested source fields plus optional total distance:** current ball/flight inputs already
+- **The 17 requested source fields plus core reported total distance:** current ball/flight inputs already
   supply much of this dictionary, but club readings in inspected history are unavailable and source
-  Smash Factor has no mapping. Add validation/mapping for supplied values; do not invent missing data.
+  Smash Factor required a new mapping (implemented in stage 1). Add validation/mapping for supplied values; do not invent missing data.
   TraceCapture needs a change only if it must send additional fields. It continues to send the open
   protocol, owns no TraceLoft database, and requires no access to the new tables. No port change is
   required by this migration.
@@ -455,11 +460,11 @@ Implement in reviewable steps:
 
 Do not ship a transitional UI backed by two independently editable catalogs or session authorities.
 Steps can be developed/committed separately using fixtures; production cutover requires the complete
-compatibility path and reconciliation below. This implementation map is an audit, not a migration.
+compatibility path and reconciliation below. This implementation map guides the staged migration; stage-1 implementation is documented separately.
 
 ## Staged migration and acceptance
 
-1. Use the confirmed 17-label dictionary plus optional total distance. Verify actual incoming
+1. Use the confirmed 17-label dictionary plus core reported total distance. Verify actual incoming
    semantics/units, finish source-selection policy/versioned output families and finalize DDL.
 2. Take a verified SQLite backup and restore into isolation; inventory IDs, raw bytes, observations,
    duplicates/conflicts, sessions/attempts, tags/exclusions, corrections and frozen game outcomes.
@@ -482,4 +487,7 @@ compatibility path and reconciliation below. This implementation map is an audit
    rejects newer versions, so rollback means a verified pre-upgrade snapshot plus matching service,
    not opening an upgraded database with the old binary.
 
-The production database, service and existing model outcomes are unchanged by this proposal.
+Stage 1 adds wide source/derived storage and compatible readers/writers without changing original
+evidence or saved game/drill outcomes. Users, relational equipment/context/plans, versioned group
+analyses, SQL-backed Analyze and complete recalculation workflows remain pending. See
+[implemented scope and upgrade procedure](SHOT_DATABASE.md).

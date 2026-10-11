@@ -1,8 +1,8 @@
 # TraceLoft architecture decisions
 
-## D59 — Readable source metrics and recalculable derived results (2026-10-10, design)
+## D59 — Readable source metrics and recalculable derived results (2026-10-10, stage 1 implemented)
 
-Prefer explicit optional columns for common source-reported shot metrics and a separate wide,
+Prefer explicit core columns for common source-reported shot metrics and a separate wide,
 versioned table for TraceLoft calculations. Both reference the existing physical shot ID. Keep
 multiple source reports/normalization revisions, explicit primary-source selection, immutable raw
 evidence and original missingness. Provider flight calculations are source-reported, not automatically
@@ -10,7 +10,8 @@ sensor measurements. Calculations pin exact inputs, code/model/settings and rele
 recalculation appends a version and explicit publication selects it for analysis. Played outcomes
 and scores never change through analytical recomputation. Everyday views expose units, club/bag
 labels and selected methodology without long-form pivots. The user's confirmed list has 17 fields;
-retain all 17 plus optional existing total distance. Preserve source Smash Factor separately from
+retain all 17 plus core reported total distance. Missing/invalid source values remain nullable;
+the core total column is never filled from a model. Preserve source Smash Factor separately from
 a versioned ball-speed/club-speed calculation. Supported columns do not imply available input values.
 Equipment, tags and original/corrected shot intent use separate relational context/history tables.
 Bag mapping and wedge matrix results are versioned multi-shot analyses with frozen member/input
@@ -19,7 +20,10 @@ merged into a shared physical club; migration retains the original catalog and s
 Add local golfer profiles and explicit ownership for equipment, shots, sessions and analysis.
 Profiles do not imply authentication. Core editable/queryable data is relational; JSON remains for
 original packets, model-specific snapshots and versioned artifacts. Avoid two editable authorities.
-See [design/migration plan](docs/DATABASE_REDESIGN.md). No schema upgrade or production change yet.
+Schema 2 implements wide source/derived storage, quality/source selection, attempt pins and compatible
+readers/writers/exports with verified backup and transactional backfill. Users, relational equipment/
+context/plans, group analyses and full recalculation UI remain pending. See
+[implemented scope](docs/SHOT_DATABASE.md) and [design/migration plan](docs/DATABASE_REDESIGN.md).
 
 ## D50 — Audited game corrections (2026-10-03)
 

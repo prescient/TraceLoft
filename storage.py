@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 FIELDS = {
     'ball_speed': ('ball.speed', 'mph', .44704),
     'launch_ang': ('ball.launch_angle', 'deg', 1),
@@ -150,7 +150,7 @@ CREATE VIEW shot_metrics AS
 
 
 class Store:
-    def __init__(self, path):
+    def __init__(self, path, migration_lease_held=False):
         self.path = Path(path).resolve()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
@@ -164,6 +164,7 @@ class Store:
         if version > SCHEMA_VERSION:
             self.connection.close()
             raise OSError('Database is newer than this application; use the matching version.')
+        new_database = version == 0
         if version == 0:
             # Schema and catalog initialization must succeed together.
             try:
@@ -172,7 +173,7 @@ class Store:
                 self.connection.executescript('BEGIN IMMEDIATE;\n' + SCHEMA)
                 self._catalog()
                 self.connection.execute('PRAGMA application_id=1196379206')
-                self.connection.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
+                self.connection.execute('PRAGMA user_version=1')
                 self.connection.execute('COMMIT')
             except BaseException:
                 if self.connection.in_transaction:
@@ -182,12 +183,28 @@ class Store:
         elif self.connection.execute('PRAGMA application_id').fetchone()[0] != 1196379206:
             self.connection.close()
             raise OSError('Unrecognized database application identity.')
-        self.connection.execute('PRAGMA journal_mode=WAL')
-        self.connection.execute('PRAGMA synchronous=FULL')
+        if self.connection.execute('PRAGMA user_version').fetchone()[0] == 1:
+            lease = None
+            try:
+                if not new_database and not migration_lease_held:
+                    from database_tools import ServiceLease
+                    lease = ServiceLease(self.path)
+                self.connection.execute('PRAGMA journal_mode=WAL')
+                self.connection.execute('PRAGMA synchronous=FULL')
+                self._upgrade_metrics(backup=not new_database)
+            except BaseException:
+                self.connection.close()
+                raise
+            finally:
+                if lease:
+                    lease.close()
+        else:
+            self.connection.execute('PRAGMA journal_mode=WAL')
+            self.connection.execute('PRAGMA synchronous=FULL')
         self.profile = json.loads(self.connection.execute(
             "SELECT payload FROM mapping_versions WHERE id='golfdata.foresight_screen.parsed.v1'").fetchone()[0])
         self.extended_profile = json.loads((ROOT / 'data/metric_mapping.v2.json').read_text('utf-8'))['profiles'][0]
-        self.generic_profile = json.loads((ROOT / 'data/metric_mapping.normalized.v1.json').read_text('utf-8'))['profiles'][0]
+        self.generic_profile = json.loads((ROOT / 'data/metric_mapping.normalized.v2.json').read_text('utf-8'))['profiles'][0]
         with self.transaction():
             payload = encoded(self.generic_profile)
             old = self.connection.execute('SELECT payload FROM mapping_versions WHERE id=?',(self.generic_profile['id'],)).fetchone()
@@ -201,6 +218,35 @@ class Store:
                 raise ValueError('Metric mapping version conflicts with its archived definition.')
             self.connection.execute('INSERT OR IGNORE INTO mapping_versions VALUES(?,?,?)',
                                     (mapping_id, digest(payload.encode()), payload))
+
+    def _upgrade_metrics(self, backup=True):
+        from shot_schema import DDL, backfill, evidence_manifest
+        snapshot = self.backup() if backup else None
+        before = {t:self.count(t) for t in ('shots','observations','metric_values','sessions','session_attempts','ingest_events')}
+        evidence_before = evidence_manifest(self.connection)
+        try:
+            self.connection.executescript('BEGIN IMMEDIATE;\n' + DDL)
+            backfill(self.connection)
+            after = {t:self.count(t) for t in before}
+            if before != after:
+                raise ValueError('Schema upgrade changed original evidence counts.')
+            if evidence_manifest(self.connection) != evidence_before:
+                raise ValueError('Schema upgrade changed original evidence or saved outcomes.')
+            report = dict(from_schema=1,to_schema=2,at=now(),backup=str(snapshot) if snapshot else None,
+                          before=before,after=after,evidence=evidence_before,stage='wide_source_and_derived_metrics')
+            self.connection.execute('INSERT INTO metadata VALUES(?,?)', ('schema_migration.v2',encoded(report)))
+            self.connection.execute('PRAGMA user_version=2')
+            self.connection.execute('COMMIT')
+        except BaseException:
+            if self.connection.in_transaction:
+                self.connection.execute('ROLLBACK')
+            raise
+
+    def write_derived_result(self, *args, **kwargs):
+        """Append an analytical version; select=True explicitly publishes for analysis only."""
+        from shot_schema import write_result
+        with self.transaction():
+            return write_result(self.connection,*args,**kwargs)
 
     def equipment_catalog(self):
         from equipment import CATALOG_KEY, default_catalog
@@ -307,7 +353,7 @@ class Store:
             self.connection.execute('INSERT INTO shots VALUES(?,?,?,?,?)',
                 (shot_id, event_id, when, basis, event.get('club')))
         observation_id = identity('observation:' + event_id)
-        profile = self.generic_profile if event.get('mapping_id') == 'traceloft.normalized.v1' else self.extended_profile if EXTENDED_FIELDS.intersection(event.get('vals', {})) else self.profile
+        profile = self.generic_profile if event.get('mapping_id') in ('traceloft.normalized.v1','traceloft.normalized.v2') or {'club_speed','smash_factor','attack_angle','club_path'}.intersection(event.get('vals',{})) else self.extended_profile if EXTENDED_FIELDS.intersection(event.get('vals', {})) else self.profile
         mapping_id = profile['id']
         self.connection.execute('INSERT INTO observations VALUES(?,?,?,?,?)',
             (observation_id, event_id, shot_id, mapping_id, provenance))
@@ -328,6 +374,10 @@ class Store:
             (identity('delivery:' + event_id), event_id,
              'socket_write_reported_unacknowledged' if event.get('result') == 'sent' else 'not_established',
              encoded({'result': event.get('result'), 'note':event.get('note'), 'sent_fields':event.get('sent_fields')})))
+        from shot_schema import write_source, source_features
+        write_source(self.connection,observation_id)
+        if shot_id:
+            source_features(self.connection,shot_id)
         return event_id
 
     def load_session(self, session_id, deleted=False):
@@ -338,11 +388,13 @@ class Store:
                                           (session_id, int(deleted))).fetchone()
             if not row:
                 raise FileNotFoundError('Session not found.')
-            return json.loads(row[0])
+            from shot_schema import hydrate_session
+            return hydrate_session(self.connection,json.loads(row[0]))
 
     def list_sessions(self, deleted=False):
         with self.lock:
-            return [json.loads(r[0]) for r in self.connection.execute(
+            from shot_schema import hydrate_session
+            return [hydrate_session(self.connection,json.loads(r[0])) for r in self.connection.execute(
                 'SELECT payload_json FROM sessions WHERE (deleted_at IS NOT NULL)=? ORDER BY started DESC', (int(deleted),))]
 
     def save_session(self, data, imported=False, deleted=False):
@@ -394,11 +446,22 @@ class Store:
                     shot_id = linked_shot or own_shot
                     if linked_shot:
                         self.connection.execute('UPDATE observations SET shot_id=? WHERE id=?',(linked_shot,obs_id))
+                        from shot_schema import write_source, source_features
+                        # Transfer the practice report before deleting its temporary shot identity.
+                        self.connection.execute('DELETE FROM derived_metric_selection WHERE shot_id=?',(own_shot,))
+                        self.connection.execute('DELETE FROM calculation_inputs WHERE result_id IN (SELECT result_id FROM shot_derived_metrics WHERE shot_id=?)',(own_shot,))
+                        self.connection.execute('DELETE FROM shot_derived_metrics WHERE shot_id=?',(own_shot,))
+                        write_source(self.connection,obs_id)
+                        source_features(self.connection,linked_shot)
                         self.connection.execute('DELETE FROM shots WHERE id=?',(own_shot,))
                 self.connection.execute('INSERT INTO session_attempts VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(session_id,ordinal) DO UPDATE SET '
                     'excluded=excluded.excluded,payload_json=excluded.payload_json',
                     (sid,ordinal,shot['key'],shot_id,obs_id,shot.get('captured'),shot.get('target',data['target']),
                      int(shot['success']),int(shot['excluded']),encoded(shot)))
+                from shot_schema import write_source, save_attempt_results, source_features
+                write_source(self.connection,obs_id)
+                source_features(self.connection,shot_id)
+                save_attempt_results(self.connection,data,shot,ordinal,legacy=imported)
             self._audit(sid, 'import_session' if imported else 'save_session', {'shots':len(data['shots'])})
 
     def set_deleted(self, session_id, deleted):
@@ -419,7 +482,7 @@ class Store:
                 if destination.execute('PRAGMA integrity_check').fetchone()[0] != 'ok' or destination.execute('PRAGMA foreign_key_check').fetchall():
                     raise OSError('Backup integrity verification failed.')
                 counts = {t:destination.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('shots','ingest_events','sessions','session_attempts')}
-        atomic_json(target.with_suffix('.manifest.json'), dict(schema=SCHEMA_VERSION,created=now(),sha256=digest(target.read_bytes()),counts=counts,
+        atomic_json(target.with_suffix('.manifest.json'), dict(schema=self.connection.execute('PRAGMA user_version').fetchone()[0],created=now(),sha256=digest(target.read_bytes()),counts=counts,
                      protection='local_only', includes='database and embedded imported evidence; crop/training archives remain separate'))
         return target
 
@@ -466,22 +529,30 @@ class Store:
             simulated_events={r['id'] for r in self.connection.execute('SELECT id,raw_json FROM ingest_events') if json.loads(r['raw_json']).get('simulated')}
             for shot in shots:
                 shot['simulated']=shot['event_id'] in simulated_events
-            by_shot = {}
-            for value in metrics:
-                by_shot.setdefault(value['shot_id'],[]).append(value)
+            from shot_schema import SOURCE_FIELDS
+            reports = {r['shot_id']:r for r in self.connection.execute('SELECT * FROM v_shots_source')}
             for shot in shots:
-                # Prefer exact practice/live observation to rounded legacy CSV; retain all in long export.
-                values = by_shot.get(shot['id'],[])
-                values.sort(key=lambda v: v['provenance']=='legacy_csv')
+                # One explicit report supplies the row; never blend values from competing reports.
+                report = reports.get(shot['id'])
                 for field,(metric,unit,factor) in FIELDS.items():
-                    found = next((v for v in values if v['metric_key']==metric and v['availability']=='available'),None)
-                    shot[field + '_' + ('degrees' if unit=='deg' else unit)] = found['real_value']/factor if found else None
+                    shot[field + '_' + ('degrees' if unit=='deg' else unit)] = report[SOURCE_FIELDS[field][0]] if report else None
             files = {'shots.csv': shots, 'metric_values.csv':metrics, 'session_attempts.csv':attempts}
+            field_sets = {'shots.csv':shot_fields,'metric_values.csv':metric_fields,'session_attempts.csv':attempt_fields}
+            for table in ('shot_source_metrics','source_metric_quality','shot_primary_source',
+                          'shot_derived_metrics','calculation_runs','calculation_inputs',
+                          'derived_metric_selection','attempt_derived_results','shot_trajectories'):
+                cursor = self.connection.execute(f'SELECT * FROM {table} ORDER BY rowid')
+                files[table+'.csv'] = [dict(r) for r in cursor]
+                field_sets[table+'.csv'] = [d[0] for d in cursor.description]
+            for view,name in (('v_shots_source','shots_source.csv'),('v_session_shots','session_shots_wide.csv')):
+                cursor = self.connection.execute(f'SELECT * FROM {view} ORDER BY shot_id')
+                files[name] = [dict(r) for r in cursor]
+                field_sets[name] = [d[0] for d in cursor.description]
             output = io.BytesIO()
             with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as archive:
                 for name,rows in files.items():
                     text = io.StringIO(newline='')
-                    fields = {'shots.csv':shot_fields,'metric_values.csv':metric_fields,'session_attempts.csv':attempt_fields}[name]
+                    fields = field_sets[name]
                     writer = csv.DictWriter(text, fields)
                     writer.writeheader()
                     # Protect spreadsheet text while preserving genuine numeric values.
@@ -489,6 +560,10 @@ class Store:
                     archive.writestr(name,text.getvalue().encode('utf-8-sig'))
                 archive.writestr('manifest.json',encoded(dict(schema=SCHEMA_VERSION,created=now(),scope='all_captured_including_session_exclusions_and_deleted_sessions',
                     counts={name:len(rows) for name,rows in files.items()}, missing='blank; see availability in long export',
+                    row_shapes={'shots_source.csv':'one selected report per physical shot; no model fallback',
+                                'shot_source_metrics.csv':'all observations including competing reports',
+                                'session_shots_wide.csv':'one row per session attempt, including excluded/deleted history',
+                                'shot_derived_metrics.csv':'all result versions; filter model family/context before aggregating'},
                     timestamps='time_basis declares UTC receipts versus timezone-unknown legacy local times',text_safety='formula-leading text prefixed with apostrophe')))
                 archive.writestr('metric_catalog.json',encoded([json.loads(r[0]) for r in self.connection.execute('SELECT definition_json FROM metric_definitions ORDER BY key,version')]))
                 archive.writestr('metric_mappings.json',encoded([json.loads(r[0]) for r in self.connection.execute('SELECT payload FROM mapping_versions ORDER BY id')]))

@@ -101,6 +101,10 @@ session/save errors remain specific to practice.
 
 - Display only measurements actually collected or explicitly entered. Missing data is unavailable,
   not zero. Keep units and left/right sign conventions consistent across capture, practice and review.
+- Treat reported carry and total distance as core source metrics, distinct from TraceLoft's modeled
+  travel. Readable database/CSV columns must retain this distinction; missing source distance never
+  becomes a modeled source value. Version analytical calculations separately and keep played/drill
+  outcomes pinned when methodologies change. Preserve competing reports rather than combining fields.
 - A pace/start-line window success is **In window**; it does not establish a holed putt.
 - Scraped launch measurements do not establish stopping distance, proximity, skid or final ball position.
 - Label modeled putting travel, simulator outcomes and club suggestions as estimates. Make their

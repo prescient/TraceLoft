@@ -48,7 +48,7 @@ class GolfService:
         self.lease = None if database is False else ServiceLease(db_path)
         self.store = None
         try:
-            self.store = None if database is False else Store(db_path)
+            self.store = None if database is False else Store(db_path,migration_lease_held=True)
             if self.store and not self.store.migrated():
                 if self.capture_detector():
                     raise OSError('Stop desktop capture before migrating legacy data.')

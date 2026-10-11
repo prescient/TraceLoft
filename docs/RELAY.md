@@ -33,7 +33,9 @@ simulator player information when available. Two-way control is not a club auto-
 
 Optional `TraceLoft` extension:
 - ReceiptId, ProducerId, StreamId and CapturedAt (UTC ISO timestamp) give durable retry identity.
-- Metrics carries documented internal normalized fields (see data/metric_mapping.normalized.v1.json).
+- Metrics carries documented internal normalized fields (see data/metric_mapping.normalized.v2.json).
+  Version 2 adds source `smash_factor` (ratio); reported `total` remains a core distance metric.
+  Durable envelope identity stays compatible with v1 retries; observation mapping identity is v2.
 - Source and Evidence preserve provenance and source readings.
 - Context freezes practice_session_id, equipment_selection, range_context, collection_context and
   game_context. The latest Context is returned in every Code 200 under TraceLoft.Context.

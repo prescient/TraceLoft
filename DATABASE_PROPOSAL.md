@@ -4,8 +4,9 @@
 and a separate, versioned derived-metrics table linked by shot ID. The
 [readable database redesign](docs/DATABASE_REDESIGN.md) supersedes the long-form-first recommendation
 below for the next analytical schema. The user confirmed 17 source metrics; total distance remains
-an additional optional compatibility column. This is a design
-proposal; the implemented database remains schema v1 and no production migration has occurred.
+the eighteenth core source column. Stage 1 is implemented as schema 2: wide source/derived
+tables, preserved evidence and compatible session reads. The remaining relational entities and
+recalculation workflows are proposed. See [implemented scope](docs/SHOT_DATABASE.md).
 Retain the original raw/typed evidence and provenance during an additive, verified transition.
 
 Status: core SQLite schema/import, capture/practice persistence, CSV export and local backup/restore

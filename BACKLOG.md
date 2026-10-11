@@ -516,17 +516,20 @@ Real-course sources/import enhancements remain optional deferred work.
 - [x] Review current tables/mappings and document a wide source-metrics / versioned derived-metrics
   design, linked by existing shot ID, with readable views and preserved evidence.
 - [x] Confirm the source metric labels and document their named columns: the supplied list has 17
-  metrics, plus optional existing total distance. Distinguish supplied versus calculated Smash Factor.
+  metrics, plus core reported total distance (18 columns). Distinguish supplied versus calculated Smash Factor.
 - [x] Specify relational bag/club revisions, frozen shot context, scoped correction/tag history and
   separate versioned bag-map/wedge-matrix group results with exact analysis membership.
 - [x] Specify users/golfer profiles, explicit equipment/shot/session/analysis ownership and the
   boundary between core relational data and immutable JSON evidence/settings artifacts.
 - [x] Map the redesign to existing app workflows and document backend/UI impact, compatibility
   boundaries and implementation order; include session-state parity and version-aware Play profiles.
-- [ ] Verify actual input units/semantics, add missing source Smash Factor mapping when supplied,
-  finalize source selection and DDL. Existing club capacity has no available readings in inspected data.
-- [ ] Implement additive backed-up migration/backfill with explicit primary-report selection;
-  preserve multiple observations, availability, original units, sessions and frozen game scores.
+- [x] Implement stage-1 source/derived DDL, explicit report selection, supplied source Smash Factor
+  mapping and existing-unit normalization. Club capacity has no available readings in inspected history;
+  source-specific semantics still require verification when additional monitor profiles are connected.
+- [x] Implement schema-2 additive backed-up migration/backfill, availability/quality and separate
+  immutable source/derived versions with attempt pins; preserve observations, original units and outcomes.
+- [ ] Complete typed session-state/outcome/correction schema and full dependency/batch lineage;
+  stage 1 retains existing session/equipment authority during their later relational migration.
 - [ ] Move equipment catalog/context/collection plans from JSON into readable relational tables;
   retain historical IDs/labels and explicit physical-club identity. Add general shot tags and
   reproducible group analyses/profile selection without changing existing cleanup scopes.
@@ -538,7 +541,8 @@ Real-course sources/import enhancements remain optional deferred work.
 - [ ] Verify source reconciliation, rollback/restore, interrupted runs, missing inputs, exclusions,
   retagging dependencies and historical review in isolation before production cutover.
 
-See [redesign](docs/DATABASE_REDESIGN.md). Design only; no live migration or recomputation yet.
+See [redesign](docs/DATABASE_REDESIGN.md) and [implemented schema 2](docs/SHOT_DATABASE.md).
+Stage 1 implements wide metrics and compatible reads/writes/export; broader migration remains pending.
 
 Status: core SQLite import/capture/practice persistence, typed registry, CSV export and verified local
 backup/restore implemented; cutover and verification are tracked in WORK_LOG.md.

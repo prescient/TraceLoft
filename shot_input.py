@@ -16,6 +16,7 @@ FIELDS = {'ball_speed': (0, 250), 'launch_ang': (-90, 90), 'launch_dir': (-90, 9
           'spin_axis': (-180, 180), 'carry': (0, 1000), 'total': (0, 1000), 'offline': (-1000, 1000),
           'peak_height': (0, 1000), 'descent_ang': (-90, 90), 'curve': (-1000, 1000), 'hang_time': (0, 60)}
 FIELDS.update({key: (-10000,10000) for key in ('club_speed','attack_angle','face_angle','dynamic_lie','dynamic_loft','club_path','closure_rate','impact_vertical','impact_horizontal')})
+FIELDS['smash_factor'] = (0, 5)
 BALL = {'Speed': 'ball_speed', 'VLA': 'launch_ang', 'HLA': 'launch_dir', 'BackSpin': 'back_spin',
         'SideSpin': 'side_spin', 'TotalSpin': 'total_spin', 'SpinAxis': 'spin_axis', 'CarryDistance': 'carry'}
 
@@ -54,6 +55,8 @@ def validate(envelope):
         if event.get(key) is not None and not isinstance(event[key], dict): raise ValueError('Invalid ' + key)
     sid = event.get('practice_session_id')
     if sid is not None and not re.fullmatch('[a-f0-9]{32}', str(sid)): raise ValueError('Invalid practice identity.')
+    # Keep the durable envelope identity stable across upgrades/recovered receipt retries.
+    # Store archives the current v2 normalization specification on the observation itself.
     event.update(kind='record', wire_digest=digest(encoded(event).encode()), mapping_id='traceloft.normalized.v1')
     return event, age <= 15 and not envelope.get('recovered', False)
 

@@ -67,7 +67,7 @@ def restore_snapshot(snapshot, target):
     manifest = json.loads(snapshot.with_suffix('.manifest.json').read_text('utf-8'))
     if digest(snapshot.read_bytes()) != manifest['sha256']:
         raise ValueError('Backup checksum does not match its manifest.')
-    if manifest['schema'] != SCHEMA_VERSION:
+    if manifest['schema'] not in (1, SCHEMA_VERSION):
         raise ValueError('Use the matching application version for this backup.')
     with contextlib.closing(sqlite3.connect(f'{snapshot.resolve().as_uri()}?mode=ro',uri=True)) as source:
         if source.execute('PRAGMA integrity_check').fetchone()[0] != 'ok' or source.execute('PRAGMA foreign_key_check').fetchall():
@@ -91,7 +91,7 @@ def restore_snapshot(snapshot, target):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=('migrate','backup','export','restore'))
+    parser.add_argument('command',choices=('migrate','upgrade','backup','export','restore'))
     parser.add_argument('--root',type=Path,default=ROOT)
     parser.add_argument('--database',type=Path,default=None)
     parser.add_argument('--dry-run',action='store_true')
@@ -102,6 +102,14 @@ def main():
     if args.command == 'migrate' and args.dry_run:
         print(json.dumps(dict(dry_run=True,files=inspect_legacy(args.root)),indent=2))
         return
+    if args.command == 'upgrade' and args.dry_run:
+        if not path.exists():
+            parser.error('Database does not exist.')
+        with contextlib.closing(sqlite3.connect(f'{path.resolve().as_uri()}?mode=ro',uri=True)) as source:
+            print(json.dumps(dict(dry_run=True,current_schema=source.execute('PRAGMA user_version').fetchone()[0],
+                target_schema=SCHEMA_VERSION,shots=source.execute('SELECT count(*) FROM shots').fetchone()[0],
+                stage='wide_source_and_derived_metrics'),indent=2))
+        return
     if args.command == 'restore':
         if not args.snapshot or not args.output:
             parser.error('restore needs --snapshot and a new --output destination')
@@ -109,7 +117,7 @@ def main():
         return
     if args.command != 'migrate' and not path.exists():
         parser.error('Database does not exist; migrate first.')
-    lease = ServiceLease(path) if args.command == 'migrate' else None
+    lease = ServiceLease(path)
     store = None
     try:
         if args.command == 'migrate':
@@ -117,7 +125,7 @@ def main():
             if desktop_capture_running():
                 raise OSError('Stop desktop capture before migrating.')
             archive = preserve_legacy(args.root,path.parent/'backups')
-        store = Store(path)
+        store = Store(path,migration_lease_held=True)
         if args.command == 'migrate':
             report = import_legacy(store,args.root)
             report['legacy_archive'] = str(archive)
@@ -126,6 +134,9 @@ def main():
             print(json.dumps(report,indent=2))
         elif args.command == 'backup':
             print(store.backup(args.output))
+        elif args.command == 'upgrade':
+            report = json.loads(store.connection.execute("SELECT value FROM metadata WHERE key='schema_migration.v2'").fetchone()[0])
+            print(json.dumps(report,indent=2))
         else:
             target = args.output or path.parent/'traceloft-export.zip'
             target.write_bytes(store.export())

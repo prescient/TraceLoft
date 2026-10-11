@@ -1,8 +1,9 @@
 # Source separation update — 2026-10-03
 
-New [database redesign proposal](DATABASE_REDESIGN.md), 2026-10-10: named source-metric columns,
-separate versioned derived results and readable analytical views. This is not implemented yet;
-schema v1, current backup/export formats and the live database remain unchanged.
+The first [database redesign](DATABASE_REDESIGN.md) stage is implemented as schema 2: 18 named
+source columns including reported total, separate immutable derived results and readable views.
+See [shot database and upgrade](SHOT_DATABASE.md) for verified schema-1 backup, rollback, new CSV
+files and implemented/pending scope. Original evidence and saved outcomes remain intact.
 
 SQLite remains authoritative at the same path. TraceLoft stores raw Open Connect packets and mapped
 observations, plus session state atomically. The source app keeps its own private outbox and cannot
@@ -99,8 +100,9 @@ Dry run inventories/hashes sources without creating a database. Migration requir
 lease, creates a verified ZIP of CSV/JSON/trash/configuration/glyph files, and imports transactionally.
 Source bytes are also embedded in database import evidence. A report and verified SQLite snapshot
 are saved under the data/backups locations. First startup performs the same archive/import if no
-completed migration exists. Future SQL upgrade versions need a pre-upgrade snapshot and their own
-verified migration before support is added.
+completed migration exists. Schema 2 has its own verified pre-upgrade SQLite snapshot and transactional
+backfill. Future versions require the same safeguards. Offline CLI operations require the owner lease;
+stop the app first or use the owning app's backup/export controls.
 
 Explicit historical `ok` notes establish CSV acceptance, including GSPro-off shots. Other notes stay
 unknown unless uniquely matching confirmed practice evidence resolves them. Distinct files with
@@ -112,7 +114,7 @@ while practice/worker receipt times retain their recorded offset/UTC basis.
 
 ## CSV export and local backups
 
-Use **Capture → Data & backups → Export CSV / Back up database**. Export downloads a ZIP with
+Use **Relay → Data & backups → Export CSV / Back up database**. Export downloads a ZIP with
 `shots.csv`, `metric_values.csv`, `session_attempts.csv` and a manifest from one committed snapshot.
 Frozen metric definitions/mappings accompany the export as JSON dictionaries. Long export includes
 failed/unknown observations with an empty shot ID and explicit acceptance/availability.
@@ -126,6 +128,11 @@ have explicit distance/model/Stimp/target/rung columns in `session_attempts.csv`
 preserves per-session assumptions and source identity. Derived travel remains separate from measured
 metrics; historical outcomes are never recomputed on review. No SQL schema upgrade is needed for these
 existing session/attempt payload fields. See [distance models](PUTTING_DISTANCE.md).
+
+Schema 2 additionally exports wide source reports, source quality/selection, wide derived results,
+calculation specifications/dependencies/selections, attempt result pins and separate paths. Reported
+and modeled total distance have distinct columns. `shots.csv` uses one explicitly selected source
+report rather than filling each field from a different report. See [file/view details](SHOT_DATABASE.md).
 
 Local snapshots run after manual/automatic completion or abandonment, at service shutdown, during
 migration and on request. They use SQLite's backup API, integrity/foreign-key checks, counts and a

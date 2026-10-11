@@ -1,5 +1,42 @@
 # TraceLoft work log
 
+## 2026-10-10 — Readable source/derived migration, stage 1
+
+- Released schema 2 with 18 core named source columns including reported total distance, all-report
+  evidence, per-field availability/quality and explicit whole-report selection. Source total never
+  falls back to an estimate; missing historic/ordinary-protocol distance remains unavailable.
+  Added supplied Smash Factor normalization v2 without changing archived v1 mapping or durable
+  receipt identity. Source Smash Factor and the calculated speed ratio remain separate.
+- Added immutable wide derived results, specifications, source dependencies, context fingerprints,
+  trajectories, analytical selections and pinned attempt results. Extracted historical flight/putting
+  outcomes without recomputation or invented code lineage; appended basic source-feature calculations.
+  Compatible session readers hydrate numerical fields from wide storage while retaining original
+  session/equipment authority for subsequent stages. Group analyses/users/context/tags remain pending.
+- Added verified pre-upgrade backup and transactional DDL/backfill with exact typed-row evidence hashes,
+  count/FK reconciliation and schema rollback on failure. Owner lease protects offline upgrade/CLI
+  operations; verified v1/v2 restores create new destinations. Expanded CSV includes simple one-shot
+  source/one-attempt views, all reports, all calculation versions and documented row shapes.
+- Verification: full Python suite 156 passed and all 49 JS tests passed. After final reader/ownership
+  refinements, 60 affected storage/relay/range/preview/analysis/correction/nine-hole tests passed;
+  final export/retry refinements passed 22 storage/migration tests. New tests exercise real v1 upgrade,
+  interruption rollback, verified snapshot restore, unchanged outcomes, quality/zero/missingness,
+  old-receipt retry, immutable versions, cross-shot FK rejection and analytical selection without
+  rescoring. Existing API journeys cover recording failures, cleanup/Undo and recoverable deletion.
+- Migrated two isolated snapshots; final copy retained all 1,305 shots, 2,429 observations, 32,406
+  original metric rows, 47 sessions and 1,089 attempts, with every session DTO identical. Isolated
+  service resumed the unfinished session, matched all eight real/demo Analyze kind reports exactly
+  against original payloads, loaded all 45 non-deleted reviews and exported analysis CSV. Copied
+  simulator output was disabled and input used an ephemeral port. No synthetic production shots.
+- Production service was already stopped. Acquired owner lease, created verified schema-1 snapshot
+  `golfdata-20261011T004824-64827405.sqlite3`, then upgraded production with exact evidence/session/
+  equipment/active-session/relay metadata equality and integrity/FK checks. Backfilled 2,429 reports
+  and 2,364 derived results; 1,052 physical shots have reported total, all primaries resolved.
+  Started normal service on 8765/input 900: active 40-shot session and equipment match saved state.
+  No original shots/sessions/outcomes were deleted or rescored. Runtime reports/backups stay outside Git.
+- Updated principles, operating/SQL/relay guides, D59 and backlog with implemented versus pending
+  scope. Checked Markdown links, mapping JSON and whitespace. No navigation/visual-layout changes;
+  responsive JS behavior remains passing, physical iPad/live-monitor acceptance was not rerun.
+
 ## 2026-10-10 — Database redesign application impact audit
 
 - Mapped Relay, equipment, session/drill lifecycle, range cleanup, bag mapping/gapping, wedge matrix,
