@@ -1,0 +1,6 @@
+# Formatting-only commits. Enable locally with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub applies this file automatically.
+
+# style: format Python with ruff and web code with prettier (2026-10-11)
+63712968475132f4a795f752be5e5e49f5e323f0

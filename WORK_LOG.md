@@ -1,5 +1,13 @@
 # TraceLoft work log
 
+## 2026-10-11 — One-time formatting commit
+
+- At the user's request, formatted all Python with ruff (`6371296`) and web JS/CSS/test modules with
+  prettier 3.6.2. The commit is formatting only and is listed in `.git-blame-ignore-revs`.
+  Prettier leaves HTML template literals unchanged, so some JS lines remain long.
+- Verified: `node --check` on every `web/*.js`; `python verify.py` passed 188 Python and 63
+  JavaScript tests and lint. A real-browser smoke test follows the later behavior commits.
+
 ## 2026-10-11 — Reproducible installs, lint and verification tooling
 
 - Added `requirements-lock.txt` (exact transitive pins from the verified venv; Setup now installs

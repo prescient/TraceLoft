@@ -145,9 +145,11 @@ DESIGN_PRINCIPLES.md. Read the relevant section before changing those features.
 
 ## Code conventions
 
-- Match the formatting of the module you are editing. Do not mechanically reformat files; a
-  repo-wide rewrite would hide behavior changes. When you substantially rewrite a function, you
-  may split dense lines within it for readability.
+- Python is formatted with `ruff format` (line length 100, quote style preserved) and web
+  JS/CSS/test modules with prettier 3.6.2 using `.prettierrc.json`. Run the formatters on files you
+  change. Keep formatting-only changes in their own commit and add its hash to
+  `.git-blame-ignore-revs`. Prettier leaves HTML template literals as written, so keep new
+  templates readable by hand.
 - UI is built from template strings assigned to `innerHTML`. Escape every interpolated value
   with `esc()`/`escape()` from `web/charts.js`, or use `textContent`. Golfer, bag, club, tag and
   course names are user input.

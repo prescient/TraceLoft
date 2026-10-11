@@ -25,8 +25,9 @@ not production latency claims. Verify each concern against current code before c
    source/estimate basis, ownership and robust quartiles; pagination must not truncate statistics.
 6. **Frozen migrations and verification:** numbered immutable SQL snapshots with transactional
    upgrades/backups/reconciliation, explicit lifecycle/scoring invariants, a repeatable verification
-   command and browser controller regression coverage. Formatting follows modules being changed;
-   avoid a repo-wide mechanical rewrite obscuring behavior changes.
+   command and browser controller regression coverage. At the user's request (2026-10-11) the
+   repository was formatted once in an isolated formatting-only commit, listed in
+   `.git-blame-ignore-revs`, so behavior changes never share a diff with formatting.
 
 ## Future product ideas
 
