@@ -189,6 +189,16 @@ class RangeTests(unittest.TestCase):
 
         self.assertEqual(range_value(legacy, 'carry'), 150)
 
+    def test_club_estimates_follow_the_tag_and_fill_in_for_older_shots(self):
+        self.launch()
+        self.shot(vals=dict(VALUES, attack_angle=-4.0, club_path=3.0))
+        s = self.service.practice.data['shots'][0]
+        self.assertEqual(s['club_estimates']['model'], 'traceloft-dplane-v1')
+        self.assertIsNotNone(s['club_estimates']['face_angle'])
+        del s['club_estimates']  # as recorded before D64
+        self.service.practice.summary()
+        self.assertIsNotNone(s['club_estimates']['dynamic_loft'])
+
     def test_range_family_does_not_require_a_reported_distance_column(self):
         self.launch()
         self.assertIsNone(self.service.input_context['required_distance'])

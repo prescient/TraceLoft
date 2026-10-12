@@ -172,7 +172,15 @@ class DrivingRangeSession(PuttingSession):
         self.save(append=True)
         return True
 
+    def fill_club_estimates(self):
+        """Shots recorded before D64 have no club_estimates: derive them from the stored measurements and
+        effective tag (estimates only; measurements and outcomes are untouched). Saved on the next write."""
+        for s in self.data['shots']:
+            if 'club_estimates' not in s and isinstance(s.get('vals'), dict):
+                s['club_estimates'] = club_model.estimate(s['vals'], effective_equipment(s))
+
     def summary(self):
+        self.fill_club_estimates()
         all_shots = self.data['shots']
         included = [s for s in all_shots if not s.get('excluded') and not s.get('removed')]
         clubs = {}
