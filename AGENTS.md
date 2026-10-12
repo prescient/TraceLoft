@@ -37,3 +37,6 @@ they change an established project preference; update the affected documentation
 - Commit after each completed feature, once the relevant checks pass and documentation is updated.
   Include that feature's code, tests and documentation in a focused commit without waiting for a
   separate request. Keep unrelated changes and runtime data out of the commit, and report its hash.
+- Push each commit to `origin main` (https://github.com/prescient/TraceLoft). Fetch first, and if
+  `origin/main` has moved, bring those commits in before pushing. Never force-push. Report the
+  push with the hash; if it fails, say so rather than retrying silently.
