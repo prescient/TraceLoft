@@ -192,6 +192,8 @@ def create_app(service=None):
         if service.access["lan"]:
             allowed.update(urlsplit(address).hostname for address in service.access["addresses"])
             allowed.update((socket.gethostname().lower(), socket.gethostname().lower() + ".local"))
+            # The owner's extra names/addresses (allowed_hosts.txt, D62), e.g. a public IP for a remote screen.
+            allowed.update(service.access.get("extra_hosts", ()))
         return hostname in allowed
 
     @app.middleware("http")
@@ -648,6 +650,27 @@ def create_app(service=None):
     return app
 
 
+ALLOWED_HOSTS = ROOT / 'allowed_hosts.txt'
+
+
+def extra_hosts(path=ALLOWED_HOSTS):
+    """Extra host names/addresses LAN mode answers to, one per line (# comments allowed).
+
+    By default LAN mode answers only to localhost, this PC's name and its LAN address, which guards
+    against DNS rebinding. The owner may add more, such as a public IP reached through port forwarding
+    to show TraceLoft on a remote simulator screen (D62). The file is local and gitignored, so a private
+    address never enters the repository. TraceLoft has no login: anyone who can reach an allowed
+    address can use it.
+    """
+    try:
+        lines = path.read_text(encoding='utf-8').splitlines()
+    except OSError:
+        return []
+    return [
+        line.split('#', 1)[0].strip().lower() for line in lines if line.split('#', 1)[0].strip()
+    ]
+
+
 def runtime_file(environ=None):
     """The launcher's runtime record, or None for an isolated instance.
 
@@ -689,6 +712,7 @@ def main():
         addresses=[f"http://{socket.gethostbyname(socket.gethostname())}:{args.port}"]
         if args.lan
         else [],
+        extra_hosts=extra_hosts() if args.lan else [],
     )
     app = create_app(service)
     config = uvicorn.Config(
@@ -709,6 +733,8 @@ def main():
             f"LAN address: http://{socket.gethostbyname(socket.gethostname())}:{args.port}",
             flush=True,
         )
+        for host in service.access['extra_hosts']:
+            print(f"Also allowed (allowed_hosts.txt): http://{host}:{args.port}", flush=True)
     if args.open:
         import threading
 

@@ -1,5 +1,14 @@
 # TraceLoft architecture decisions
 
+## D62 — Owner-allowed addresses in LAN mode (2026-10-12)
+
+The user wants TraceLoft on a simulator screen reached through the home public IP and a Firewalla
+port forward. LAN mode now also answers to the hosts listed in the local, gitignored
+`allowed_hosts.txt`, one per line. Local mode is unchanged, and any name not listed is still refused
+(DNS-rebinding protection). TraceLoft has no login, so anyone who can reach a listed address can view
+and change data. The user accepted this risk for a personal project; authentication may come later.
+A private path (VPN/Tailscale) remains the safer alternative.
+
 ## D61 — Simulator delivery by the shot source; modeled distances for memory capture (2026-10-11)
 
 The user moved live simulator delivery into TraceCapture (its D53): TraceCapture sends each shot to

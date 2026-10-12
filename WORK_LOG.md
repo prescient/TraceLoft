@@ -1,5 +1,19 @@
 # TraceLoft work log
 
+## 2026-10-12 — Owner-allowed addresses in LAN mode (D62)
+
+- `web_app.extra_hosts()` reads `allowed_hosts.txt` (gitignored; one host per line, # comments) at
+  startup in LAN mode. The host check accepts those names too, and startup prints them.
+- The user's file lists the home public IP for a simulator screen reached through a port forward. The
+  user accepted that TraceLoft has no login.
+- **Verification:**
+  - New `tests/test_access.py`:
+    - the file format;
+    - local mode refuses the public address;
+    - LAN mode refuses it until it is listed, then accepts it;
+    - other names stay refused.
+  - Ruff clean. A live check from the remote screen follows the restart.
+
 ## 2026-10-11 — Simulator hand-off to TraceCapture; live flight estimates (D61)
 
 - `ShotInput.context()` adds `simulator` (Relay destination, host, port) to every Code 200 context.

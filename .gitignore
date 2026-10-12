@@ -27,6 +27,7 @@ receipts/
 .env
 .env.*
 !.env.example
+allowed_hosts.txt
 .vscode/
 .idea/
 Thumbs.db
