@@ -12,7 +12,10 @@
     - local mode refuses the public address;
     - LAN mode refuses it until it is listed, then accepts it;
     - other names stay refused.
-  - Ruff clean. A live check from the remote screen follows the restart.
+  - Ruff clean.
+  - After a LAN-mode restart, test requests addressed to the public IP and the LAN IP got 200; an
+    unlisted name got 400.
+  - Live: the user connected from the simulator screen through the port forward (2026-10-12).
 
 ## 2026-10-11 — Simulator hand-off to TraceCapture; live flight estimates (D61)
 
