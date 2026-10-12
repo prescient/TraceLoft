@@ -84,7 +84,11 @@ class GolfService:
         self.input_context = dict(
             practice_session_id=self.practice.data['id'] if active else None,
             user_id=self.store.session_owner(self.practice.data['id']) if active else None,
-            required_distance=self.practice.data.get('range_metric') if active else None,
+            # Range-family drills score on OpenGolfCoach distances (D63), so only drills scored on
+            # reported distances (Distance ladder) need the source to read a carry/total column.
+            required_distance=self.practice.data.get('range_metric')
+            if active and self.practice.data.get('session_kind') != 'driving_range'
+            else None,
             equipment_selection=copy.deepcopy(self.practice.data.get('equipment_selection'))
             if active
             else None,

@@ -102,7 +102,7 @@ class RangeTests(unittest.TestCase):
             receipt_id=f'range-test-{seq}',
             result='validated',
             practice_session_id=self.sid,
-            vals=copy.deepcopy(VALUES),
+            vals=extra.pop('vals', None) or copy.deepcopy(VALUES),
             **extra,
         )
         self.service.ingest(e)
@@ -141,6 +141,57 @@ class RangeTests(unittest.TestCase):
         s = self.service.practice.data['shots'][0]
         self.assertEqual(s['flight']['status'], 'unavailable')
         self.assertEqual(s['vals']['carry'], 170)
+
+    def test_range_always_scores_on_opengolfcoach_distances(self):
+        """D63: one distance definition for every source; measurements stay unchanged."""
+        self.launch(range_target=150, range_depth=200)
+        no_distances = {
+            k: v for k, v in VALUES.items() if k not in ('carry', 'total', 'offline', 'peak_height')
+        }
+        self.shot(vals=no_distances)  # iPad club table / Premier memory: no distances reported
+        self.shot(2)  # a source that does report carry 170 is still scored on the model
+        first, second = self.service.practice.data['shots']
+        modeled = first['flight']['metrics']['carry_yd']
+        for s in (first, second):
+            self.assertEqual(s['distance_basis'], 'opengolfcoach')
+            self.assertAlmostEqual(s['range_vals']['carry'], modeled)
+            self.assertAlmostEqual(s['distance_yd'], modeled)
+            self.assertTrue(s['scored'] and s['success'])
+        self.assertNotIn('carry', first['vals'])  # nothing filled into the measurements
+        self.assertEqual(second['vals']['carry'], 170)
+        summary = self.service.practice.summary()
+        self.assertAlmostEqual(summary['carry']['mean'], modeled)
+        self.assertEqual(summary['distance_basis'], ['opengolfcoach'])
+        saved = self.service.load_session(self.sid).data['shots'][0]  # survives a reload
+        self.assertEqual(saved['range_vals'], first['range_vals'])
+
+    def test_back_and_side_spin_alone_are_enough_for_the_model(self):
+        both = predict(VALUES)
+        back = VALUES['total_spin'] * math.cos(math.radians(VALUES['spin_axis']))
+        side = VALUES['total_spin'] * math.sin(math.radians(VALUES['spin_axis']))
+        pair_only = {k: v for k, v in VALUES.items() if k not in ('total_spin', 'spin_axis')}
+        derived = predict(dict(pair_only, back_spin=back, side_spin=side))
+        self.assertEqual(derived['status'], 'ready')
+        self.assertAlmostEqual(
+            derived['metrics']['carry_yd'], both['metrics']['carry_yd'], places=6
+        )
+
+    def test_reported_distances_are_the_labeled_fallback_without_the_model(self):
+        self.launch(range_target=170, range_depth=10)
+        with patch('opengolfcoach.calculate_derived_values', side_effect=RuntimeError('offline')):
+            self.shot()
+        s = self.service.practice.data['shots'][0]
+        self.assertEqual(
+            (s['distance_basis'], s['range_vals']['carry'], s['success']), ('reported', 170, True)
+        )
+        legacy = dict(vals=dict(carry=150))  # recorded before D63: no range_vals
+        from driving_range import range_value
+
+        self.assertEqual(range_value(legacy, 'carry'), 150)
+
+    def test_range_family_does_not_require_a_reported_distance_column(self):
+        self.launch()
+        self.assertIsNone(self.service.input_context['required_distance'])
 
     def test_bulk_retag_preserves_measurements_original_and_prediction(self):
         self.launch()

@@ -103,7 +103,7 @@ export function point(s, metric, source) {
 export function summarize(shots, metric = 'carry') {
   const values = shots
     .filter(included)
-    .map(s => s.vals[metric])
+    .map(s => rangeValue(s, metric))
     .filter(valid);
   const mean = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
   return {
@@ -122,11 +122,17 @@ export const CLUB_METRICS = [
 // Early demo generator used 'descent'; real captures always use descent_ang.
 export const sourceValue = (shot, metric) =>
   shot?.vals?.[metric] ?? (shot?.simulated && metric === 'descent_ang' ? shot.vals?.descent : undefined);
+// Range distances (D63): shots recorded since 2026-10-12 carry range_vals, OpenGolfCoach estimates
+// (reported only as a labeled fallback when the model is unavailable). Older shots keep reported values.
+const RANGE_FIELDS = ['carry', 'total', 'offline'];
+export const rangeValue = (shot, metric) =>
+  RANGE_FIELDS.includes(metric) && shot?.range_vals ? shot.range_vals[metric] : sourceValue(shot, metric);
+export const estimated = shot => shot?.distance_basis === 'opengolfcoach';
 export function robustSummary(shots, metric, { absolute = false } = {}) {
   const values = shots
     .filter(included)
     .map(s => {
-      const value = sourceValue(s, metric);
+      const value = rangeValue(s, metric);
       return valid(value) ? (absolute ? Math.abs(value) : value) : null;
     })
     .filter(valid)
@@ -189,7 +195,11 @@ export function rangeCsv(shots) {
     'modeled_apex_ft',
     'modeled_descent_deg',
     'modeled_hang_time_s',
-    'swing_label'
+    'swing_label',
+    'range_distance_basis',
+    'range_carry_yd',
+    'range_total_yd',
+    'range_offline_yd'
   ];
   const safe = v => {
     let s = v == null ? '' : String(v);
@@ -229,7 +239,11 @@ export function rangeCsv(shots) {
       m.apex_ft,
       m.descent_deg,
       m.hang_time_s,
-      s.swing_label
+      s.swing_label,
+      s.distance_basis ?? 'reported',
+      rangeValue(s, 'carry'),
+      rangeValue(s, 'total'),
+      rangeValue(s, 'offline')
     ];
   });
   return '\uFEFF' + [headings, ...rows].map(r => r.map(safe).join(',')).join('\r\n');

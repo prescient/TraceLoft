@@ -1,5 +1,20 @@
 # TraceLoft architecture decisions
 
+## D63 — Range distances always from OpenGolfCoach (2026-10-12)
+
+The user's choice: the driving range always calculates carry, total and offline with OpenGolfCoach
+instead of expecting Foresight's software to report them. The iPad club table and Premier memory
+report none, so range shots were recorded unscored.
+- New range shots store `range_vals` and `distance_basis: opengolfcoach`. The distance window,
+  statistics, club snapshot and CSV use them, labeled as estimates. Bag mapping and Wedge matrix share
+  the range code and follow suit.
+- Source-reported distances are the labeled fallback (`reported`) only when the model cannot run.
+- Measurements in `vals` and reported columns are never filled or changed.
+- Shots recorded earlier keep their reported basis and pinned outcomes.
+- Range-family drills no longer ask the source for a readable carry/total column (`required_distance`).
+- The model derives total spin and axis from back/side spin when only that pair is reported.
+- Distance ladder and Play still use reported distances. The Play replay stays source-anchored (D54).
+
 ## D62 — Owner-allowed addresses in LAN mode (2026-10-12)
 
 The user wants TraceLoft on a simulator screen reached through the home public IP and a Firewalla

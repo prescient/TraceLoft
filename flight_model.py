@@ -21,7 +21,24 @@ def finite(value):
     return isinstance(value, (float, int)) and not isinstance(value, bool) and math.isfinite(value)
 
 
+def with_spin_pair(vals):
+    """Fill total spin and spin axis from back/side spin when only that pair was reported (the
+    model takes total/axis). Reported values are never replaced."""
+    back, side = vals.get('back_spin'), vals.get('side_spin')
+    if (
+        (vals.get('total_spin') is None or vals.get('spin_axis') is None)
+        and finite(back)
+        and finite(side)
+    ):
+        derived = dict(
+            total_spin=math.hypot(back, side), spin_axis=math.degrees(math.atan2(side, back))
+        )
+        return {**derived, **{k: v for k, v in vals.items() if v is not None}}
+    return vals
+
+
 def predict(vals, handedness='right_handed'):
+    vals = with_spin_pair(vals)
     result = dict(model=MODEL, status='unavailable', assumptions=ASSUMPTIONS.copy())
     fields = {
         'ball_speed': ('ball_speed_meters_per_second', 0.44704, 1, 220),

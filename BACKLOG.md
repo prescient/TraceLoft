@@ -7,10 +7,11 @@
   labeled OpenGolfCoach carry/total/offline estimates in Relay's latest shot when no carry is
   reported (D61).
 - Pending, after a live session proves the TraceCapture simulator path: retire the relay's
-  forwarding code (keep it while other Open Connect senders may rely on it), and decide whether
-  Range, Distance Ladder, Collection and Play may score on modeled distances for sources that report
-  none. Today they score on reported carry/total only, so memory-source swings are recorded unscored
-  there (Range still shows its OpenGolfCoach flight).
+  forwarding code (keep it while other Open Connect senders may rely on it).
+- Done 2026-10-12 (D63): Driving range, Bag mapping and Wedge matrix always score and summarize on
+  OpenGolfCoach carry/total/offline.
+- Open: should Distance Ladder and Play also use modeled distances? They still need reported
+  carry/total, so club-table and memory-source swings are unscored there.
 
 ## Architecture/performance improvements — requested 2026-10-10
 

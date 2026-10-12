@@ -19,10 +19,19 @@ not implemented; raw evidence remains in SQLite. Shot and session exports identi
 
 ## At-a-glance feedback
 
-- Large tiles show reported carry, total, signed offline, ball speed, total spin (rpm), vertical
-  launch angle and descent angle (degrees). Inspecting an older shot updates all seven readings;
-  Back to latest resumes following new shots. Missing values stay unavailable, including descent
-  when only a modeled value exists. A distance-window result compares carry with the saved target.
+- **Range distances (D63, from 2026-10-12):**
+  - Carry, total and offline are always OpenGolfCoach estimates. Each shot stores `range_vals`
+    with `distance_basis: opengolfcoach`, so every source is scored and summarized the same way.
+    The iPad club table and Premier memory report no distances.
+  - Source-reported distances are used, labeled `reported`, only when the model cannot run.
+  - Measurements in `vals` are never changed.
+  - Shots recorded before D63 keep their reported distances and pinned results.
+  - Tiles, the shot table, statistics, club snapshot and CSV mark modeled distances "est.".
+- Large tiles show carry, total and signed offline (range distances above), plus ball speed, total
+  spin (rpm), vertical launch angle and descent angle (degrees). Inspecting an older shot updates
+  all seven readings; Back to latest resumes following new shots. Missing values stay unavailable,
+  including descent when only a modeled value exists. A distance-window result compares the range
+  carry with the saved target.
 - The primary layout is 13-inch / 12.9-inch iPad Pro landscape: all seven readings share one row
   at widths of at least 1200 CSS px. Smaller tablets use four columns, phones two. Charts remain
   below the bar; wide workspace tables scroll inside their containers. Browser viewport QA does
@@ -34,7 +43,8 @@ not implemented; raw evidence remains in SQLite. Shot and session exports identi
   reported distance / offline** compares reported values; offline's endpoint definition is still
   unverified, so this is not labeled a verified landing map.
 - The target rectangle is the current session target. Change target affects future shots only.
-  Width is a visual guide; success uses reported carry inside half the full depth on either side.
+  Width is a visual guide; success uses the range carry (OpenGolfCoach, D63) inside half the full
+  depth on either side.
   Earlier targets remain in shot details/exports, even when the current rectangle changes.
 - Dots use distinct bag/club colors within a session, assigned from original recorded club order.
   The legend shows only bag/club names and color swatches; untagged shots are gray. Filtering and Carry/Total

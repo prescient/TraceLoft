@@ -1,5 +1,30 @@
 # TraceLoft work log
 
+## 2026-10-12 — Range distances always from OpenGolfCoach (D63)
+
+- `driving_range.range_distances()`: each new range shot stores `range_vals` (carry, total, and
+  offline at the total endpoint) and `distance_basis`. It is `opengolfcoach` whenever the model runs,
+  and `reported` only as the labeled fallback. Scoring, the distance window and `summary()` use it.
+  `range_value()` keeps older shots on their reported values.
+- `flight_model.with_spin_pair()`: total spin and axis are derived from back/side spin when only that
+  pair is reported, for the model only.
+- `publish_context`: range-family drills no longer require a reported carry/total column from the
+  source.
+- Page: `rangeValue()` and `estimated()` in `range-data.js` drive tiles, the shot table, sorting,
+  statistics, club snapshot and CSV (new `range_*` columns). Modeled distances are labeled "est.",
+  and the setup hint is updated.
+- **Verification:**
+  - `python verify.py`: 227 Python and 77 JavaScript tests, lint clean.
+  - New tests:
+    - a no-distance shot and a reported-carry shot both scored on the model;
+    - measurements untouched; reload round-trip;
+    - the reported fallback; legacy shots; no required distance;
+    - the back/side-only model; the JavaScript helper and CSV.
+  - Isolated instance (temp database, ports 9911/8791): two shots over Open Connect were scored on
+    OpenGolfCoach (144.1 yd in the window; 177.6 yd outside it, despite a reported 170). The page at
+    1376 × 1032 shows the labeled estimate tiles, the statistics basis and the club snapshot.
+  - Not verified: live shots from the club table into the user's real range session.
+
 ## 2026-10-12 — Owner-allowed addresses in LAN mode (D62)
 
 - `web_app.extra_hosts()` reads `allowed_hosts.txt` (gitignored; one host per line, # comments) at

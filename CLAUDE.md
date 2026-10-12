@@ -92,7 +92,8 @@ verified upgrade. Helper tests do not verify the interface in a real browser.
   Recalculation appends versioned derived results, and analysis uses them only after explicit
   publication. Played and drill outcomes stay pinned and are never rescored.
 - **Missing is not zero.** Unavailable measurements stay null throughout storage, the API, CSV and the UI.
-  Reported carry/total are source metrics, so never fill them from a model.
+  Reported carry/total are source metrics, so never fill them from a model. The range family scores
+  on separate, labeled OpenGolfCoach `range_vals` (D63); that never writes into `vals`.
 - **Mutations are atomic.** Wrap every service mutation in `with self._changing(session):`
   (`web_service.py`). It runs one `store.transaction()` and restores the session's previous
   in-memory state on any exception. Call `self._require_saved(message)` first so queued shots

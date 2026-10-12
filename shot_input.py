@@ -123,15 +123,15 @@ def validate(envelope):
 def live_estimate(event):
     """The live-view copy of a stored event, with an OpenGolfCoach flight estimate when the source
     reported no carry (e.g. Premier memory capture). Display only: the stored measurements never
-    change, and drills keep scoring on reported distances. Shots without measured spin and launch
-    (putts) get no estimate; a putt is not a flight."""
-    vals = event['vals']
+    change (range-family drills compute their own OpenGolfCoach distances, D63). Shots without
+    measured spin and launch (putts) get no estimate; a putt is not a flight."""
+    from flight_model import MODEL, predict, with_spin_pair
+
+    vals = with_spin_pair(event['vals'])
     if vals.get('carry') is not None or not (vals.get('total_spin') or 0) > 0:
         return event
     if not (vals.get('launch_ang') or 0) > 0:
         return event
-    from flight_model import MODEL, predict
-
     flight = predict(vals)
     if flight.get('status') != 'ready':
         return event

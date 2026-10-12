@@ -29,8 +29,41 @@ def effective_equipment(shot):
     }
 
 
+RANGE_FIELDS = ('carry', 'total', 'offline')
+
+
+def modeled_distances(flight):
+    """OpenGolfCoach carry, total and offline (lateral at the total endpoint, right positive), or {}."""
+    if not flight or flight.get('status') != 'ready':
+        return {}
+    m, end = flight.get('metrics', {}), flight.get('total_point_yd') or {}
+    return dict(carry=m.get('carry_yd'), total=m.get('total_yd'), offline=end.get('right'))
+
+
+def range_distances(vals, flight):
+    """(basis, {carry, total, offline}) a range shot is scored and summarized on (D63).
+
+    Always OpenGolfCoach when the model can run, so every shot uses one definition whatever the
+    source reports (the iPad club table and Premier memory report no distances). Source-reported
+    distances are the labeled fallback only when the model is unavailable. Measurements in `vals`
+    are never changed."""
+    modeled = modeled_distances(flight)
+    if numeric(modeled.get('carry'), 0, 450):
+        return 'opengolfcoach', modeled
+    if numeric(vals.get('carry'), 0, 450):
+        return 'reported', {k: vals.get(k) for k in RANGE_FIELDS}
+    return None, dict.fromkeys(RANGE_FIELDS)
+
+
+def range_value(shot, field):
+    """A shot's range distance. Sessions recorded before D63 have no range_vals and keep reported."""
+    if field in RANGE_FIELDS and 'range_vals' in shot:
+        return shot['range_vals'].get(field)
+    return shot['vals'].get(field)
+
+
 def stats(shots, field):
-    values = [s['vals'][field] for s in shots if numeric(s['vals'].get(field), -10000, 20000)]
+    values = [range_value(s, field) for s in shots if numeric(range_value(s, field), -10000, 20000)]
     return dict(
         count=len(values),
         mean=statistics.mean(values) if values else None,
@@ -103,7 +136,13 @@ class DrivingRangeSession(PuttingSession):
             k: self.data[k] for k in ('range_target', 'range_width', 'range_depth')
         }
         target = context['range_target']
-        carry = vals.get('carry')
+        flight = (
+            copy.deepcopy(event.get('_demo_flight'))
+            if event.get('_demo_flight')
+            else predict(vals, self.data['handedness'])
+        )
+        basis, distances = range_distances(vals, flight)
+        carry = distances['carry']
         scored = target > 0 and numeric(carry, 0, 450)
         shot = dict(
             key=key,
@@ -115,6 +154,8 @@ class DrivingRangeSession(PuttingSession):
             target_width_yd=context['range_width'],
             target_depth_yd=context['range_depth'],
             distance_metric='carry',
+            distance_basis=basis,
+            range_vals=distances,
             distance_yd=carry if numeric(carry, 0, 450) else None,
             distance_error_yd=carry - target if scored else None,
             scored=scored,
@@ -124,11 +165,7 @@ class DrivingRangeSession(PuttingSession):
             simulated=self.data['demo'],
             **equipment,
         )
-        shot['flight'] = (
-            copy.deepcopy(event.get('_demo_flight'))
-            if event.get('_demo_flight')
-            else predict(vals, self.data['handedness'])
-        )
+        shot['flight'] = flight
         self.data['shots'].append(shot)
         self.save(append=True)
         return True
@@ -159,6 +196,7 @@ class DrivingRangeSession(PuttingSession):
             total=stats(included, 'total'),
             offline=stats(included, 'offline'),
             all_recorded_carry=stats(all_shots, 'carry'),
+            distance_basis=sorted({s.get('distance_basis') or 'reported' for s in included}),
             shapes=dict(Counter(s.get('flight', {}).get('shape', 'Unavailable') for s in included)),
             clubs=[
                 dict(

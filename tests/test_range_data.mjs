@@ -284,3 +284,23 @@ test('default scatter retains excluded context while cleanup table and analysis 
     ['a', 'b', 'c']
   );
 });
+
+test('range distances use OpenGolfCoach range_vals when present, reported values for older shots (D63)', async () => {
+  const { rangeValue, estimated } = await import('../web/range-data.js');
+  const modeled = {
+    key: 'm',
+    vals: { carry: null, launch_ang: 18 },
+    range_vals: { carry: 171.2, total: 180.4, offline: -6.1 },
+    distance_basis: 'opengolfcoach'
+  };
+  const legacy = { key: 'l', vals: { carry: 150, total: 160, offline: 3 } };
+  assert.equal(rangeValue(modeled, 'carry'), 171.2);
+  assert.equal(rangeValue(modeled, 'launch_ang'), 18); // non-distance metrics stay source values
+  assert.equal(rangeValue(legacy, 'carry'), 150);
+  assert.equal(estimated(modeled), true);
+  assert.equal(estimated(legacy), false);
+  assert.equal(summarize([modeled, legacy], 'carry').mean, (171.2 + 150) / 2);
+  const csv = rangeCsv([modeled]).split('\r\n');
+  assert.match(csv[0], /range_distance_basis","range_carry_yd/);
+  assert.match(csv[1], /"opengolfcoach","171.2","180.4","-6.1"$/);
+});
