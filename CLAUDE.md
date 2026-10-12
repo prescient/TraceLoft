@@ -208,3 +208,12 @@ Follow "Finishing work" in AGENTS.md: verify journeys and layouts, run the suite
 NAVIGATION/WORK_LOG/BACKLOG and the affected docs, then make one focused commit per feature and
 report its hash. Separate implemented behavior from proposed or unverified behavior in every
 document.
+
+After each commit, push it: `git push origin main` (origin is
+https://github.com/prescient/TraceLoft). Run `git fetch origin` first. If `origin/main` has
+moved, bring those commits in before pushing. Never force-push. Report the push along with the
+commit hash. If a push fails (authentication or network), say so instead of retrying silently.
+On this machine git is not on PATH; use GitHub Desktop's bundled git
+(`%LOCALAPPDATA%\GitHubDesktop\app-*\resources\app\git\cmd`). In PowerShell 5.1, git's
+progress output on stderr gives a nonzero exit code even when the push succeeded, so confirm
+with `git status -sb`.
