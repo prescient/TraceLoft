@@ -2590,6 +2590,31 @@ tbody tr.excluded {
     border-right: 0;
   }
 }
+/* Club delivery row under the latest-shot readings: four tiles, two per row on phones. */
+.range-club-heading {
+  margin: 20px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.range-club-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (min-width: 1200px) {
+  .range-club-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .range-club-metrics > div:nth-child(4n) {
+    border-right: 0;
+  }
+}
+@media (max-width: 600px) {
+  .range-club-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 
 .range-dispersion-circle {
   pointer-events: none;

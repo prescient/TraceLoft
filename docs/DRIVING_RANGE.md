@@ -27,6 +27,13 @@ not implemented; raw evidence remains in SQLite. Shot and session exports identi
   - Measurements in `vals` are never changed.
   - Shots recorded before D63 keep their reported distances and pinned results.
   - Tiles, the shot table, statistics, club snapshot and CSV mark modeled distances "est.".
+- **Club delivery** (2026-10-12) appears under the latest-shot tiles in sessions whose source
+  reports club data (iPad club table, Premier memory): club speed, smash factor, angle of attack and
+  club path.
+  - Attack shows "up/down"; path shows "in-to-out/out-to-in" for the session's handedness (values
+    are target-relative, right positive).
+  - A smash factor the source didn't report is calculated from ball/club speed and labeled "calc.".
+  - Four tiles per row, two on phones.
 - Large tiles show carry, total and signed offline (range distances above), plus ball speed, total
   spin (rpm), vertical launch angle and descent angle (degrees). Inspecting an older shot updates
   all seven readings; Back to latest resumes following new shots. Missing values stay unavailable,

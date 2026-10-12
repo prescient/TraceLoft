@@ -1,5 +1,20 @@
 # TraceLoft work log
 
+## 2026-10-12 — Club delivery on the range's latest shot
+
+- New "Club delivery" row under the latest-shot readings: club speed, smash factor, angle of attack
+  (up/down) and club path (in-to-out/out-to-in by session handedness). It is shown only when the
+  session has club data.
+  - A source smash factor is used when reported; otherwise ball/club speed, labeled "calc.".
+- `range-data.js`: `clubReadings()` and `hasClubData()`; `studio.css`: `.range-club-metrics` (4 columns,
+  2 at ≤600 px).
+- **Verification:**
+  - JavaScript tests: direction words, a left-handed path, the calculated smash label, unavailable
+    values, and session detection.
+  - Isolated instance with a club-data shot: the row read "86.4 mph · 1.39 · 3.2° down ·
+    2.3° in-to-out" at 1376 × 1032, and at 390 px it shows two per row with no horizontal overflow.
+  - Not verified: a real iPad Safari check.
+
 ## 2026-10-12 — Range distances always from OpenGolfCoach (D63)
 
 - `driving_range.range_distances()`: each new range shot stores `range_vals` (carry, total, and

@@ -28,6 +28,8 @@ import {
   clubSummaries,
   rangeValue,
   estimated,
+  clubReadings,
+  hasClubData,
   scatterCohort,
   dispersionCircles
 } from './range-data.js';
@@ -349,6 +351,16 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
     ([label, key, unit, precision = 1]) =>
       html`<div><span>${label}${['carry', 'total', 'offline'].includes(key) ? est(shown) : ''}</span><strong>${n(rangeValue(shown, key), precision)}<small>${unit}</small></strong></div>`
   );
+  // Club delivery row: only in sessions whose source reports club data (iPad club table, Premier memory).
+  const clubTiles = hasClubData(shots)
+    ? html`<h3 class="range-club-heading">Club delivery</h3><div class="range-metrics range-club-metrics">${clubReadings(
+        shown,
+        data.handedness
+      ).map(
+        r =>
+          html`<div><span>${r.label}</span><strong>${n(r.value, r.precision)}<small>${r.unit}</small></strong></div>`
+      )}</div>`
+    : '';
   const flightTiles = [
     ['Carry', fm.carry_yd, 'yd'],
     ['Total', fm.total_yd, 'yd'],
@@ -387,7 +399,7 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
   ${data.demo ? html`<section class="range-demo" role="status"><div><strong>SIMULATED DATA · Demo range</strong><span>Generated shots only. Live capture does not enter this session.</span></div>${active ? html`<div>${local('＋ Add simulated shot', 'simulate', 'primary')}${local('Generate sample set (10)', 'sample', '')}</div>` : ''}</section>` : ''}
   ${active && !data.demo ? html`<div id="recording-feedback">${recordingWarnings(state.capture)}</div>` : ''}${!active ? sessionNotice(data, isReview) : ''}${state.practice_error && !isReview ? html`<div class="session-error" role="alert">${state.practice_error}</div>` : ''}
   ${active ? html`<section class="card equipment-card" aria-label="Tag upcoming shots">${equipmentControls(state.equipment, data.equipment_selection)}</section>` : ''}
-  <section class="card range-hero"><div class="range-hero-heading"><div><span class="eyebrow">${shown === last ? 'LATEST SHOT' : `SHOT ${shown?.ordinal ?? '—'}`}</span><p>${eq.bag_name ?? ''}${eq.club_label ? ' / ' + eq.club_label : ' · Untagged'} ${shown?.corrected_equipment ? '· Corrected tag' : ''}</p></div><div>${shown && shown !== last ? local('Back to latest', 'latest') : ''}<span class="range-shape">${flight?.shape ?? (shown ? 'Model unavailable' : 'Waiting for a shot')}</span><p class="form-hint">OpenGolfCoach classification · estimated</p></div></div><div class="range-metrics">${metricTiles}</div><p class="form-hint">${data.demo_reference ? 'Synthetic Tour-reference samples; OpenGolfCoach estimates are separate' : data.demo ? 'Synthetic values generated from the flight model' : estimated(shown) ? 'Carry, total and offline: OpenGolfCoach estimates · other values source-reported' : 'source-reported values'} · ${shown ? `Shot ${shown.ordinal} · ${shown.removed ? 'Removed' : shown.excluded ? 'Excluded' : 'Saved'}${shown.target_distance_yd ? ` · Carry target ${n(shown.target_distance_yd)} yd${valid(rangeValue(shown, 'carry')) ? ` · ${shown.success ? 'In distance window' : 'Outside distance window'} · ${n(Math.abs(rangeValue(shown, 'carry') - shown.target_distance_yd))} yd ${rangeValue(shown, 'carry') < shown.target_distance_yd ? 'short' : 'long'}${est(shown)}` : ''}` : ''}` : 'Waiting for your first shot. Missing values stay unavailable.'}</p></section>
+  <section class="card range-hero"><div class="range-hero-heading"><div><span class="eyebrow">${shown === last ? 'LATEST SHOT' : `SHOT ${shown?.ordinal ?? '—'}`}</span><p>${eq.bag_name ?? ''}${eq.club_label ? ' / ' + eq.club_label : ' · Untagged'} ${shown?.corrected_equipment ? '· Corrected tag' : ''}</p></div><div>${shown && shown !== last ? local('Back to latest', 'latest') : ''}<span class="range-shape">${flight?.shape ?? (shown ? 'Model unavailable' : 'Waiting for a shot')}</span><p class="form-hint">OpenGolfCoach classification · estimated</p></div></div><div class="range-metrics">${metricTiles}</div>${clubTiles}<p class="form-hint">${data.demo_reference ? 'Synthetic Tour-reference samples; OpenGolfCoach estimates are separate' : data.demo ? 'Synthetic values generated from the flight model' : estimated(shown) ? 'Carry, total and offline: OpenGolfCoach estimates · other values source-reported' : 'source-reported values'} · ${shown ? `Shot ${shown.ordinal} · ${shown.removed ? 'Removed' : shown.excluded ? 'Excluded' : 'Saved'}${shown.target_distance_yd ? ` · Carry target ${n(shown.target_distance_yd)} yd${valid(rangeValue(shown, 'carry')) ? ` · ${shown.success ? 'In distance window' : 'Outside distance window'} · ${n(Math.abs(rangeValue(shown, 'carry') - shown.target_distance_yd))} yd ${rangeValue(shown, 'carry') < shown.target_distance_yd ? 'short' : 'long'}${est(shown)}` : ''}` : ''}` : 'Waiting for your first shot. Missing values stay unavailable.'}</p></section>
   <section class="range-analysis-controls"><div class="range-segment" aria-label="Scatter distance">${['carry', 'total'].map(m => html`<button class="btn ${v.metric === m ? 'primary' : 'quiet'}" data-distance="${m}" aria-pressed="${v.metric === m}">${m === 'carry' ? 'Carry' : 'Total'}</button>`)}</div>${select(
     'source',
     'Plot source',

@@ -304,3 +304,21 @@ test('range distances use OpenGolfCoach range_vals when present, reported values
   assert.match(csv[0], /range_distance_basis","range_carry_yd/);
   assert.match(csv[1], /"opengolfcoach","171.2","180.4","-6.1"$/);
 });
+
+test('club delivery readings: direction words, handedness and labeled calculated smash', async () => {
+  const { clubReadings, hasClubData } = await import('../web/range-data.js');
+  const iPad = { vals: { ball_speed: 15, club_speed: 13, smash_factor: 1.15, attack_angle: -13.9, club_path: 2.3 } };
+  const [speed, smash, attack, path] = clubReadings(iPad);
+  assert.deepEqual([speed.value, smash.value, smash.label], [13, 1.15, 'Smash factor']);
+  assert.deepEqual([attack.value, attack.unit], [13.9, '° down']);
+  assert.deepEqual([path.value, path.unit], [2.3, '° in-to-out']);
+  assert.equal(clubReadings(iPad, 'left_handed')[3].unit, '° out-to-in'); // right of target for a lefty
+  const memory = { vals: { ball_speed: 4.3, club_speed: 4.6, attack_angle: 1.7, club_path: 0 } };
+  const calc = clubReadings(memory)[1];
+  assert.equal(calc.label, 'Smash factor · calc.');
+  assert.ok(Math.abs(calc.value - 4.3 / 4.6) < 1e-9);
+  assert.equal(clubReadings(memory)[3].unit, '°'); // 0.0: no direction
+  assert.equal(clubReadings({ vals: {} })[0].value, undefined); // unavailable, never zero
+  assert.equal(hasClubData([{ vals: { ball_speed: 100 } }]), false);
+  assert.equal(hasClubData([{ vals: { ball_speed: 100 } }, memory]), true);
+});

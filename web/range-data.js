@@ -128,6 +128,41 @@ const RANGE_FIELDS = ['carry', 'total', 'offline'];
 export const rangeValue = (shot, metric) =>
   RANGE_FIELDS.includes(metric) && shot?.range_vals ? shot.range_vals[metric] : sourceValue(shot, metric);
 export const estimated = shot => shot?.distance_basis === 'opengolfcoach';
+// Club delivery for the latest-shot panel. Values are source-reported, except a smash factor the source
+// did not report, which is calculated from ball and club speed and labeled. Attack angle is
+// upward-positive; club path is target-relative (right positive), so in-to-out depends on handedness.
+export const CLUB_READINGS = ['club_speed', 'smash_factor', 'attack_angle', 'club_path'];
+export const hasClubData = shots => shots.some(s => CLUB_READINGS.some(k => valid(s.vals?.[k])));
+export function clubReadings(shot, handedness = 'right_handed') {
+  const v = shot?.vals ?? {};
+  const word = (value, positive, negative) => (!valid(value) || value === 0 ? '' : value > 0 ? positive : negative);
+  const right = handedness !== 'left_handed';
+  const calculated =
+    !valid(v.smash_factor) && valid(v.ball_speed) && valid(v.club_speed) && v.club_speed > 0
+      ? v.ball_speed / v.club_speed
+      : null;
+  return [
+    { label: 'Club speed', value: v.club_speed, unit: 'mph', precision: 1 },
+    {
+      label: calculated == null ? 'Smash factor' : 'Smash factor · calc.',
+      value: valid(v.smash_factor) ? v.smash_factor : calculated,
+      unit: '',
+      precision: 2
+    },
+    {
+      label: 'Angle of attack',
+      value: valid(v.attack_angle) ? Math.abs(v.attack_angle) : null,
+      unit: `° ${word(v.attack_angle, 'up', 'down')}`.trim(),
+      precision: 1
+    },
+    {
+      label: 'Club path',
+      value: valid(v.club_path) ? Math.abs(v.club_path) : null,
+      unit: `° ${word(v.club_path, right ? 'in-to-out' : 'out-to-in', right ? 'out-to-in' : 'in-to-out')}`.trim(),
+      precision: 1
+    }
+  ];
+}
 export function robustSummary(shots, metric, { absolute = false } = {}) {
   const values = shots
     .filter(included)
