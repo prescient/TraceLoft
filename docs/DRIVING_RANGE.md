@@ -33,6 +33,9 @@ not implemented; raw evidence remains in SQLite. Shot and session exports identi
   - Attack shows "up/down"; path shows "in-to-out/out-to-in" for the session's handedness (values
     are target-relative, right positive).
   - A smash factor the source didn't report is calculated from ball/club speed and labeled "calc.".
+  - A second row shows estimated face angle and face to path (open/closed for the handedness),
+    dynamic loft and spin loft (D64, `club_model.py`). The CSV adds `est_*` columns, including the
+    spin-axis face-to-path cross-check.
   - Four tiles per row, two on phones.
 - Large tiles show carry, total and signed offline (range distances above), plus ball speed, total
   spin (rpm), vertical launch angle and descent angle (degrees). Inspecting an older shot updates

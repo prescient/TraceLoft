@@ -29,6 +29,7 @@ import {
   rangeValue,
   estimated,
   clubReadings,
+  clubEstimates,
   hasClubData,
   scatterCohort,
   dispersionCircles
@@ -353,10 +354,10 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
   );
   // Club delivery row: only in sessions whose source reports club data (iPad club table, Premier memory).
   const clubTiles = hasClubData(shots)
-    ? html`<h3 class="range-club-heading">Club delivery</h3><div class="range-metrics range-club-metrics">${clubReadings(
-        shown,
-        data.handedness
-      ).map(
+    ? html`<h3 class="range-club-heading">Club delivery</h3><div class="range-metrics range-club-metrics">${[
+        ...clubReadings(shown, data.handedness),
+        ...clubEstimates(shown, data.handedness)
+      ].map(
         r =>
           html`<div><span>${r.label}</span><strong>${n(r.value, r.precision)}<small>${r.unit}</small></strong></div>`
       )}</div>`

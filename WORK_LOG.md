@@ -1,5 +1,18 @@
 # TraceLoft work log
 
+## 2026-10-12 — Estimated face angle, face to path, dynamic loft, spin loft (D64)
+
+- New `club_model.py` (D-plane estimates with weights per club type).
+  - Range shots store `club_estimates` at capture, recalculated when a retag or undo changes the
+    effective club.
+  - The Club delivery panel adds four labeled estimate tiles (open/closed by handedness).
+  - CSV `est_*` columns, including the spin-axis face-to-path cross-check.
+- **Verification:**
+  - `tests/test_club_model.py`: formulas, club types, missing inputs.
+  - JavaScript test for open/closed by handedness.
+  - Python 230, JavaScript 79, lint clean.
+  - Not yet seen with a live shot (the iPad's mirroring was disconnected).
+
 ## 2026-10-12 — Club delivery on the range's latest shot
 
 - New "Club delivery" row under the latest-shot readings: club speed, smash factor, angle of attack

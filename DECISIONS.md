@@ -1,5 +1,18 @@
 # TraceLoft architecture decisions
 
+## D64 — Estimated face angle, face to path, dynamic loft and spin loft (2026-10-12)
+
+The user asked for all four, computed from the LPi's measurements with D-plane relationships
+(`club_model.py`). They are estimates, stored in `club_estimates` and never written into measurements.
+- Start direction ≈ k × face + (1 − k) × path; launch angle ≈ a × loft + (1 − a) × attack.
+- k and a are typical per club type: driver 0.85/0.85, wood 0.80/0.82, hybrid 0.78/0.80, iron
+  0.75/0.78, wedge 0.65/0.75, putter 0.90/0.90.
+- Club type comes from the effective club tag (recalculated on retag); an untagged shot under 25 mph
+  ball speed counts as a putt, otherwise an iron.
+- Face to path is also estimated independently from the spin axis (spin loft × tan axis) as an
+  off-center-strike check.
+- The weights are not fitted to this player; the LPi measures no face to calibrate against.
+
 ## D63 — Range distances always from OpenGolfCoach (2026-10-12)
 
 The user's choice: the driving range always calculates carry, total and offline with OpenGolfCoach

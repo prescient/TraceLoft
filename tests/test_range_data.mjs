@@ -302,7 +302,7 @@ test('range distances use OpenGolfCoach range_vals when present, reported values
   assert.equal(summarize([modeled, legacy], 'carry').mean, (171.2 + 150) / 2);
   const csv = rangeCsv([modeled]).split('\r\n');
   assert.match(csv[0], /range_distance_basis","range_carry_yd/);
-  assert.match(csv[1], /"opengolfcoach","171.2","180.4","-6.1"$/);
+  assert.match(csv[1], /"opengolfcoach","171.2","180.4","-6.1"/);
 });
 
 test('club delivery readings: direction words, handedness and labeled calculated smash', async () => {
@@ -321,4 +321,14 @@ test('club delivery readings: direction words, handedness and labeled calculated
   assert.equal(clubReadings({ vals: {} })[0].value, undefined); // unavailable, never zero
   assert.equal(hasClubData([{ vals: { ball_speed: 100 } }]), false);
   assert.equal(hasClubData([{ vals: { ball_speed: 100 } }, memory]), true);
+});
+
+test('estimated club delivery reads open/closed by handedness (D64)', async () => {
+  const { clubEstimates } = await import('../web/range-data.js');
+  const shot = { club_estimates: { face_angle: 1.3, face_to_path: -2.7, dynamic_loft: 24.2, spin_loft: 28.2 } };
+  const [face, ftp, loft, spinLoft] = clubEstimates(shot);
+  assert.deepEqual([face.value, face.unit, ftp.value, ftp.unit], [1.3, '° open', 2.7, '° closed']);
+  assert.deepEqual([loft.value, spinLoft.value], [24.2, 28.2]);
+  assert.equal(clubEstimates(shot, 'left_handed')[0].unit, '° closed');
+  assert.equal(clubEstimates({})[0].value, null);
 });

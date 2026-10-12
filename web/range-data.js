@@ -133,6 +133,21 @@ export const estimated = shot => shot?.distance_basis === 'opengolfcoach';
 // upward-positive; club path is target-relative (right positive), so in-to-out depends on handedness.
 export const CLUB_READINGS = ['club_speed', 'smash_factor', 'attack_angle', 'club_path'];
 export const hasClubData = shots => shots.some(s => CLUB_READINGS.some(k => valid(s.vals?.[k])));
+// Estimated delivery (D64, club_model.py): face angle and face to path read open/closed for the
+// session's handedness (values are right-positive); lofts are plain degrees.
+export function clubEstimates(shot, handedness = 'right_handed') {
+  const e = shot?.club_estimates ?? {};
+  const right = handedness !== 'left_handed';
+  const openClosed = value =>
+    !valid(value) || value === 0 ? '°' : `° ${(value > 0) === right ? 'open' : 'closed'}`;
+  const signed = key => (valid(e[key]) ? Math.abs(e[key]) : null);
+  return [
+    { label: 'Face angle · est.', value: signed('face_angle'), unit: openClosed(e.face_angle), precision: 1 },
+    { label: 'Face to path · est.', value: signed('face_to_path'), unit: openClosed(e.face_to_path), precision: 1 },
+    { label: 'Dynamic loft · est.', value: e.dynamic_loft, unit: '°', precision: 1 },
+    { label: 'Spin loft · est.', value: e.spin_loft, unit: '°', precision: 1 }
+  ];
+}
 export function clubReadings(shot, handedness = 'right_handed') {
   const v = shot?.vals ?? {};
   const word = (value, positive, negative) => (!valid(value) || value === 0 ? '' : value > 0 ? positive : negative);
@@ -234,7 +249,13 @@ export function rangeCsv(shots) {
     'range_distance_basis',
     'range_carry_yd',
     'range_total_yd',
-    'range_offline_yd'
+    'range_offline_yd',
+    'est_club_type',
+    'est_face_angle_deg',
+    'est_face_to_path_deg',
+    'est_face_to_path_from_spin_deg',
+    'est_dynamic_loft_deg',
+    'est_spin_loft_deg'
   ];
   const safe = v => {
     let s = v == null ? '' : String(v);
@@ -278,7 +299,13 @@ export function rangeCsv(shots) {
       s.distance_basis ?? 'reported',
       rangeValue(s, 'carry'),
       rangeValue(s, 'total'),
-      rangeValue(s, 'offline')
+      rangeValue(s, 'offline'),
+      s.club_estimates?.club_type,
+      s.club_estimates?.face_angle,
+      s.club_estimates?.face_to_path,
+      s.club_estimates?.face_to_path_from_spin,
+      s.club_estimates?.dynamic_loft,
+      s.club_estimates?.spin_loft
     ];
   });
   return '\uFEFF' + [headings, ...rows].map(r => r.map(safe).join(',')).join('\r\n');

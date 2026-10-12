@@ -9,6 +9,7 @@ from pathlib import Path
 
 from putting import PuttingSession, timestamp
 from distance_ladder import numeric
+import club_model
 from flight_model import predict
 
 DRIVING_FIELDS = ('range_target', 'range_width', 'range_depth', 'handedness', 'demo')
@@ -166,6 +167,7 @@ class DrivingRangeSession(PuttingSession):
             **equipment,
         )
         shot['flight'] = flight
+        shot['club_estimates'] = club_model.estimate(vals, equipment)  # D64: face, loft (estimated)
         self.data['shots'].append(shot)
         self.save(append=True)
         return True
@@ -252,6 +254,8 @@ class DrivingRangeSession(PuttingSession):
                 if action == 'retag':
                     s['corrected_equipment'] = copy.deepcopy(equipment)
                 s['cleanup_reason'] = reason.strip()
+            if 'club_estimates' in s:  # the club type follows the effective tag (also after undo)
+                s['club_estimates'] = club_model.estimate(s['vals'], effective_equipment(s))
             items.append(
                 dict(
                     key=key, before=before, after={k: copy.deepcopy(s.get(k)) for k in EDIT_FIELDS}
