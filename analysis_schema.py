@@ -70,12 +70,14 @@ def metric_values(row, basis='source'):
             'distance_error_ft',
         ):
             values[key] = row[key]
-        # D64 estimates are not stored as calculation results: they are computed here from the
-        # stored source readings and the effective club tag, exactly as the range page does
-        # (club_model.estimate). They never enter the source basis.
-        estimates = club_model.estimate(values, dict(club_label=row.get('club_label')))
-        for key in CLUB_ESTIMATES:
-            values[key] = estimates[key]
+    # D64 estimates are not stored as calculation results: they are computed here from the stored
+    # source readings and the effective club tag, exactly as the range page does
+    # (club_model.estimate). Both bases carry them: no source reading exists for them to replace,
+    # and hidden under the default source basis they looked missing (2026-10-13). Labels say
+    # "Estimated".
+    estimates = club_model.estimate(values, dict(club_label=row.get('club_label')))
+    for key in CLUB_ESTIMATES:
+        values[key] = estimates[key]
     return values
 
 

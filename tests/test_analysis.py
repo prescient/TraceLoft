@@ -99,7 +99,7 @@ class AnalysisTests(unittest.TestCase):
 
 
 class ClubEstimateMetricTests(unittest.TestCase):
-    """D64 club estimates in Analyze: analytical basis only, from source readings and the club tag."""
+    """D64 club estimates in Analyze: both bases, from source readings and the club tag."""
 
     def row(self, club_label='7 iron', **source):
         values = dict(
@@ -127,9 +127,13 @@ class ClubEstimateMetricTests(unittest.TestCase):
             self.assertAlmostEqual(vals[key], expected[key])
         self.assertAlmostEqual(vals['face_angle'], (2.0 - 0.25 * 4.0) / 0.75)   # iron weights
 
-    def test_source_basis_and_missing_inputs_stay_unavailable(self):
-        self.assertNotIn('face_angle', metric_values(self.row(), 'source'))
-        vals = metric_values(self.row(club_path=None, attack_angle=None), 'flight')
+    def test_both_bases_carry_them_and_missing_inputs_stay_unavailable(self):
+        # Analyze opens on the source basis; the estimates have no source reading to replace.
+        self.assertEqual(
+            metric_values(self.row(), 'source')['face_angle'],
+            metric_values(self.row(), 'flight')['face_angle'],
+        )
+        vals = metric_values(self.row(club_path=None, attack_angle=None), 'source')
         self.assertIsNone(vals['face_angle'])
         self.assertIsNone(vals['dynamic_loft'])
         self.assertEqual(METRICS['face_angle'], ('Estimated face angle', '°'))

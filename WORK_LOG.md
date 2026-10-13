@@ -1,5 +1,15 @@
 # TraceLoft work log
 
+## 2026-10-13 — Club estimates under both Analyze bases
+
+- After the restart the golfer saw the four estimates in the picker but no values. Analyze opens on
+  "Source-reported metrics", where the estimates were unavailable by design: n=0 there, n=103 under
+  the analytical basis.
+- They have no source reading to replace, so `metric_values` now computes them for both bases.
+  Labels still say "Estimated". Frozen collections, which use source values, now also record them.
+- **Verification:** `verify.py` passed; the test now checks that both bases give the same value.
+  Checked on the live service after a restart (below).
+
 ## 2026-10-13 — Club estimates in Analyze
 
 - Analyze lacked the D64 club estimates: face angle, face to path, dynamic loft and spin loft. The
