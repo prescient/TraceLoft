@@ -542,9 +542,15 @@ class ShotInput:
                     if batch:
                         if added and overlap:
                             target.data['shots'][-1]['possible_duplicate'] = overlap
+                        # Delivery order is not guaranteed: finish once every index has arrived
+                        # (a shot the range rejects still counts as delivered).
+                        source = target.data.setdefault('import_source', {})
+                        received = sorted(set(source.get('received', [])) | {batch['index']})
+                        source['received'] = received
+                        if len(received) >= batch['count']:
+                            target.finish()
+                        else:
                             target.save()
-                        if batch['index'] >= batch['count']:
-                            target.finish()  # the last shot ends the import, even if it was rejected
             except Exception:
                 if target:
                     target.data = previous

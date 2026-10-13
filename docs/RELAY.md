@@ -55,7 +55,7 @@ Optional `TraceLoft` extension:
   - Such shots are stored like recovered receipts: never live, never forwarded, never added to the
     active drill.
   - They go to their own driving range session whose id is BatchId, tagged with the given bag/club;
-    the shot at Index == Count finishes it.
+    it finishes once every Index has arrived, in any order.
   - Shots matching a live capture are flagged `possible_duplicate`.
   - Context.equipment_catalog lists the bags and clubs a source can choose from.
 

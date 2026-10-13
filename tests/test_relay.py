@@ -262,7 +262,8 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         await self.service.input.accept_packet(live, 'live')  # a live capture of table row 2
         batch = 'b' * 32
         rows = [(110.0, 19.0, -1.0), (120.0, 18.0, 2.0), (130.0, 15.0, 0.5)]
-        for index, (speed, vla, hla) in enumerate(rows, 1):
+        order = [3, 1, 2]  # delivery order is not guaranteed: the last index arrives first
+        for index, (speed, vla, hla) in sorted(enumerate(rows, 1), key=lambda r: order.index(r[0])):
             p = shot(index)
             p['BallData'] = dict(Speed=speed, VLA=vla, HLA=hla, TotalSpin=5000, SpinAxis=8.0)
             p['TraceLoft'] = dict(
@@ -284,11 +285,15 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(reply['forwarded'])
         imported = self.service.load_session(batch).data
         self.assertEqual(len(imported['shots']), 3)
-        self.assertIsNotNone(imported['ended'])  # the last shot finished the import
+        self.assertIsNotNone(imported['ended'])  # finished once all three indexes arrived
+        self.assertEqual(imported['import_source']['received'], [1, 2, 3])
         self.assertEqual(imported['import_source']['kind'], 'ipad_table')
         self.assertEqual({s['club_label'] for s in imported['shots']}, {club['label']})
-        flagged = [s.get('possible_duplicate') is not None for s in imported['shots']]
-        self.assertEqual(flagged, [False, True, False])
+        flagged = {
+            s['vals']['ball_speed']: s.get('possible_duplicate') is not None
+            for s in imported['shots']
+        }
+        self.assertEqual(flagged, {110.0: False, 120.0: True, 130.0: False})
         self.assertEqual(self.service.practice.data['id'], active['id'])
         self.assertEqual(len(self.service.practice.data['shots']), 1)  # only the live shot
         with self.assertRaises(ValueError):

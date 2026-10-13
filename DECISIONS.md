@@ -13,7 +13,7 @@ user's choices for how those shots arrive:
 
 Protocol: `TraceLoft.Import = {BatchId (32 hex), Index, Count, BagId, ClubId, Label}`.
 - BatchId becomes the session id, so retries and restarts find the same session.
-- The shot at Index == Count finishes the session.
+- The session finishes once every Index from 1 to Count has arrived, in any order.
 - Import shots are stored with provenance `ipad_import`, and the import's club replaces any context
   the packet carries.
 - `Context.equipment_catalog` lists bags and clubs so the source can offer the choice.

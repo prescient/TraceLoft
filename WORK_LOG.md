@@ -4,7 +4,7 @@
 
 - `shot_input.import_batch()` validates the `TraceLoft.Import` block.
 - `ShotInput.import_session()` loads or creates the batch's driving range session: the batch id as the
-  session id, the chosen bag/club, no target, and `import_source`. It is finished at the last index.
+  session id, the chosen bag/club, no target, and `import_source`. It finishes once every index has arrived (delivery order is not guaranteed; tested out of order).
 - Import shots are recovered (never live or forwarded) with provenance `ipad_import`, and the
   import's club and session replace the packet's context.
 - `find_overlap()` flags matches with live captures from the last 30 days.
