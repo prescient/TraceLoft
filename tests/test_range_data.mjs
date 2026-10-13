@@ -332,3 +332,11 @@ test('estimated club delivery reads open/closed by handedness (D64)', async () =
   assert.equal(clubEstimates(shot, 'left_handed')[0].unit, '° closed');
   assert.equal(clubEstimates({})[0].value, null);
 });
+
+test('descent, peak height and hang time come from range_vals when modeled', async () => {
+  const { rangeValue } = await import('../web/range-data.js');
+  const shot = { vals: { descent_ang: null }, range_vals: { carry: 150, descent_ang: 44.2 }, distance_basis: 'opengolfcoach' };
+  assert.equal(rangeValue(shot, 'descent_ang'), 44.2);
+  assert.equal(rangeValue(shot, 'hang_time'), undefined); // not in range_vals: falls back to the source (none)
+  assert.equal(rangeValue({ vals: { descent_ang: 47 } }, 'descent_ang'), 47); // legacy reported
+});

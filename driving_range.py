@@ -30,15 +30,24 @@ def effective_equipment(shot):
     }
 
 
-RANGE_FIELDS = ('carry', 'total', 'offline')
+RANGE_FIELDS = ('carry', 'total', 'offline', 'descent_ang', 'peak_height', 'hang_time')
 
 
 def modeled_distances(flight):
-    """OpenGolfCoach carry, total and offline (lateral at the total endpoint, right positive), or {}."""
+    """OpenGolfCoach flight outcomes in the measurement keys' units: carry, total and offline (lateral at
+    the total endpoint, right positive) in yd, descent angle in degrees, peak height in ft, hang time
+    in s. {} when the model did not run."""
     if not flight or flight.get('status') != 'ready':
         return {}
     m, end = flight.get('metrics', {}), flight.get('total_point_yd') or {}
-    return dict(carry=m.get('carry_yd'), total=m.get('total_yd'), offline=end.get('right'))
+    return dict(
+        carry=m.get('carry_yd'),
+        total=m.get('total_yd'),
+        offline=end.get('right'),
+        descent_ang=m.get('descent_deg'),
+        peak_height=m.get('apex_ft'),
+        hang_time=m.get('hang_time_s'),
+    )
 
 
 def range_distances(vals, flight):
@@ -173,11 +182,16 @@ class DrivingRangeSession(PuttingSession):
         return True
 
     def fill_club_estimates(self):
-        """Shots recorded before D64 have no club_estimates: derive them from the stored measurements and
-        effective tag (estimates only; measurements and outcomes are untouched). Saved on the next write."""
+        """Derived values added after a shot was recorded: club_estimates (D64) from the stored
+        measurements and effective tag, and modeled descent/peak height/hang time for shots whose range
+        values came from OpenGolfCoach before those keys existed. Estimates only; measurements, scores and
+        the carry used for scoring are untouched. Saved on the next write."""
         for s in self.data['shots']:
             if 'club_estimates' not in s and isinstance(s.get('vals'), dict):
                 s['club_estimates'] = club_model.estimate(s['vals'], effective_equipment(s))
+            if s.get('distance_basis') == 'opengolfcoach' and isinstance(s.get('range_vals'), dict):
+                for k, v in modeled_distances(s.get('flight')).items():
+                    s['range_vals'].setdefault(k, v)
 
     def summary(self):
         self.fill_club_estimates()

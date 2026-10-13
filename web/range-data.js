@@ -124,9 +124,11 @@ export const sourceValue = (shot, metric) =>
   shot?.vals?.[metric] ?? (shot?.simulated && metric === 'descent_ang' ? shot.vals?.descent : undefined);
 // Range distances (D63): shots recorded since 2026-10-12 carry range_vals, OpenGolfCoach estimates
 // (reported only as a labeled fallback when the model is unavailable). Older shots keep reported values.
-const RANGE_FIELDS = ['carry', 'total', 'offline'];
+export const RANGE_FIELDS = ['carry', 'total', 'offline', 'descent_ang', 'peak_height', 'hang_time'];
 export const rangeValue = (shot, metric) =>
-  RANGE_FIELDS.includes(metric) && shot?.range_vals ? shot.range_vals[metric] : sourceValue(shot, metric);
+  RANGE_FIELDS.includes(metric) && shot?.range_vals && metric in shot.range_vals
+    ? shot.range_vals[metric]
+    : sourceValue(shot, metric);
 export const estimated = shot => shot?.distance_basis === 'opengolfcoach';
 // Club delivery for the latest-shot panel. Values are source-reported, except a smash factor the source
 // did not report, which is calculated from ball and club speed and labeled. Attack angle is

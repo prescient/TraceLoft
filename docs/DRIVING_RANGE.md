@@ -20,7 +20,8 @@ not implemented; raw evidence remains in SQLite. Shot and session exports identi
 ## At-a-glance feedback
 
 - **Range distances (D63, from 2026-10-12):**
-  - Carry, total and offline are always OpenGolfCoach estimates. Each shot stores `range_vals`
+  - Carry, total, offline, descent angle, peak height and hang time are always OpenGolfCoach
+    estimates (descent and friends added the same evening). Each shot stores `range_vals`
     with `distance_basis: opengolfcoach`, so every source is scored and summarized the same way.
     The iPad club table and Premier memory report no distances.
   - Source-reported distances are used, labeled `reported`, only when the model cannot run.

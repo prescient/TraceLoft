@@ -1,5 +1,15 @@
 # TraceLoft work log
 
+## 2026-10-12 — Range descent, peak height and hang time from OpenGolfCoach
+
+- The Descent angle tile still read the source's value, which the iPad club table doesn't report. The
+  range values (D63) now also hold OpenGolfCoach descent (°), peak height (ft) and hang time (s).
+  Tiles and the club snapshot use them, labeled "est.".
+- Older OpenGolfCoach-basis shots get them filled from their stored flight when the session loads.
+  Scoring is unchanged.
+- **Verification:** Python 231, JavaScript 80, lint clean; new assertions for modeled descent, peak
+  and hang time, the load-time fill, and the JavaScript fallback.
+
 ## 2026-10-12 — Estimated face angle, face to path, dynamic loft, spin loft (D64)
 
 - New `club_model.py` (D-plane estimates with weights per club type).

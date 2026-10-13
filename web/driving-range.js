@@ -27,6 +27,7 @@ import {
   CLUB_METRICS,
   clubSummaries,
   rangeValue,
+  RANGE_FIELDS,
   estimated,
   clubReadings,
   clubEstimates,
@@ -350,7 +351,7 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
     ['Descent angle', 'descent_ang', '°']
   ].map(
     ([label, key, unit, precision = 1]) =>
-      html`<div><span>${label}${['carry', 'total', 'offline'].includes(key) ? est(shown) : ''}</span><strong>${n(rangeValue(shown, key), precision)}<small>${unit}</small></strong></div>`
+      html`<div><span>${label}${RANGE_FIELDS.includes(key) ? est(shown) : ''}</span><strong>${n(rangeValue(shown, key), precision)}<small>${unit}</small></strong></div>`
   );
   // Club delivery row: only in sessions whose source reports club data (iPad club table, Premier memory).
   const clubTiles = hasClubData(shots)

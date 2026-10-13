@@ -158,6 +158,14 @@ class RangeTests(unittest.TestCase):
             self.assertAlmostEqual(s['distance_yd'], modeled)
             self.assertTrue(s['scored'] and s['success'])
         self.assertNotIn('carry', first['vals'])  # nothing filled into the measurements
+        metrics = first['flight']['metrics']
+        self.assertAlmostEqual(first['range_vals']['descent_ang'], metrics['descent_deg'])
+        self.assertAlmostEqual(first['range_vals']['peak_height'], metrics['apex_ft'])
+        self.assertAlmostEqual(first['range_vals']['hang_time'], metrics['hang_time_s'])
+        self.assertNotIn('descent_ang', first['vals'])
+        del first['range_vals']['descent_ang']  # recorded before descent joined the range values
+        self.service.practice.summary()
+        self.assertAlmostEqual(first['range_vals']['descent_ang'], metrics['descent_deg'])
         self.assertEqual(second['vals']['carry'], 170)
         summary = self.service.practice.summary()
         self.assertAlmostEqual(summary['carry']['mean'], modeled)
