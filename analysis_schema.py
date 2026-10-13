@@ -2,11 +2,13 @@
 
 import hashlib
 import json
+import club_model
 from storage import encoded, identity, now
 from analysis import METRICS, robust, build_report
 from shot_schema import SOURCE_FIELDS
 from domain_schema import active_user
 
+CLUB_ESTIMATES = ('face_angle', 'face_to_path', 'dynamic_loft', 'spin_loft')
 
 QUERY = '''SELECT a.*,s.started,s.drill,s.revision,s.deleted_at,o.user_id,
  eq.bag_id,eq.bag_name,eq.club_id,eq.club_label,eq.context_id,eq.configuration_id,
@@ -68,6 +70,12 @@ def metric_values(row, basis='source'):
             'distance_error_ft',
         ):
             values[key] = row[key]
+        # D64 estimates are not stored as calculation results: they are computed here from the
+        # stored source readings and the effective club tag, exactly as the range page does
+        # (club_model.estimate). They never enter the source basis.
+        estimates = club_model.estimate(values, dict(club_label=row.get('club_label')))
+        for key in CLUB_ESTIMATES:
+            values[key] = estimates[key]
     return values
 
 
@@ -187,7 +195,9 @@ def report(c, params, user_id=None):
     }
     if basis == 'flight':
         r['method'] = (
-            'Selected analytical flight/putting/source-feature results; launch/club fields are source inputs. Median/type-7 IQR. Missing model outputs stay unavailable; saved scores/reviews stay pinned.'
+            'Selected analytical flight/putting/source-feature results; launch/club fields are source inputs. Face angle, face to path, dynamic loft and spin loft are '
+            + club_model.MODEL
+            + ' estimates computed from the source launch and club readings. Median/type-7 IQR. Missing model outputs stay unavailable; saved scores/reviews stay pinned.'
         )
     return r
 

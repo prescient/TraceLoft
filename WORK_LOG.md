@@ -1,5 +1,27 @@
 # TraceLoft work log
 
+## 2026-10-13 — Club estimates in Analyze
+
+- Analyze lacked the D64 club estimates: face angle, face to path, dynamic loft and spin loft. The
+  range page computes them, but they were never written to SQL, which Analyze reads.
+- **Change:**
+  - `analysis.METRICS` gains the four as "Estimated …" metrics.
+  - Under the "Selected analytical calculations" basis, `analysis_schema.metric_values` computes them
+    with `club_model.estimate`. It uses the stored source readings and the effective club tag, the same
+    function as the range page. The basis method text names the model.
+  - Under the source basis they stay unavailable.
+- **Not persisted:** they are computed on read, not stored as versioned calculation results. Storing
+  them would need a schema migration (new derived-metric columns). That is in BACKLOG as an option.
+- The OpenGolfCoach distances, apex, descent and hang time, plus calculated smash and rollout, were
+  already in the analytical basis (saved attempt flight snapshots).
+- **Verification:**
+  - `verify.py` passed: Python 234, JavaScript 81, ruff clean.
+  - New tests: the values equal `club_model.estimate`, with the iron weights checked by hand; the
+    source basis and missing inputs stay unavailable; CSV has the new columns.
+  - An isolated instance (temp database and ports) served `/api/analysis` with metric `face_angle`, the
+    new labels and the method text. It had no shots.
+  - Not checked on real data: the running service still has the old code until a restart.
+
 ## 2026-10-13 — Club snapshot shows every latest-shot metric
 
 - The range Club snapshot now has a median/IQR column for each metric of the latest-shot panel:

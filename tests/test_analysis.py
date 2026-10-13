@@ -1,6 +1,9 @@
 import copy
 import unittest
-from analysis import build_report, report_csv
+import club_model
+from analysis import METRICS, build_report, report_csv
+from analysis_schema import metric_values
+from shot_schema import SOURCE_FIELDS
 
 
 class AnalysisTests(unittest.TestCase):
@@ -92,3 +95,41 @@ class AnalysisTests(unittest.TestCase):
         self.assertIn("'=formula", csv)
         self.assertIn('carry (yd)', csv)
         self.assertNotIn('900', csv)
+        self.assertIn('face_angle (°)', csv)
+
+
+class ClubEstimateMetricTests(unittest.TestCase):
+    """D64 club estimates in Analyze: analytical basis only, from source readings and the club tag."""
+
+    def row(self, club_label='7 iron', **source):
+        values = dict(
+            launch_dir=2.0, club_path=4.0, launch_ang=18.0, attack_angle=-3.0, spin_axis=5.0
+        )
+        values.update(source)
+        row = {SOURCE_FIELDS[k][0]: values.get(k) for k in METRICS if k in SOURCE_FIELDS}
+        row.update(
+            club_label=club_label,
+            flight_status=None,
+            calculated_smash_factor=None,
+            source_rollout_yd=None,
+            estimated_distance_ft=None,
+            distance_error_ft=None,
+        )
+        return row
+
+    def test_estimates_match_the_range_page_model(self):
+        vals = metric_values(self.row(), 'flight')
+        expected = club_model.estimate(
+            dict(launch_dir=2.0, club_path=4.0, launch_ang=18.0, attack_angle=-3.0, spin_axis=5.0),
+            dict(club_label='7 iron'),
+        )
+        for key in ('face_angle', 'face_to_path', 'dynamic_loft', 'spin_loft'):
+            self.assertAlmostEqual(vals[key], expected[key])
+        self.assertAlmostEqual(vals['face_angle'], (2.0 - 0.25 * 4.0) / 0.75)   # iron weights
+
+    def test_source_basis_and_missing_inputs_stay_unavailable(self):
+        self.assertNotIn('face_angle', metric_values(self.row(), 'source'))
+        vals = metric_values(self.row(club_path=None, attack_angle=None), 'flight')
+        self.assertIsNone(vals['face_angle'])
+        self.assertIsNone(vals['dynamic_loft'])
+        self.assertEqual(METRICS['face_angle'], ('Estimated face angle', '°'))

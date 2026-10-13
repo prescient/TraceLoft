@@ -18,7 +18,18 @@ navigation/reload within the browser tab, scoped to the selected local golfer.
 
 **Source-reported metrics** is the default, including reported total distance. **Selected analytical
 calculations** explicitly uses the selected estimates/derived features where applicable; launch and
-club inputs remain source readings. Missing values stay unavailable. A predicate on a missing metric
+club inputs remain source readings.
+
+The analytical basis includes:
+- OpenGolfCoach carry, total, offline, apex, descent and hang time;
+- calculated smash factor and rollout;
+- putting distance estimates;
+- since 2026-10-13, the D64 club estimates: face angle, face to path, dynamic loft and spin loft.
+
+The club estimates are not stored as calculation results. They are computed when Analyze reads
+(`club_model.estimate`) from the stored source launch and club readings and the shot's effective club
+tag, exactly as on the range page. They are signed like the readings (right and up positive), and
+appear under the source basis as unavailable. Missing values stay unavailable. A predicate on a missing metric
 rejects that attempt; displaying a different unavailable metric does not reject the whole attempt.
 Included shots is the default. All non-removed shots includes manual exclusions; removed shots stay
 out. Manual exclusion counts are not automatic outlier classifications.

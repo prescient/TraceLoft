@@ -1,5 +1,14 @@
 # TraceLoft backlog
 
+## Option — store club estimates as calculation results (2026-10-13, not started)
+
+Analyze computes the D64 club estimates when it reads (docs/ANALYZE.md). Storing them as versioned
+`club_delivery` calculation results would let calculation management stage, publish and pin them
+like flight results.
+- This needs a schema migration that adds derived-metric columns.
+- Released backfills call `write_result`, so give the earlier steps a frozen copy of the old writer.
+- Do it only if pinned or reviewed estimate versions become needed.
+
 ## TraceCapture Premier memory source — 2026-10-11
 
 - Done: shots without spin (`SpinUnavailable`); simulator settings published in Context; the relay

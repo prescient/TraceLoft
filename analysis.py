@@ -13,6 +13,11 @@ METRICS = {
     'source_rollout_yd': ('Calculated source rollout', 'yd'),
     'estimated_distance_ft': ('Estimated putting distance', 'ft'),
     'distance_error_ft': ('Estimated putting distance error', 'ft'),
+    # D64 club delivery estimates (club_model.py), available with the analytical basis only.
+    'face_angle': ('Estimated face angle', '°'),
+    'face_to_path': ('Estimated face to path', '°'),
+    'dynamic_loft': ('Estimated dynamic loft', '°'),
+    'spin_loft': ('Estimated spin loft', '°'),
     'club_speed': ('Club head speed', 'mph'),
     'smash_factor': ('Reported Smash Factor', 'ratio'),
     'club_path': ('Club path', '°'),
