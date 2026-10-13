@@ -1,5 +1,23 @@
 # TraceLoft architecture decisions
 
+## D65 — iPad table imports (2026-10-13)
+
+The user scrolls through the iPad app's shot table on AirPlay, and TraceCapture reads every row. The
+user's choices for how those shots arrive:
+- **Destination:** each import becomes its own driving range session. It is never the active drill,
+  never live and never forwarded to a simulator.
+- **Timestamps:** the import time.
+- **Duplicates:** everything is imported. A shot matching a live capture from the last 30 days (ball
+  speed, launch angles and club speed within display precision) is flagged `possible_duplicate`.
+- **Club:** chosen when the import starts.
+
+Protocol: `TraceLoft.Import = {BatchId (32 hex), Index, Count, BagId, ClubId, Label}`.
+- BatchId becomes the session id, so retries and restarts find the same session.
+- The shot at Index == Count finishes the session.
+- Import shots are stored with provenance `ipad_import`, and the import's club replaces any context
+  the packet carries.
+- `Context.equipment_catalog` lists bags and clubs so the source can offer the choice.
+
 ## D64 — Estimated face angle, face to path, dynamic loft and spin loft (2026-10-12)
 
 The user asked for all four, computed from the LPi's measurements with D-plane relationships

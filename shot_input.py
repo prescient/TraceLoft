@@ -8,7 +8,7 @@ import re
 import sqlite3
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from storage import encoded, digest, now
 
@@ -142,6 +142,69 @@ def live_estimate(event):
             model=MODEL, carry=m['carry_yd'], total=m['total_yd'], offline=m['offline_yd']
         ),
     )
+
+
+IMPORT_PROVENANCE = 'ipad_import'
+OVERLAP_DAYS = 30  # how far back an imported shot is compared with live captures
+
+
+def import_batch(value):
+    """The validated TraceLoft.Import block of an iPad table import (D65), or None for live shots.
+
+    BatchId (32 hex) names the import and becomes its driving range session's id; Index/Count order
+    the shots (the session is finished at the last one); BagId/ClubId tag them; Label names the import.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise ValueError('Invalid import block.')
+    batch_id, index, count = value.get('BatchId'), value.get('Index'), value.get('Count')
+    if not isinstance(batch_id, str) or not re.fullmatch('[a-f0-9]{32}', batch_id):
+        raise ValueError('Invalid import batch.')
+    if type(index) is not int or type(count) is not int or not 1 <= index <= count <= 10000:
+        raise ValueError('Invalid import position.')
+    text = {k: value.get(k, '') for k in ('BagId', 'ClubId', 'Label')}
+    if any(not isinstance(v, str) or len(v) > 200 for v in text.values()):
+        raise ValueError('Invalid import labels.')
+    return dict(
+        batch_id=batch_id,
+        index=index,
+        count=count,
+        bag_id=text['BagId'],
+        club_id=text['ClubId'],
+        label=text['Label'] or 'iPad import',
+    )
+
+
+def find_overlap(connection, vals):
+    """A live-captured shot (not an import) from the last OVERLAP_DAYS with the same ball speed, launch
+    angles and, when both have it, club speed: the imported shot was probably already captured live.
+    Returns {shot_id, captured} or None. Display precision is 0.1, so values within 0.051 match."""
+    keys = ('ball_speed', 'launch_ang', 'launch_dir')
+    if any(not isinstance(vals.get(k), (int, float)) for k in keys):
+        return None
+    since = (datetime.now(timezone.utc) - timedelta(days=OVERLAP_DAYS)).isoformat()
+    club = vals.get('club_speed') if isinstance(vals.get('club_speed'), (int, float)) else None
+    row = connection.execute(
+        '''SELECT m.shot_id, m.created_at FROM shot_source_metrics m
+           JOIN observations o ON o.id = m.observation_id
+           WHERE o.provenance != ? AND m.created_at >= ?
+             AND abs(m.ball_speed_mph - ?) < 0.051
+             AND abs(m.vertical_launch_angle_deg - ?) < 0.051
+             AND abs(m.horizontal_launch_angle_deg - ?) < 0.051
+             AND (? IS NULL OR m.club_head_speed_mph IS NULL OR abs(m.club_head_speed_mph - ?) < 0.051)
+           ORDER BY m.created_at DESC LIMIT 1''',
+        (
+            IMPORT_PROVENANCE,
+            since,
+            vals['ball_speed'],
+            vals['launch_ang'],
+            vals['launch_dir'],
+            club,
+            club,
+        ),
+    ).fetchone()
+    return dict(shot_id=row[0], captured=row[1]) if row else None
 
 
 def source_delivers(packet):
@@ -324,6 +387,45 @@ class ShotInput:
             simulator=dict(
                 destination=relay['destination'], host=relay['host'], port=relay['port']
             ),
+            # Bags and clubs, so a source can tag an iPad table import (D65) before sending it.
+            equipment_catalog=[
+                dict(
+                    bag_id=bag['id'],
+                    bag_name=bag['name'],
+                    clubs=[dict(club_id=c['id'], label=c['label']) for c in bag['clubs']],
+                )
+                for bag in self.service.equipment.get('bags', [])
+            ],
+        )
+
+    def import_equipment(self, batch):
+        """The bag/club selection for an import, or None (untagged) if it is unknown or changed."""
+        from equipment import selection
+
+        try:
+            return selection(self.service.equipment, batch['bag_id'], batch['club_id'])
+        except ValueError:
+            return None
+
+    def import_session(self, batch):
+        """The driving range session of an import batch: loaded when it exists (retries, restarts),
+        else created with the batch id as its id, the chosen bag/club and no target. An unknown or
+        changed bag/club leaves the shots untagged rather than refusing the import."""
+        from driving_range import DrivingRangeSession
+
+        try:
+            return self.service.load_session(batch['batch_id'])
+        except FileNotFoundError:
+            pass
+        return DrivingRangeSession(
+            self.service.root / 'practice_sessions',
+            store=self.service.store,
+            equipment_selection=self.import_equipment(batch),
+            range_target=0,
+            session_id=batch['batch_id'],
+            import_source=dict(
+                kind='ipad_table', label=batch['label'], count=batch['count'], imported=now()
+            ),
         )
 
     async def accept_packet(self, packet, connection_id):
@@ -388,9 +490,24 @@ class ShotInput:
                 if k in evidence
             }
         )
+        batch = import_batch(extension.get('Import'))
+        if batch:
+            # An iPad table import (D65): never live, never forwarded, and never part of the active
+            # drill; its shots go to their own driving range session named by the batch id, tagged
+            # with the club chosen for the import (not the active drill's context).
+            event.update(
+                import_batch=batch,
+                practice_session_id=batch['batch_id'],
+                equipment_selection=self.import_equipment(batch),
+                range_context=None,
+                collection_context=None,
+                game_context=None,
+            )
         event, live = validate(
             dict(
-                schema='traceloft.shot.v1', event=event, recovered=extension.get('Recovered', False)
+                schema='traceloft.shot.v1',
+                event=event,
+                recovered=extension.get('Recovered', False) or batch is not None,
             )
         )
         event['wire_digest'] = digest(encoded(packet).encode())
@@ -408,8 +525,8 @@ class ShotInput:
                 return dict(
                     accepted=True, duplicate=True, forwarded=False, receipt_id=event['receipt_id']
                 )
-            target = self.service.practice
-            if (
+            target = self.import_session(batch) if batch else self.service.practice
+            if not batch and (
                 not live
                 or not target
                 or target.data['id'] != event.get('practice_session_id')
@@ -419,14 +536,20 @@ class ShotInput:
             previous = copy.deepcopy(target.data) if target else None
             try:
                 with store.transaction():
-                    store.ingest(event, provenance='open_connect')
-                    if target:
-                        target.add(event)
+                    overlap = find_overlap(store.connection, event['vals']) if batch else None
+                    store.ingest(event, provenance=IMPORT_PROVENANCE if batch else 'open_connect')
+                    added = target.add(event) if target else False
+                    if batch:
+                        if added and overlap:
+                            target.data['shots'][-1]['possible_duplicate'] = overlap
+                            target.save()
+                        if batch['index'] >= batch['count']:
+                            target.finish()  # the last shot ends the import, even if it was rejected
             except Exception:
                 if target:
                     target.data = previous
                 raise
-            self.service.remember_record(live_estimate(event), read=True)
+            self.service.remember_record(live_estimate(event), read=not batch)
             self.service.sessions_revision += 1
             self.service.publish_context()
             self.service.save_error = ''

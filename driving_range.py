@@ -93,7 +93,11 @@ class DrivingRangeSession(PuttingSession):
         range_depth=20,
         handedness='right_handed',
         demo=False,
+        session_id=None,
+        import_source=None,
     ):
+        """session_id/import_source: an iPad table import (D65) uses its batch id as the session id, so
+        retried deliveries find the same session, and records where the shots came from."""
         if (
             not numeric(range_target, 0, 450)
             or not numeric(range_width, 1, 200)
@@ -104,7 +108,7 @@ class DrivingRangeSession(PuttingSession):
             raise ValueError('Choose a valid handedness and range mode.')
         self.folder, self.store = Path(folder), store
         self.data = dict(
-            id=uuid.uuid4().hex,
+            id=session_id or uuid.uuid4().hex,
             started=timestamp(),
             ended=None,
             drill='Driving range',
@@ -122,6 +126,8 @@ class DrivingRangeSession(PuttingSession):
             cleanup_revision=0,
             cleanup_history=[],
         )
+        if import_source:
+            self.data['import_source'] = copy.deepcopy(import_source)
         self.save()
 
     def add(self, event):

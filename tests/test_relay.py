@@ -249,6 +249,53 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(event['vals']['club_speed'], 4.6)
         self.assertTrue(event['raw_packet']['TraceLoft']['SpinUnavailable'])
 
+    async def test_ipad_table_import_becomes_its_own_finished_range_session(self):
+        """D65: imported shots never join the active drill or the simulator, keep the chosen club, and
+        are flagged when a live capture already has the same shot."""
+        bag = self.service.equipment['bags'][0]
+        club = bag['clubs'][0]
+        active = self.service.create_practice(dict(drill='Driving range'))
+        catalog = self.service.input.context()['equipment_catalog']
+        self.assertEqual(catalog[0]['clubs'][0]['club_id'], club['id'])
+        live = shot(1)
+        live['BallData'] = dict(Speed=120.0, VLA=18.0, HLA=2.0, TotalSpin=5000, SpinAxis=8.0)
+        await self.service.input.accept_packet(live, 'live')  # a live capture of table row 2
+        batch = 'b' * 32
+        rows = [(110.0, 19.0, -1.0), (120.0, 18.0, 2.0), (130.0, 15.0, 0.5)]
+        for index, (speed, vla, hla) in enumerate(rows, 1):
+            p = shot(index)
+            p['BallData'] = dict(Speed=speed, VLA=vla, HLA=hla, TotalSpin=5000, SpinAxis=8.0)
+            p['TraceLoft'] = dict(
+                ReceiptId=f'import-{index}',
+                ProducerId='import',
+                StreamId='import-test',
+                CapturedAt=datetime.now(timezone.utc).isoformat(),
+                Context=dict(practice_session_id=active['id']),  # must be ignored
+                Import=dict(
+                    BatchId=batch,
+                    Index=index,
+                    Count=len(rows),
+                    BagId=bag['id'],
+                    ClubId=club['id'],
+                    Label='iPad import',
+                ),
+            )
+            reply = await self.service.input.accept_packet(p, 'importer')
+            self.assertFalse(reply['forwarded'])
+        imported = self.service.load_session(batch).data
+        self.assertEqual(len(imported['shots']), 3)
+        self.assertIsNotNone(imported['ended'])  # the last shot finished the import
+        self.assertEqual(imported['import_source']['kind'], 'ipad_table')
+        self.assertEqual({s['club_label'] for s in imported['shots']}, {club['label']})
+        flagged = [s.get('possible_duplicate') is not None for s in imported['shots']]
+        self.assertEqual(flagged, [False, True, False])
+        self.assertEqual(self.service.practice.data['id'], active['id'])
+        self.assertEqual(len(self.service.practice.data['shots']), 1)  # only the live shot
+        with self.assertRaises(ValueError):
+            bad = shot(9)
+            bad['TraceLoft'] = dict(Import=dict(BatchId='nothex', Index=1, Count=1))
+            await self.service.input.accept_packet(bad, 'importer')
+
     async def test_single_source_ownership(self):
         r, w = await self.client()
         await self.exchange(r, w, heartbeat())

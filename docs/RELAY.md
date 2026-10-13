@@ -51,6 +51,14 @@ Optional `TraceLoft` extension:
   disconnects. TraceLoft.Context.simulator = {destination, host, port} tells the sender where to send.
   'off' means send nothing.
 
+- Import = {BatchId, Index, Count, BagId, ClubId, Label} marks a shot from an iPad table import (D65).
+  - Such shots are stored like recovered receipts: never live, never forwarded, never added to the
+    active drill.
+  - They go to their own driving range session whose id is BatchId, tagged with the given bag/club;
+    the shot at Index == Count finishes it.
+  - Shots matching a live capture are flagged `possible_duplicate`.
+  - Context.equipment_catalog lists the bags and clubs a source can choose from.
+
 When a stored shot reports no carry but has measured spin and launch, Relay's latest-shot view adds an
 "Estimated flight" table with OpenGolfCoach carry, total and offline (D61). It is display-only: stored
 measurements and drill scoring are unchanged.

@@ -1,5 +1,23 @@
 # TraceLoft work log
 
+## 2026-10-13 — iPad table import sessions (D65, TraceLoft side)
+
+- `shot_input.import_batch()` validates the `TraceLoft.Import` block.
+- `ShotInput.import_session()` loads or creates the batch's driving range session: the batch id as the
+  session id, the chosen bag/club, no target, and `import_source`. It is finished at the last index.
+- Import shots are recovered (never live or forwarded) with provenance `ipad_import`, and the
+  import's club and session replace the packet's context.
+- `find_overlap()` flags matches with live captures from the last 30 days.
+- Context adds `equipment_catalog`.
+- `DrivingRangeSession` accepts `session_id` and `import_source`.
+- Range page: "Imported from iPad table" with a possible-duplicate count, and per-shot flags.
+- **Verification:**
+  - New relay test: an import alongside an active range session, with one matching live shot. Result:
+    its own finished session, the chosen club, one duplicate flagged, the active session untouched,
+    nothing forwarded, invalid batch refused.
+  - Relay 15 tests and JavaScript 80 pass; full verify before commit.
+  - Not done: the TraceCapture side and a live scroll import.
+
 ## 2026-10-12 — Range descent, peak height and hang time from OpenGolfCoach
 
 - The Descent angle tile still read the source's value, which the iPad club table doesn't report. The
