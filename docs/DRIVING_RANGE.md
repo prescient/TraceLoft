@@ -97,10 +97,22 @@ not implemented; raw evidence remains in SQLite. Shot and session exports identi
 
 ## Club snapshot
 
-Above Shot workspace, each bag/club row shows **median and IQR** for carry, total, absolute offline,
-vertical launch angle and descent angle. Values come from reported readings (synthetic readings in
-Demo ranges), independently of the scatter source. Modeled descent never fills a missing reading.
-Absolute offline takes the magnitude of each signed reading before calculating statistics.
+Above Shot workspace, each bag/club row shows **median and IQR** for the metrics of the latest-shot
+panel, in the same order:
+- **Ball and flight:** carry, total, absolute offline, ball speed, total spin, launch angle and
+  descent angle. Carry, total, offline and descent use the shot's range values (OpenGolfCoach
+  estimates, D63) when it has them, else reported readings (synthetic in Demo ranges). This is
+  independent of the scatter source.
+- **Club delivery**, only in sessions whose source reports club data (2026-10-13):
+  - club speed, smash factor, angle of attack and club path;
+  - the D64 estimates: face angle, face to path, dynamic loft and spin loft, labeled "est.".
+- **Smash factor** is the reported value, or ball speed / club speed when the source reports none, as
+  in the latest-shot panel.
+- **Signed angles** (attack, path, face, face to path) take the median of the signed values and show
+  its direction: up/down, in-to-out/out-to-in, open/closed for the session's handedness. The IQR is a
+  width, so it has no direction.
+- **Absolute offline** takes the magnitude of each signed reading before calculating statistics.
+- **Layout:** the table scrolls sideways inside its panel, with the club name pinned.
 
 The snapshot includes only included shots matching the workspace filters below, using corrected
 bag/club tags when present. Each metric shows its own available-reading count, n; missing readings

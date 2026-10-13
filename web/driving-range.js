@@ -24,7 +24,8 @@ import {
   rangeCsv,
   clubKey,
   clubColors,
-  CLUB_METRICS,
+  snapshotMetrics,
+  snapshotValue,
   clubSummaries,
   rangeValue,
   RANGE_FIELDS,
@@ -363,6 +364,8 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
           html`<div><span>${r.label}</span><strong>${n(r.value, r.precision)}<small>${r.unit}</small></strong></div>`
       )}</div>`
     : '';
+  // Club snapshot columns follow the latest-shot panel (club delivery only with club data).
+  const snapshotColumns = snapshotMetrics(shots);
   const flightTiles = [
     ['Carry', fm.carry_yd, 'yd'],
     ['Total', fm.total_yd, 'yd'],
@@ -413,7 +416,7 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
   )}<div class="range-target-control"><span>${data.range_target ? `Target ${n(data.range_target)} yd · ${n(data.range_width)} × ${n(data.range_depth)} yd` : 'Free practice · no target'}</span>${active ? local('Change target', 'target') : ''}</div></section>
   <div class="range-chart-grid"><section class="card range-dispersion-card"><div class="table-head">${dispersionHelp(v)}<span class="top-hint">${v.source === 'model' ? 'Estimated' : 'Reported'} · ${v.metric}</span></div><div class="range-scatter-stage">${chart.svg}</div>${chart.legend}<div class="range-summary-strip"><div><strong>${n(summary.mean)} yd</strong><span>Included mean · n=${summary.count}</span></div><div><strong>± ${n(summary.sd)} yd</strong><span>Population spread</span></div><div><strong>${n(all.mean)} yd</strong><span>All matching mean · n=${all.count}</span></div></div><p class="form-hint">Statistics use ${distanceBasis} ${v.metric}, independent of the plot source. Small samples are descriptive.</p></section>
   <div class="range-side"><section class="card"><div class="table-head"><h2>Flight profile</h2><span class="estimate-label">ESTIMATED</span></div><div class="range-segment range-flight-switch" aria-label="Flight profile view">${['side', 'top'].map(m => html`<button type="button" class="btn ${v.flightView === m ? 'primary' : 'quiet'}" data-flight-view="${m}" aria-pressed="${v.flightView === m}">${m === 'side' ? 'Side view' : 'Top view'}</button>`)}</div>${motionChart(motion, v.flightView)}${motionControls(motion)}<p class="form-hint">${motion?.label ?? 'Flight estimate unavailable'}. Path fitted to distance anchors; landing lateral position is estimated. Source and model metrics remain separate.</p><h3>OpenGolfCoach estimates</h3><div class="range-flight-metrics">${flightTiles}</div><p class="form-hint">OpenGolfCoach 0.3.0 · flat, no wind, standard atmosphere; typical fairway rollout. Uncalibrated against Foresight.</p></section><section class="card"><h2>Flight shapes</h2><p class="form-hint">${analytical.length} included shots in this filter · classification follows player handedness.</p><div class="shape-bars">${shapeBars}</div></section></div></div>
-  <section class="card section-space range-club-snapshot" id="club-snapshot"><h2>Club snapshot</h2><p class="form-hint">${data.demo ? 'Synthetic values' : modeledDistances ? 'Carry, total and offline are OpenGolfCoach estimates; angles are source-reported' : 'source-reported values'} · included shots matching the workspace filters below. Median and IQR for each metric; n counts available readings.</p><div class="table-wrap" role="region" aria-label="Club snapshot statistics" tabindex="0"><table><thead><tr><th scope="col">Club</th><th scope="col">Included</th>${CLUB_METRICS.map(m => html`<th scope="col">${m.label} · ${m.unit}</th>`)}</tr></thead><tbody>${clubRows(analytical)}</tbody></table></div><p class="form-hint">IQR = Q3 − Q1, the width of the middle 50% (interpolated quartiles). At least two readings are needed for spread; small samples are descriptive. Absolute offline ignores left/right sign. Missing readings stay unavailable.</p></section>
+  <section class="card section-space range-club-snapshot" id="club-snapshot"><h2>Club snapshot</h2><p class="form-hint">${data.demo ? 'Synthetic values' : modeledDistances ? 'Carry, total and offline are OpenGolfCoach estimates; angles are source-reported' : 'source-reported values'} · included shots matching the workspace filters below. Median and IQR for each metric; n counts available readings.</p><div class="table-wrap" role="region" aria-label="Club snapshot statistics" tabindex="0"><table><thead><tr><th scope="col">Club</th><th scope="col">Included</th>${snapshotColumns.map(m => html`<th scope="col">${m.label}${m.unit ? ` · ${m.unit}` : ''}</th>`)}</tr></thead><tbody>${clubRows(analytical, snapshotColumns, data.handedness)}</tbody></table></div><p class="form-hint">IQR = Q3 − Q1, the width of the middle 50% (interpolated quartiles). At least two readings are needed for spread; small samples are descriptive. Absolute offline ignores left/right sign. Signed angles show the median's direction${data.handedness === 'left_handed' ? ' for a left-handed golfer' : ''}.${snapshotColumns.some(m => m.club) ? ' Smash factor is ball speed / club speed where the source reports none. Est. columns are D-plane estimates, not measurements.' : ''} Missing readings stay unavailable.</p></section>
   <section class="card section-space" id="shot-workspace"><div class="table-head"><div><h2>Shot workspace</h2><p class="form-hint">Filter, inspect and clean up this session. Original captures stay preserved.</p></div>${local('Export filtered CSV', 'csv')}</div><div class="range-filters">${select('bag', 'Bag', [['', 'All bags'], ...bagOptions], v.bag)}${select('club', 'Club', [['', 'All clubs'], ['__untagged__', 'Untagged'], ...clubOptions], v.club)}${select('shape', 'Flight shape', [['', 'All shapes'], ...[...new Set(shots.map(s => s.flight?.shape ?? 'Unavailable'))].map(s => [s, s])], v.shape)}${select(
     'status',
     'Shot state',
@@ -625,14 +628,19 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
   decorateCollection(app, data, active, { ...context, shown });
 }
 
-function clubRows(shots) {
-  const groups = clubSummaries(shots);
+// One row per club: each metric's median (signed angles with their direction), IQR and n.
+function clubRows(shots, columns, handedness) {
+  const groups = clubSummaries(shots, columns);
   return groups.length
     ? groups.map(
         g =>
-          html`<tr><th scope="row">${g.label}</th><td>${g.count}</td>${g.metrics.map(m => html`<td><strong>${n(m.median)}</strong><span class="range-stat-detail">IQR ${n(m.iqr)} · n=${m.count}</span></td>`)}</tr>`
+          html`<tr><th scope="row">${g.label}</th><td>${g.count}</td>${g.metrics.map((s, i) => {
+            const m = columns[i],
+              shown = snapshotValue(m, s.median, handedness);
+            return html`<td><strong>${n(shown.value, m.precision ?? 1)}${m.direction && valid(s.median) ? shown.unit : ''}</strong><span class="range-stat-detail">IQR ${n(s.iqr, m.precision ?? 1)} · n=${s.count}</span></td>`;
+          })}</tr>`
       )
-    : html`<tr><td colspan="7" class="empty">Included club statistics will appear here.</td></tr>`;
+    : html`<tr><td colspan="${columns.length + 2}" class="empty">Included club statistics will appear here.</td></tr>`;
 }
 
 function targetDialog(data, context) {

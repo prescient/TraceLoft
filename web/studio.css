@@ -2544,6 +2544,7 @@ tbody tr.excluded {
 }
 .range-club-snapshot td strong {
   font-size: 18px;
+  white-space: nowrap;
 }
 .range-stat-detail {
   display: block;
@@ -2554,6 +2555,14 @@ tbody tr.excluded {
 .range-club-snapshot tbody th {
   color: var(--ink);
   font-weight: 600;
+}
+/* Up to 15 metric columns scroll inside the panel; the club name stays in view. */
+.range-club-snapshot thead th:first-child,
+.range-club-snapshot tbody th {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
 }
 
 /* Primary range device: iPad Pro in landscape; keep all seven readings together. */

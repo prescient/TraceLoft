@@ -10,6 +10,8 @@ import {
   clubKey,
   robustSummary,
   clubSummaries,
+  snapshotMetrics,
+  snapshotValue,
   sourceValue,
   scatterCohort,
   dispersionCircles
@@ -166,19 +168,66 @@ test('club snapshot honors corrected membership and metric-specific counts witho
     { bag_id: 'b', club_id: '7', vals: { carry: 999 }, excluded: true },
     { bag_id: 'b', club_id: '7', vals: { carry: 999 }, removed: true }
   ]);
+  const metric = key => rows[0].metrics.find(m => m.key === key);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].count, 2);
-  assert.equal(rows[0].metrics[0].median, 110);
-  assert.equal(rows[0].metrics[2].median, 6);
-  assert.equal(rows[0].metrics[3].median, 21);
-  assert.equal(rows[0].metrics[4].count, 1);
-  assert.equal(rows[0].metrics[4].median, 40);
+  assert.equal(metric('carry').median, 110);
+  assert.equal(metric('offline').median, 6);
+  assert.equal(metric('launch_ang').median, 21);
+  assert.equal(metric('descent_ang').count, 1);
+  assert.equal(metric('descent_ang').median, 40);
   assert.equal(robustSummary([{ simulated: true, vals: { descent: 48 } }], 'descent_ang').median, 48);
   assert.equal(robustSummary([{ vals: { descent: 48 } }], 'descent_ang').count, 0);
   assert.equal(
     robustSummary([{ simulated: true, vals: { descent_ang: 0, descent: 48 } }], 'descent_ang').median,
     0
   );
+});
+
+test('club snapshot adds club delivery and estimates only for sessions with club data', () => {
+  const ball = { club_id: '7', vals: { carry: 150, ball_speed: 110, total_spin: 6000 } };
+  const keys = shots => snapshotMetrics(shots).map(m => m.key);
+  assert.deepEqual(keys([ball]), [
+    'carry',
+    'total',
+    'offline',
+    'ball_speed',
+    'total_spin',
+    'launch_ang',
+    'descent_ang'
+  ]);
+  const club = (attack, path, extra = {}) => ({
+    club_id: '7',
+    vals: { ball_speed: 110, club_speed: 80, attack_angle: attack, club_path: path, ...extra },
+    club_estimates: { face_angle: path / 2, face_to_path: -1, dynamic_loft: 24, spin_loft: 27 }
+  });
+  const shots = [club(-2, 3, { smash_factor: 1.3 }), club(-4, 5), club(1, 4, { smash_factor: 1.2 })];
+  const metrics = snapshotMetrics(shots);
+  assert.equal(metrics.length, 15);
+  const row = clubSummaries(shots, metrics)[0];
+  const summary = key => row.metrics.find(m => m.key === key);
+  assert.equal(summary('ball_speed').median, 110);
+  assert.equal(summary('club_speed').median, 80);
+  // Reported smash where present, else ball / club speed (110 / 80 = 1.375).
+  assert.equal(summary('smash_factor').median, 1.3);
+  assert.equal(summary('smash_factor').count, 3);
+  assert.equal(summary('attack_angle').median, -2);
+  assert.equal(summary('dynamic_loft').median, 24);
+  assert.equal(summary('face_angle').median, 2);
+  const shown = (key, handedness) =>
+    snapshotValue(
+      metrics.find(m => m.key === key),
+      summary(key).median,
+      handedness
+    );
+  assert.deepEqual(shown('attack_angle'), { value: 2, unit: '° down' });
+  assert.deepEqual(shown('club_path'), { value: 4, unit: '° in-to-out' });
+  assert.deepEqual(shown('club_path', 'left_handed'), { value: 4, unit: '° out-to-in' });
+  assert.deepEqual(shown('face_angle'), { value: 2, unit: '° open' });
+  assert.deepEqual(shown('face_to_path'), { value: 1, unit: '° closed' });
+  assert.deepEqual(shown('face_to_path', 'left_handed'), { value: 1, unit: '° open' });
+  assert.deepEqual(shown('total_spin'), { value: null, unit: 'rpm' });       // missing stays missing
+  assert.deepEqual(snapshotValue(metrics.find(m => m.key === 'attack_angle'), 0), { value: 0, unit: '°' });
 });
 
 test('shot readings preserve zero and legacy demo descent without replacing missing source data', () => {

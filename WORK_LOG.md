@@ -1,5 +1,29 @@
 # TraceLoft work log
 
+## 2026-10-13 — Club snapshot shows every latest-shot metric
+
+- The range Club snapshot now has a median/IQR column for each metric of the latest-shot panel:
+  - **Always:** carry, total, absolute offline, ball speed, total spin, launch and descent.
+  - **In sessions with club data:** club speed, smash factor, angle of attack, club path, and the D64
+    estimates (face angle, face to path, dynamic loft, spin loft).
+- **Smash factor** falls back to ball speed / club speed, as on the latest shot.
+- **Signed angles** show the median's direction for the session's handedness.
+- **Shared wording:** the direction words (up/down, in-to-out, open/closed) are now one set of helpers
+  for the tiles and the table.
+- **Layout:** the club column is pinned while the table scrolls sideways.
+- Corrected DRIVING_RANGE.md, which still said the snapshot used reported distances only (pre-D63).
+- **Verification:**
+  - `verify.py` passed: Python suite, JavaScript 81, ruff clean.
+  - New test: the column set with and without club data; medians for club values, the smash fallback
+    and estimates; direction words for both hands; missing stays missing.
+  - The existing latest-shot tests still pass after the shared-helper refactor.
+  - In the browser, on the real 100-shot import review (read only):
+    - all 15 columns with plausible values; club columns n=98, because two shots had `-`;
+    - the club name stays put while scrolling;
+    - no page overflow at 390 px.
+  - Screenshots could not be captured, so the look was checked through the DOM, not by eye.
+  - Not checked: real iPad Safari.
+
 ## 2026-10-13 — iPad table import sessions (D65, TraceLoft side)
 
 - `shot_input.import_batch()` validates the `TraceLoft.Import` block.

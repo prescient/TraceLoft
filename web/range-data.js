@@ -112,13 +112,64 @@ export function summarize(shots, metric = 'carry') {
     sd: values.length ? Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length) : null
   };
 }
+// Direction words for signed club values, shared by the latest-shot tiles and the club snapshot.
+// Attack angle is upward-positive. Club path, face angle and face to path are target-relative (right
+// positive), so in-to-out and open/closed depend on the session's handedness.
+const word = (value, positive, negative) => (!valid(value) || value === 0 ? '' : value > 0 ? positive : negative);
+const attackWord = value => word(value, 'up', 'down');
+const pathWord = (value, handedness) =>
+  handedness !== 'left_handed' ? word(value, 'in-to-out', 'out-to-in') : word(value, 'out-to-in', 'in-to-out');
+const faceWord = (value, handedness) =>
+  handedness !== 'left_handed' ? word(value, 'open', 'closed') : word(value, 'closed', 'open');
+// Smash factor as the source reported it, else ball speed / club speed (labeled as calculated).
+const smash = shot => {
+  const v = shot?.vals ?? {};
+  if (valid(v.smash_factor)) return v.smash_factor;
+  return valid(v.ball_speed) && valid(v.club_speed) && v.club_speed > 0 ? v.ball_speed / v.club_speed : null;
+};
+const estimate = key => shot => shot?.club_estimates?.[key];
+// Club snapshot columns, in the order of the latest-shot panel: ball and flight, club delivery, then
+// the D64 estimates. `club` columns appear only in sessions whose source reports club data. `value`
+// overrides the default reading (rangeValue); `direction` names the sign of a signed value.
 export const CLUB_METRICS = [
   { key: 'carry', label: 'Carry', unit: 'yd' },
   { key: 'total', label: 'Total', unit: 'yd' },
   { key: 'offline', label: 'Absolute offline', unit: 'yd', absolute: true },
+  { key: 'ball_speed', label: 'Ball speed', unit: 'mph' },
+  { key: 'total_spin', label: 'Total spin', unit: 'rpm', precision: 0 },
   { key: 'launch_ang', label: 'Launch angle', unit: '°' },
-  { key: 'descent_ang', label: 'Descent angle', unit: '°' }
+  { key: 'descent_ang', label: 'Descent angle', unit: '°' },
+  { key: 'club_speed', label: 'Club speed', unit: 'mph', club: true },
+  { key: 'smash_factor', label: 'Smash factor', unit: '', precision: 2, club: true, value: smash },
+  { key: 'attack_angle', label: 'Angle of attack', unit: '°', club: true, direction: attackWord },
+  { key: 'club_path', label: 'Club path', unit: '°', club: true, direction: pathWord },
+  {
+    key: 'face_angle',
+    label: 'Face angle · est.',
+    unit: '°',
+    club: true,
+    value: estimate('face_angle'),
+    direction: faceWord
+  },
+  {
+    key: 'face_to_path',
+    label: 'Face to path · est.',
+    unit: '°',
+    club: true,
+    value: estimate('face_to_path'),
+    direction: faceWord
+  },
+  { key: 'dynamic_loft', label: 'Dynamic loft · est.', unit: '°', club: true, value: estimate('dynamic_loft') },
+  { key: 'spin_loft', label: 'Spin loft · est.', unit: '°', club: true, value: estimate('spin_loft') }
 ];
+// The snapshot's columns for these shots: club delivery only when a source reported club data.
+export const snapshotMetrics = shots => (hasClubData(shots) ? CLUB_METRICS : CLUB_METRICS.filter(m => !m.club));
+// A summarized value as shown: { value, unit } with a signed median as its size plus a direction word
+// ("2.1° up"). The IQR is a width, so it needs no direction.
+export function snapshotValue(metric, value, handedness = 'right_handed') {
+  if (!metric.direction || !valid(value)) return { value, unit: metric.unit };
+  return { value: Math.abs(value), unit: `${metric.unit} ${metric.direction(value, handedness)}`.trim() };
+}
 // Early demo generator used 'descent'; real captures always use descent_ang.
 export const sourceValue = (shot, metric) =>
   shot?.vals?.[metric] ?? (shot?.simulated && metric === 'descent_ang' ? shot.vals?.descent : undefined);
@@ -139,9 +190,7 @@ export const hasClubData = shots => shots.some(s => CLUB_READINGS.some(k => vali
 // session's handedness (values are right-positive); lofts are plain degrees.
 export function clubEstimates(shot, handedness = 'right_handed') {
   const e = shot?.club_estimates ?? {};
-  const right = handedness !== 'left_handed';
-  const openClosed = value =>
-    !valid(value) || value === 0 ? '°' : `° ${(value > 0) === right ? 'open' : 'closed'}`;
+  const openClosed = value => `° ${faceWord(value, handedness)}`.trim();
   const signed = key => (valid(e[key]) ? Math.abs(e[key]) : null);
   return [
     { label: 'Face angle · est.', value: signed('face_angle'), unit: openClosed(e.face_angle), precision: 1 },
@@ -152,39 +201,36 @@ export function clubEstimates(shot, handedness = 'right_handed') {
 }
 export function clubReadings(shot, handedness = 'right_handed') {
   const v = shot?.vals ?? {};
-  const word = (value, positive, negative) => (!valid(value) || value === 0 ? '' : value > 0 ? positive : negative);
-  const right = handedness !== 'left_handed';
-  const calculated =
-    !valid(v.smash_factor) && valid(v.ball_speed) && valid(v.club_speed) && v.club_speed > 0
-      ? v.ball_speed / v.club_speed
-      : null;
+  const calculated = !valid(v.smash_factor) && valid(smash(shot));
   return [
     { label: 'Club speed', value: v.club_speed, unit: 'mph', precision: 1 },
     {
-      label: calculated == null ? 'Smash factor' : 'Smash factor · calc.',
-      value: valid(v.smash_factor) ? v.smash_factor : calculated,
+      label: calculated ? 'Smash factor · calc.' : 'Smash factor',
+      value: smash(shot),
       unit: '',
       precision: 2
     },
     {
       label: 'Angle of attack',
       value: valid(v.attack_angle) ? Math.abs(v.attack_angle) : null,
-      unit: `° ${word(v.attack_angle, 'up', 'down')}`.trim(),
+      unit: `° ${attackWord(v.attack_angle)}`.trim(),
       precision: 1
     },
     {
       label: 'Club path',
       value: valid(v.club_path) ? Math.abs(v.club_path) : null,
-      unit: `° ${word(v.club_path, right ? 'in-to-out' : 'out-to-in', right ? 'out-to-in' : 'in-to-out')}`.trim(),
+      unit: `° ${pathWord(v.club_path, handedness)}`.trim(),
       precision: 1
     }
   ];
 }
-export function robustSummary(shots, metric, { absolute = false } = {}) {
+// Median and IQR of one metric over included shots. `value` reads a shot's value when it is not a
+// plain reading (smash factor's calculated fallback, club estimates).
+export function robustSummary(shots, metric, { absolute = false, value: read = s => rangeValue(s, metric) } = {}) {
   const values = shots
     .filter(included)
     .map(s => {
-      const value = rangeValue(s, metric);
+      const value = read(s);
       return valid(value) ? (absolute ? Math.abs(value) : value) : null;
     })
     .filter(valid)
@@ -201,7 +247,7 @@ export function robustSummary(shots, metric, { absolute = false } = {}) {
     q3 = count > 1 ? quantile(0.75) : null;
   return { count, median: count ? quantile(0.5) : null, q1, q3, iqr: count > 1 ? q3 - q1 : null };
 }
-export function clubSummaries(shots) {
+export function clubSummaries(shots, metrics = CLUB_METRICS) {
   const groups = new Map();
   shots.filter(included).forEach(s => {
     const e = equipment(s),
@@ -213,7 +259,7 @@ export function clubSummaries(shots) {
   return [...groups.values()].map(g => ({
     label: g.label,
     count: g.shots.length,
-    metrics: CLUB_METRICS.map(m => robustSummary(g.shots, m.key, m))
+    metrics: metrics.map(m => ({ key: m.key, ...robustSummary(g.shots, m.key, m) }))
   }));
 }
 export function rangeCsv(shots) {
