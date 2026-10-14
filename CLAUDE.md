@@ -9,7 +9,8 @@ interface rules; this file condenses them. If either source changes, update this
 ## What TraceLoft is
 
 A local golf practice, play and analysis app. One background Python service (FastAPI + SQLite)
-receives shots over GSPro Open Connect v1 (TCP 127.0.0.1:900), records them, owns all shared
+receives shots over GSPro Open Connect v1 (TCP 127.0.0.1:900; 0.0.0.0:900 with `--remote-input`,
+D66), records them, owns all shared
 practice/game state and serves the vanilla-JS "Vector" web UI on http://localhost:8765.
 Screen capture/OCR lives in the separate private TraceCapture app and never belongs here.
 
@@ -87,7 +88,8 @@ verified upgrade. Helper tests do not verify the interface in a real browser.
   replays stored shots. A source declaring `SimulatorDelivery: 'source'` (TraceCapture) sends to the
   simulator itself; the relay then steps aside and only publishes the destination in Context (D61).
 - **One input owner.** Only one Open Connect producer may connect at a time. Localhost needs no
-  pairing; LAN mode is an explicit launcher option.
+  pairing; LAN mode is an explicit launcher option. Remote shot input (`--remote-input`, D66) is a
+  separate opt-in, passed by the LAN launchers, and has no authentication.
 - **Evidence is immutable.** Raw packets, `metric_values` and source reports never change.
   Recalculation appends versioned derived results, and analysis uses them only after explicit
   publication. Played and drill outcomes stay pinned and are never rescored.

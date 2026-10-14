@@ -1,5 +1,21 @@
 # TraceLoft work log
 
+## 2026-10-13 — Shot input from other machines (D66)
+
+- `--remote-input` (web_app.py, launch_web.py) makes the Open Connect input bind 0.0.0.0:900 through
+  `ShotInput.accept_remote()`. The default stays 127.0.0.1.
+- `Launch TraceLoft LAN.cmd` passes it, and so does TraceCapture's `launch_capture.py --lan`.
+- launch_web refuses to reuse a running service that lacks it.
+- The runtime file records `remote_input`, and startup prints the address to point a source at.
+- **Relay page:** the chip reads "any machine"; the hint gives this PC's address plus a no-password
+  warning; the source line names a remote source's address (`input.peer`).
+- **Verification:**
+  - New relay test: the default binds 127.0.0.1 and records the peer, which clears on disconnect.
+    Remote mode binds 0.0.0.0, accepts a connection, and still refuses a second source with 503.
+  - Full `verify.py` before commit.
+  - Not checked: a real connection from another machine. That needs the Windows Firewall rule for
+    TCP 900 and the VPN or VM in place.
+
 ## 2026-10-13 — Club estimates under both Analyze bases
 
 - After the restart the golfer saw the four estimates in the picker but no values. Analyze opens on

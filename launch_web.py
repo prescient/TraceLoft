@@ -23,6 +23,7 @@ def ready(port):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--lan", action="store_true")
+    parser.add_argument("--remote-input", action="store_true")  # D66: shots from other machines
     parser.add_argument("--stop", action="store_true")
     parser.add_argument("--no-open", action="store_true")
     parser.add_argument("--resume-session", help=argparse.SUPPRESS)
@@ -48,6 +49,10 @@ def main():
         raise SystemExit(
             "The local service is running. Use Stop TraceLoft Web, then launch Web LAN."
         )
+    if live and args.remote_input and not runtime.get("remote_input"):
+        raise SystemExit(
+            "TraceLoft is running without remote shot input. Stop it, then launch it again."
+        )
     if not live:
         if ready(8765):
             raise SystemExit(
@@ -64,6 +69,7 @@ def main():
                     "-u",
                     str(ROOT / "web_app.py"),
                     *(["--lan"] if args.lan else []),
+                    *(["--remote-input"] if args.remote_input else []),
                     *(["--resume-session", args.resume_session] if args.resume_session else []),
                 ],
                 cwd=ROOT,

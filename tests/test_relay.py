@@ -307,6 +307,41 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         r2, w2 = await self.client()
         self.assertEqual(Frames().feed(await asyncio.wait_for(r2.read(8192), 2))[0]['Code'], 503)
 
+    async def test_input_listens_on_localhost_unless_remote_input_is_enabled(self):
+        # Default: loopback only, and the connected source's address is recorded.
+        self.assertEqual(self.service.input.server.sockets[0].getsockname()[0], '127.0.0.1')
+        self.assertFalse(self.service.input.state['remote'])
+        r, w = await self.client()
+        await self.exchange(r, w, heartbeat())
+        self.assertEqual(self.service.input.state['peer'], '127.0.0.1')
+        w.close()
+        await asyncio.sleep(0.1)
+        self.assertIsNone(self.service.input.state['peer'])
+        # D66: remote input binds every interface; one-source ownership still applies.
+        folder = tempfile.TemporaryDirectory()
+        remote = GolfService(folder.name)
+        try:
+            remote.input.port = 0
+            remote.input.accept_remote('192.0.2.10')
+            await remote.input.start()
+            self.assertEqual(remote.input.server.sockets[0].getsockname()[0], '0.0.0.0')
+            self.assertEqual(
+                (remote.input.state['remote'], remote.input.state['address']), (True, '192.0.2.10')
+            )
+            r, w = await asyncio.open_connection('127.0.0.1', remote.input.port)
+            self.writers.append(w)
+            await self.exchange(r, w, heartbeat())
+            r2, w2 = await asyncio.open_connection('127.0.0.1', remote.input.port)
+            self.writers.append(w2)
+            self.assertEqual(
+                Frames().feed(await asyncio.wait_for(r2.read(8192), 2))[0]['Code'], 503
+            )
+        finally:
+            for writer in self.writers[-2:]:
+                writer.close()
+            await remote.shutdown()
+            folder.cleanup()
+
     async def test_shutdown_closes_a_connected_source_without_waiting_for_it(self):
         r, w = await self.client()
         await self.exchange(r, w, heartbeat())

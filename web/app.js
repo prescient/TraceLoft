@@ -505,8 +505,12 @@ async function renderSessions() {
 
 function renderRelay() {
   const relay = state.relay;
-  app.innerHTML = html`<div class="page-head"><div><p class="eyebrow">CONNECT / RECORD / FORWARD</p><h1>Relay</h1><p class="subtitle">Incoming shots save automatically. Choose where they go next.</p></div><span class="chip accent">Always listening · TCP ${state.input.port}</span></div>
-  <div class="capture-grid"><section class="card"><h2>Incoming shots</h2><div id="relay-source" class="section-space"></div><p class="form-hint">Point your shot source at <strong>127.0.0.1:${state.input.port}</strong> using GSPro Open Connect.</p><div class="table-wrap section-space" id="relay-read"></div></section>
+  app.innerHTML = html`<div class="page-head"><div><p class="eyebrow">CONNECT / RECORD / FORWARD</p><h1>Relay</h1><p class="subtitle">Incoming shots save automatically. Choose where they go next.</p></div><span class="chip accent">Always listening · TCP ${state.input.port}${state.input.remote ? ' · any machine' : ''}</span></div>
+  <div class="capture-grid"><section class="card"><h2>Incoming shots</h2><div id="relay-source" class="section-space"></div><p class="form-hint">${
+    state.input.remote
+      ? html`Point a source on this PC at <strong>127.0.0.1:${state.input.port}</strong>, or one on another machine at <strong>${state.input.address ?? "this PC's address"}:${state.input.port}</strong>, using GSPro Open Connect. Remote input has no password: anyone who can reach this port can send shots.`
+      : html`Point your shot source at <strong>127.0.0.1:${state.input.port}</strong> using GSPro Open Connect.`
+  }</p><div class="table-wrap section-space" id="relay-read"></div></section>
   <section class="card"><h2>Send shots to</h2><label class="field section-space">Destination<select id="relay-destination"><option value="off">Off · record only</option><option value="gspro">GSPro</option><option value="infinite_tees">Infinite Tees</option></select></label><p class="form-hint">Saved automatically. Direct connection; no adapter app required.</p><div id="relay-output" class="section-space" role="status"></div><details class="details section-space"><summary>Connection details</summary><form id="relay-connection"><label class="field">Simulator port<input name="port" type="number" min="1" max="65535" value="${relay.port}" required></label><p class="form-hint">Localhost · GSPro defaults to 921; Infinite Tees to 999.</p><button class="btn" type="submit">Save port</button></form></details></section></div>
   <section class="card section-space"><h2>Data & backups</h2><p class="form-hint">Shots and sessions save to SQLite, even when forwarding is off or the simulator is disconnected.</p><div class="form-foot"><a class="btn" href="/api/exports/csv" download>Export CSV</a>${button('Back up database', 'backup-database', 'quiet')}</div><p id="database-backup-status" class="backup-status" role="status"></p></section>
   <details class="card section-space"><summary>Access & diagnostics</summary><p>${state.access.addresses.map((url, i) => [i ? ' · ' : '', html`<a href="${url}">${url}</a>`])}</p><pre id="relay-logs" class="diagnostic-log"></pre></details>`;
@@ -536,7 +540,10 @@ function renderRelay() {
 function updateRelay() {
   const source = app.querySelector('#relay-source');
   if (!source) return;
-  source.innerHTML = html`<strong>${state.capture.status}</strong><p>${state.input.device || 'No source connected'} · ${state.input.received} records stored this run</p>${state.input.error ? html`<p class="session-error">${state.input.error}</p>` : ''}`;
+  // A source on another machine (remote input, D66) shows where it connects from.
+  const remotePeer =
+    state.input.peer && !['127.0.0.1', '::1'].includes(state.input.peer) ? state.input.peer : '';
+  source.innerHTML = html`<strong>${state.capture.status}</strong><p>${state.input.device || 'No source connected'}${remotePeer ? ` from ${remotePeer}` : ''} · ${state.input.received} records stored this run</p>${state.input.error ? html`<p class="session-error">${state.input.error}</p>` : ''}`;
   const relay = state.relay;
   app.querySelector('#relay-output').innerHTML =
     relay.delegated && relay.enabled

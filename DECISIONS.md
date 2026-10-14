@@ -1,5 +1,21 @@
 # TraceLoft architecture decisions
 
+## D66 — Shot input from other machines (2026-10-13)
+
+The user wants shot sources on other machines to reach TraceLoft, for example rēlā in a VM on a
+laptop at another facility, over the VPN. The `--remote-input` option binds the Open Connect input to
+every interface (0.0.0.0:900) instead of 127.0.0.1.
+- Off by default. The LAN launchers turn it on: `Launch TraceLoft LAN.cmd` and TraceCapture's
+  `launch_capture.py --lan`, which the desktop shortcut runs.
+- **No authentication:** Open Connect has none, so anyone who can reach the port can send shots. The
+  user accepted this, as for D62. Windows Firewall must allow inbound TCP 900. Do not port-forward 900
+  to the internet; use the VPN.
+- **One source at a time** still applies. While a remote source is connected, TraceCapture (or any
+  other source) is refused with 503 and its receipts wait in its outbox.
+- The Relay page shows "any machine", this PC's address, and the address a remote source connects
+  from.
+- Simulator forwarding is unchanged and stays local.
+
 ## D65 — iPad table imports (2026-10-13)
 
 The user scrolls through the iPad app's shot table on AirPlay, and TraceCapture reads every row. The

@@ -14,7 +14,10 @@ On this PC, double-click **Launch TraceLoft.cmd**. Open **http://localhost:8765*
 TraceLoft automatically listens for GSPro Open Connect v1 JSON on **127.0.0.1:900**.
 On Relay, choose **Off**, **GSPro** (921), or **Infinite Tees** (999). The choice saves immediately
 and reconnects automatically. No rēlā adapter is needed. All three choices record incoming shots.
-Use **Launch TraceLoft LAN.cmd** for browser access on your trusted local network. Input stays local.
+Use **Launch TraceLoft LAN.cmd** for browser access on your trusted local network. It also accepts
+shots from other machines on port 900 (`--remote-input`, D66), such as rēlā in a VM or over a VPN.
+This has no password: allow inbound TCP 900 in Windows Firewall, and never port-forward it to the
+internet. The plain launcher keeps input local.
 Closing the browser leaves the service running; **Stop TraceLoft.cmd** stops it. A normal restart
 restores the unfinished session without adding or ending any shots.
 

@@ -692,6 +692,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--lan", action="store_true")
+    # D66: accept Open Connect shots from other machines (rēlā in a VM, over a VPN). No authentication.
+    parser.add_argument("--remote-input", action="store_true")
     parser.add_argument("--open", action="store_true")
     parser.add_argument("--resume-session", help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -714,6 +716,8 @@ def main():
         else [],
         extra_hosts=extra_hosts() if args.lan else [],
     )
+    if args.remote_input:
+        service.input.accept_remote(socket.gethostbyname(socket.gethostname()))
     app = create_app(service)
     config = uvicorn.Config(
         app,
@@ -726,8 +730,20 @@ def main():
     app.state.stop_server = lambda: setattr(server, "should_exit", True)
     runtime = runtime_file()
     if runtime:
-        runtime.write_text(json.dumps(dict(pid=os.getpid(), port=args.port, lan=args.lan)))
+        runtime.write_text(
+            json.dumps(
+                dict(
+                    pid=os.getpid(), port=args.port, lan=args.lan, remote_input=args.remote_input
+                )
+            )
+        )
     print(f"TraceLoft: http://localhost:{args.port}", flush=True)
+    if args.remote_input:
+        print(
+            f"Shot input accepts any machine: {socket.gethostbyname(socket.gethostname())}:"
+            f"{service.input.port} (no authentication; allow it in Windows Firewall)",
+            flush=True,
+        )
     if args.lan:
         print(
             f"LAN address: http://{socket.gethostbyname(socket.gethostname())}:{args.port}",

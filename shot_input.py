@@ -358,9 +358,13 @@ class Relay:
         self.state.update(connected=False, status='Forwarding off', player={})
 
 
+LOCAL_INPUT = '127.0.0.1'
+ANY_MACHINE = '0.0.0.0'  # remote shot input (D66): every interface, e.g. rēlā in a VM or over a VPN
+
+
 class ShotInput:
-    def __init__(self, service, port=900):
-        self.service, self.port = service, port
+    def __init__(self, service, port=900, host=LOCAL_INPUT):
+        self.service, self.port, self.host = service, port, host
         self.server = None
         self.relay = Relay()
         self.last_seen = 0
@@ -371,6 +375,8 @@ class ShotInput:
         self.state = dict(
             listening=False,
             port=port,
+            remote=host != LOCAL_INPUT,
+            peer=None,  # address of the connected source (shown when it is another machine)
             device=None,
             received=0,
             duplicates=0,
@@ -606,8 +612,17 @@ class ShotInput:
                 accepted=True, duplicate=False, forwarded=forwarded, receipt_id=event['receipt_id']
             )
 
+    def accept_remote(self, address=None):
+        """Listen on every interface instead of localhost only (D66, the user's choice 2026-10-13).
+
+        Open Connect has no authentication: anyone who can reach the port can send shots. One-source
+        ownership still applies, so a remote source also blocks TraceCapture while it is connected.
+        `address` is this PC's network address, shown on the Relay page. Call before start()."""
+        self.host = ANY_MACHINE
+        self.state.update(remote=True, address=address)
+
     async def start(self):
-        self.server = await asyncio.start_server(self._client, '127.0.0.1', self.port, limit=262144)
+        self.server = await asyncio.start_server(self._client, self.host, self.port, limit=262144)
         self.port = self.server.sockets[0].getsockname()[1]
         self.state.update(listening=True, port=self.port)
 
@@ -626,6 +641,8 @@ class ShotInput:
             return
         self.clients.add(writer)
         self.source = connection_id
+        peer = writer.get_extra_info('peername')
+        self.state['peer'] = peer[0] if peer else None
         frames = Frames()
         last = -1
         device = None
@@ -696,6 +713,7 @@ class ShotInput:
             writer.close()
             if self.source == connection_id:
                 self.source = None
+                self.state['peer'] = None
                 self.service.capture.update(
                     running=False, connected=False, status='Waiting for shot source'
                 )

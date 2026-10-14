@@ -12,6 +12,8 @@ separate states; a simulator outage does not stop local recording.
 [GSPro Open Connect v1](https://gsprogolf.com/GSProConnectV1.html) is raw UTF-8 JSON over TCP.
 TraceLoft binds localhost:900, accepts one producer at a time, handles fragmented/concatenated JSON,
 and limits pending input to 256 KiB. Use periodic heartbeat packets while connected (idle timeout 20s).
+With `--remote-input` (D66, used by the LAN launchers) it binds 0.0.0.0:900, so a producer on
+another machine can connect. There is no authentication; Relay shows the remote source's address.
 
 ```json
 {"DeviceID":"My monitor","Units":"Yards","ShotNumber":1,"APIversion":"1",
