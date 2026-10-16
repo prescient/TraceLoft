@@ -114,6 +114,40 @@ class ProtocolTests(unittest.TestCase):
                 asyncio.run(service.shutdown())
 
 
+class SimulatorAddressTests(unittest.IsolatedAsyncioTestCase):
+    """D69: the simulator may be this PC or another PC on the private network, never the internet."""
+
+    async def test_private_network_address_is_accepted_and_kept(self):
+        from shot_input import Relay
+
+        relay = Relay()
+        relay._connect = lambda: asyncio.sleep(0)  # no dialling in this test
+        await relay.configure(dict(destination='gspro', host='10.10.0.190', port=921), 900)
+        self.assertEqual((relay.state['host'], relay.state['port']), ('10.10.0.190', 921))
+        await relay.close()
+
+    async def test_names_and_public_addresses_are_refused(self):
+        from shot_input import Relay, simulator_host
+
+        for host in ('gspro.example.com', '8.8.8.8', '0.0.0.0', '', None, 921):
+            with self.assertRaisesRegex(ValueError, 'network address'):
+                simulator_host(host)
+        self.assertEqual(simulator_host('192.168.1.20'), '192.168.1.20')
+        relay = Relay()
+        with self.assertRaises(ValueError):
+            await relay.configure(dict(destination='gspro', host='8.8.8.8'), 900)
+
+    async def test_input_port_conflict_applies_only_on_this_pc(self):
+        from shot_input import Relay
+
+        relay = Relay()
+        relay._connect = lambda: asyncio.sleep(0)
+        with self.assertRaisesRegex(ValueError, 'differ from input'):
+            await relay.configure(dict(destination='gspro', host='127.0.0.1', port=921), 921)
+        await relay.configure(dict(destination='gspro', host='10.10.0.190', port=921), 921)
+        await relay.close()
+
+
 class RelayTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temp = tempfile.TemporaryDirectory()

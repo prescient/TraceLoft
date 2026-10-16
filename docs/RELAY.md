@@ -74,7 +74,9 @@ own review workflow, still planned. Extra top-level vendor fields survive in raw
 
 ## Forwarding
 
-GSPro defaults to localhost:921; Infinite Tees to localhost:999. Only documented fields are forwarded,
+GSPro defaults to localhost:921; Infinite Tees to localhost:999. The simulator may also run on another
+PC: set Connection details → Simulator address to its private-network IP address (D69). Host names and
+public addresses are refused. Changing the destination keeps the address and resets the port. Only documented fields are forwarded,
 with a relay-owned monotonically increasing ShotNumber per service run. Private extensions stay in
 SQLite. The relay sends readiness heartbeats, reconnects automatically, and never queues/replays shots
 for a disconnected simulator. Socket-write evidence is labeled unacknowledged: simulator Code 200 has

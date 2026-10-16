@@ -2,6 +2,7 @@
 
 import asyncio
 import copy
+import ipaddress
 import json
 import math
 import re
@@ -207,6 +208,26 @@ def find_overlap(connection, vals):
     return dict(shot_id=row[0], captured=row[1]) if row else None
 
 
+LOCAL_SIMULATOR_HOSTS = ('localhost', '127.0.0.1', '::1')
+
+
+def simulator_host(host):
+    """The simulator address to dial: this PC, or a private-network IP address such as a GSPro PC on
+    the same LAN (D69). Host names and public addresses are refused, so the relay never resolves a
+    name or sends shots off the local network."""
+    if host in LOCAL_SIMULATOR_HOSTS:
+        return host
+    try:
+        address = ipaddress.ip_address(host if isinstance(host, str) else '')
+    except ValueError:
+        address = None
+    if address is None or not address.is_private or address.is_unspecified:
+        raise ValueError(
+            'Use 127.0.0.1 for this PC, or the simulator PC\'s network address (such as 10.10.0.190).'
+        )
+    return str(address)
+
+
 def source_delivers(packet):
     """Whether the sender declared that it sends shots to the simulator itself (TraceCapture)."""
     extension = packet.get('TraceLoft')
@@ -248,11 +269,11 @@ class Relay:
         destination = settings.get('destination', 'off')
         if destination not in ('off', 'gspro', 'infinite_tees'):
             raise ValueError('Select Off, GSPro or Infinite Tees.')
-        host = settings.get('host', '127.0.0.1')
-        if host not in ('localhost', '127.0.0.1', '::1'):
-            raise ValueError('Use a localhost simulator address.')
+        host = simulator_host(settings.get('host', '127.0.0.1'))
         port = settings.get('port', 999 if destination == 'infinite_tees' else 921)
-        if type(port) is not int or not 1 <= port <= 65535 or port == input_port:
+        if type(port) is not int or not 1 <= port <= 65535:
+            raise ValueError('Simulator port must be between 1 and 65535.')
+        if port == input_port and host in LOCAL_SIMULATOR_HOSTS:
             raise ValueError('Simulator port must differ from input port.')
         await self.close()
         self.state.update(

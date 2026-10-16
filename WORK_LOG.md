@@ -1,5 +1,20 @@
 # TraceLoft work log
 
+## 2026-10-16 — Simulator on another PC (D69)
+
+- New PC setup: Python 3.12.10 via winget, `.venv` from `requirements-lock.txt`, fresh database.
+- `shot_input.simulator_host()` accepts this PC or a private-network IP address and refuses names and
+  public addresses. `Relay.configure` uses it; the input/simulator port conflict applies only on this PC.
+- Relay → Connection details has a Simulator address field ("Save connection"). Changing the
+  destination keeps the address.
+- **Verification:**
+  - 249 Python tests pass, including three new address tests. 85 UI tests pass (GitHub Desktop's
+    Electron as Node). The Relay page change has no browser-helper test.
+  - Live: Relay saved GSPro at 10.10.0.190:921 and TraceCapture received it in its context. In the
+    browser, Connection details shows the address and port and the page says TraceCapture delivers.
+  - Not verified: an actual connection to GSPro. This PC's WireGuard tunnel ("GolfLaptop") blocks
+    untunneled LAN traffic (WinError 10013), so nothing could reach 10.10.0.190 yet.
+
 ## 2026-10-15 — Random distances (D67)
 
 - New Full swing drill `random-distances` ("Random distances"), chosen by the user as its own drill

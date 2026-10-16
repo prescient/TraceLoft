@@ -511,7 +511,7 @@ function renderRelay() {
       ? html`Point a source on this PC at <strong>127.0.0.1:${state.input.port}</strong>, or one on another machine at <strong>${state.input.address ?? "this PC's address"}:${state.input.port}</strong>, using GSPro Open Connect. Remote input has no password: anyone who can reach this port can send shots.`
       : html`Point your shot source at <strong>127.0.0.1:${state.input.port}</strong> using GSPro Open Connect.`
   }</p><div class="table-wrap section-space" id="relay-read"></div></section>
-  <section class="card"><h2>Send shots to</h2><label class="field section-space">Destination<select id="relay-destination"><option value="off">Off · record only</option><option value="gspro">GSPro</option><option value="infinite_tees">Infinite Tees</option></select></label><p class="form-hint">Saved automatically. Direct connection; no adapter app required.</p><div id="relay-output" class="section-space" role="status"></div><details class="details section-space"><summary>Connection details</summary><form id="relay-connection"><label class="field">Simulator port<input name="port" type="number" min="1" max="65535" value="${relay.port}" required></label><p class="form-hint">Localhost · GSPro defaults to 921; Infinite Tees to 999.</p><button class="btn" type="submit">Save port</button></form></details></section></div>
+  <section class="card"><h2>Send shots to</h2><label class="field section-space">Destination<select id="relay-destination"><option value="off">Off · record only</option><option value="gspro">GSPro</option><option value="infinite_tees">Infinite Tees</option></select></label><p class="form-hint">Saved automatically. Direct connection; no adapter app required.</p><div id="relay-output" class="section-space" role="status"></div><details class="details section-space"><summary>Connection details</summary><form id="relay-connection"><label class="field">Simulator address<input name="host" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="${relay.host}" required></label><label class="field">Simulator port<input name="port" type="number" min="1" max="65535" value="${relay.port}" required></label><p class="form-hint">127.0.0.1 for this PC, or the simulator PC's network address. GSPro defaults to 921; Infinite Tees to 999.</p><button class="btn" type="submit">Save connection</button></form></details></section></div>
   <section class="card section-space"><h2>Data & backups</h2><p class="form-hint">Shots and sessions save to SQLite, even when forwarding is off or the simulator is disconnected.</p><div class="form-foot"><a class="btn" href="/api/exports/csv" download>Export CSV</a>${button('Back up database', 'backup-database', 'quiet')}</div><p id="database-backup-status" class="backup-status" role="status"></p></section>
   <details class="card section-space"><summary>Access & diagnostics</summary><p>${state.access.addresses.map((url, i) => [i ? ' · ' : '', html`<a href="${url}">${url}</a>`])}</p><pre id="relay-logs" class="diagnostic-log"></pre></details>`;
   const select = app.querySelector('#relay-destination');
@@ -528,12 +528,14 @@ function renderRelay() {
     }
   };
   select.onchange = async () => {
-    await save({ destination: select.value });
+    // A new destination takes its default port but keeps the simulator PC's address (D69).
+    await save({ destination: select.value, host: state.relay.host });
     app.querySelector('#relay-connection').elements.port.value = state.relay.port;
   };
   app.querySelector('#relay-connection').onsubmit = async e => {
     e.preventDefault();
-    await save({ destination: select.value, port: Number(e.target.elements.port.value) });
+    const { host, port } = e.target.elements;
+    await save({ destination: select.value, host: host.value.trim(), port: Number(port.value) });
   };
   updateRelay();
 }

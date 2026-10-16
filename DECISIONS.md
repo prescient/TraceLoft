@@ -1,5 +1,18 @@
 # TraceLoft architecture decisions
 
+## D69 — Simulator on another PC on the private network (2026-10-16)
+
+GSPro runs on a separate PC on the same network (10.10.0.190), and the user asked TraceLoft to relay
+shots to it. Relay → Connection details now has a **Simulator address**:
+- **Allowed:** 127.0.0.1/localhost/::1 for this PC, or a private-network IP address (10.x, 172.16–31.x,
+  192.168.x, IPv6 private). Host names and public addresses are refused, so the relay never resolves a
+  name and never sends shots off the local network. Simulator Open Connect has no authentication.
+- **Kept across destinations:** switching GSPro/Infinite Tees resets the port to that simulator's
+  default but keeps the address.
+- The input port only has to differ from the simulator port on this PC.
+- The address reaches a delivering source in `Context.simulator` as before. TraceCapture's simulator
+  link applies the same address rule (its D69). The GSPro PC must accept inbound TCP 921.
+
 ## D67 — Random distances (2026-10-15)
 
 The user wants a range mode that asks for random distances, to practice swinging between clubs.
@@ -30,7 +43,7 @@ every interface (0.0.0.0:900) instead of 127.0.0.1.
   other source) is refused with 503 and its receipts wait in its outbox.
 - The Relay page shows "any machine", this PC's address, and the address a remote source connects
   from.
-- Simulator forwarding is unchanged and stays local.
+- Simulator forwarding is unchanged and stays local (until D69).
 
 ## D65 — iPad table imports (2026-10-13)
 
