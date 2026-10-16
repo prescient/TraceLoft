@@ -50,6 +50,12 @@ DERIVED_COLUMNS = (
     'target_distance_ft',
     'distance_error_ft',
     'stimp_ft',
+    # Schema 6 -> 7 (D71): per-shot club delivery estimates (club_model, D64).
+    'face_angle_deg',
+    'face_to_path_deg',
+    'dynamic_loft_deg',
+    'spin_loft_deg',
+    'face_to_path_from_spin_deg',
 )
 
 
@@ -276,6 +282,9 @@ def write_result(
             'complete',
         ),
     )
+    # Only the columns this result supplies (the rest stay NULL). Released upgrade steps call this
+    # writer on older schemas that lack later columns, so it must never name a column it is not given.
+    derived = [k for k in DERIVED_COLUMNS if k in values]
     columns = (
         [
             'result_id',
@@ -288,7 +297,7 @@ def write_result(
             'reason',
             'flight_shape',
         ]
-        + list(DERIVED_COLUMNS)
+        + derived
         + ['artifact_json', 'created_at']
     )
     connection.execute(
@@ -304,7 +313,7 @@ def write_result(
             artifact.get('reason'),
             artifact.get('shape'),
         ]
-        + [values.get(k) for k in DERIVED_COLUMNS]
+        + [values[k] for k in derived]
         + [encoded(artifact), timestamp()],
     )
     connection.execute(
@@ -454,6 +463,118 @@ def source_features(connection, shot_id):
         dict(status='ready'),
         values,
         provenance='recomputed_from_selected_source',
+        select=True,
+    )
+
+
+SHOT_ESTIMATES_PROVENANCE = 'computed_per_shot_v1'
+# No session means no golfer or handedness setting; D58 assumes right-handed for every source.
+SHOT_HANDEDNESS = 'right_handed'
+
+
+def is_putt(vals, club_label=''):
+    """A putt for per-shot estimates (D71): tagged as a putter, or the device measured no spin.
+    Ball speed alone does not decide it: a soft chip still spins and launches."""
+    from club_model import club_type
+    from flight_model import with_spin_pair
+
+    kind, source = club_type({'club_label': club_label}, {})
+    if source == 'tag' and kind == 'putter':
+        return True
+    spin = with_spin_pair(vals).get('total_spin')
+    return not (finite(spin) and spin > 0)
+
+
+def shot_estimates(connection, shot_id):
+    """TraceLoft's own estimates for one shot, whether or not it belongs to a session (D71).
+
+    For every shot that is not a putt, from its selected source report:
+    - `flight`: OpenGolfCoach carry, total, offline, apex, descent and hang time (+ trajectory);
+    - `club_delivery`: D64 face angle, face to path, dynamic loft, spin loft and the spin-axis
+      cross-check. Untagged shots use iron weights, recorded as the club-type basis.
+    Both are per-shot results (context 'shot'), selected, and never written into measurements. An
+    unavailable estimate is stored with its reason. Attempt results in sessions are untouched.
+    """
+    from club_model import WEIGHTS, club_type, estimate
+    from flight_model import ASSUMPTIONS, predict
+
+    row = connection.execute(
+        'SELECT r.*, s.reported_club FROM shot_primary_source p JOIN shot_source_metrics r '
+        'ON r.report_id=p.report_id JOIN shots s ON s.id=p.shot_id WHERE p.shot_id=?',
+        (shot_id,),
+    ).fetchone()
+    if not row:
+        return
+    vals = {field: row[column] for field, (column, _, _) in SOURCE_FIELDS.items()}
+    label = (row['reported_club'] or '').strip()
+    if is_putt(vals, label):
+        return
+    basis = 'assumed right-handed (D58); a shot has no handedness of its own'
+    flight = predict(vals, SHOT_HANDEDNESS)
+    m = flight.get('metrics', {})
+    carry, total = flight.get('carry_point_yd', {}), flight.get('total_point_yd', {})
+    write_result(
+        connection,
+        shot_id,
+        row['report_id'],
+        'flight',
+        'shot',
+        flight.get('model'),
+        dict(
+            assumptions=ASSUMPTIONS,
+            handedness=SHOT_HANDEDNESS,
+            handedness_basis=basis,
+            endpoint_method=flight.get('endpoint_method'),
+        ),
+        flight,
+        dict(
+            carry_distance_yd=m.get('carry_yd'),
+            total_distance_yd=m.get('total_yd'),
+            carry_forward_yd=carry.get('forward'),
+            carry_right_yd=carry.get('right'),
+            total_forward_yd=total.get('forward'),
+            total_right_yd=total.get('right'),
+            offline_distance_yd=m.get('offline_yd'),
+            apex_ft=m.get('apex_ft'),
+            descent_angle_deg=m.get('descent_deg'),
+            hang_time_s=m.get('hang_time_s'),
+        ),
+        provenance=SHOT_ESTIMATES_PROVENANCE,
+        select=True,
+    )
+    kind, source = club_type({'club_label': label}, vals)
+    if source != 'tag':
+        kind, source = 'iron', 'default_non_putt'  # spin was measured, so not the slow-putt rule
+    club = estimate(vals, club=(kind, source))
+    values = dict(
+        face_angle_deg=club['face_angle'],
+        face_to_path_deg=club['face_to_path'],
+        dynamic_loft_deg=club['dynamic_loft'],
+        spin_loft_deg=club['spin_loft'],
+        face_to_path_from_spin_deg=club['face_to_path_from_spin'],
+    )
+    ready = club['face_angle'] is not None or club['dynamic_loft'] is not None
+    artifact = dict(
+        club,
+        status='ready' if ready else 'unavailable',
+        reason=None if ready else 'Needs club path or attack angle from the source',
+    )
+    write_result(
+        connection,
+        shot_id,
+        row['report_id'],
+        'club_delivery',
+        'shot',
+        club['model'],
+        dict(
+            club_type=kind,
+            club_type_source=source,
+            weights=WEIGHTS[kind],
+            handedness_basis='face angle is target-relative; ' + basis,
+        ),
+        artifact,
+        values,
+        provenance=SHOT_ESTIMATES_PROVENANCE,
         select=True,
     )
 

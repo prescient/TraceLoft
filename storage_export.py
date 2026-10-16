@@ -161,6 +161,7 @@ def export_archive(store):
             field_sets[table + '.csv'] = [d[0] for d in cursor.description]
         for view, name in (
             ('v_shots_source', 'shots_source.csv'),
+            ('v_shots_analysis', 'shots_analysis.csv'),
             ('v_session_shots', 'session_shots_wide.csv'),
             ('v_session_equipment', 'session_equipment.csv'),
             ('v_calculation_history', 'calculation_history.csv'),
@@ -200,6 +201,7 @@ def export_archive(store):
                         missing='blank; see availability in long export',
                         row_shapes={
                             'shots_source.csv': 'one selected report per physical shot; no model fallback',
+                            'shots_analysis.csv': "one row per physical shot: source columns, then TraceLoft's per-shot model_* flight and est_* club estimates (D71), never measurements",
                             'shot_source_metrics.csv': 'all observations including competing reports',
                             'session_shots_wide.csv': 'one row per session attempt, including excluded/deleted history',
                             'shot_derived_metrics.csv': 'all result versions; filter model family/context before aggregating',

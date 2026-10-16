@@ -1,5 +1,24 @@
 # TraceLoft work log
 
+## 2026-10-16 — Estimates for every non-putt shot, schema 7 (D71)
+
+- `shot_schema.shot_estimates()` and `is_putt()`; `Store.shot_estimates()` runs it in a savepoint after
+  each accepted shot (ingest, practice links and attempt saves). `club_model.estimate(..., club=)`
+  accepts an explicit club type.
+- Schema 7 (`v0007_shot_estimates`): five `shot_derived_metrics` club columns, `v_shots_analysis`
+  rebuilt as one row per shot, and a backfill of all existing shots.
+- `write_result` inserts only supplied columns, so released steps keep working on older schemas.
+- The CSV export adds `shots_analysis.csv`.
+- **Verification:**
+  - 256 Python tests pass (5 new in `tests/test_shot_estimates.py`). The first full run found 111
+    failures: practice saves delete a temporary shot's results, and the new flight trajectory rows
+    blocked that (foreign key). The cleanup now removes trajectories too.
+  - Live: the service upgraded the real database 6 → 7 with a verified backup. The backfill estimated
+    7 of 9 shots; the 2 putts (no spin) got none. TraceLoft's modeled carry matched rēlā's within
+    0.06 yd on all 4 chips that have rēlā estimates. Face angle mostly agreed in direction. TraceLoft's
+    dynamic loft ran 7-23° above rēlā's.
+  - Not yet seen live: a new shot estimated at intake (the backfill path ran; intake is covered by tests).
+
 ## 2026-10-16 — Source estimates table, schema 6 (D70)
 
 - First live rēlā shots (via TraceCapture's rēlā source): 2 putts and 3 chips stored with correct ball

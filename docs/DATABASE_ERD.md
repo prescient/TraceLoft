@@ -1,4 +1,4 @@
-# TraceLoft database relationships — schema 6
+# TraceLoft database relationships — schema 7
 
 These diagrams show the principal implemented relationships. Auxiliary mapping/quality/import,
 typed-state and audit tables are described in [the database guide](SHOT_DATABASE.md).

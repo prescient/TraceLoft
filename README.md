@@ -89,7 +89,7 @@ history. Play saves flight estimates for new full shots; older rounds keep their
 
 ## Storage and contracts
 
-The database is SQLite **schema 6**. It holds:
+The database is SQLite **schema 7**. It holds:
 
 - 18 named source metrics, including reported total distance;
 - immutable, versioned TraceLoft results (wide derived metrics);
@@ -97,7 +97,8 @@ The database is SQLite **schema 6**. It holds:
 - SQL-backed Analyze;
 - immutable bag/wedge cohorts;
 - staged recalculation with explicit publication;
-- a source's own estimates (such as rēlā's face, lie and loft), kept apart from measurements (D70).
+- a source's own estimates (such as rēlā's face, lie and loft), kept apart from measurements (D70);
+- TraceLoft's own flight and club-delivery estimates for every non-putt shot, session or not (D71).
 
 Existing IDs, raw evidence, sessions and game scores are preserved, and historical outcomes stay
 pinned. Each upgrade creates a verified pre-upgrade backup; the frozen, numbered upgrade steps

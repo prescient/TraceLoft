@@ -1,13 +1,14 @@
 # TraceLoft backlog
 
-## Option — store club estimates as calculation results (2026-10-13, not started)
+## Option — club estimates in calculation management (2026-10-13; storage done 2026-10-16)
 
-Analyze computes the D64 club estimates when it reads (docs/ANALYZE.md). Storing them as versioned
-`club_delivery` calculation results would let calculation management stage, publish and pin them
-like flight results.
-- This needs a schema migration that adds derived-metric columns.
-- Released backfills call `write_result`, so give the earlier steps a frozen copy of the old writer.
-- Do it only if pinned or reviewed estimate versions become needed.
+Done (D71, schema 7): every non-putt shot stores per-shot `club_delivery` and `flight` results
+(context `shot`); `write_result` inserts only supplied columns, so released steps need no frozen copy.
+Still open:
+- Analyze computes D64 when it reads (docs/ANALYZE.md) and does not use the stored results.
+- Recalculation's family whitelist and inputs are attempt-based; staging, publishing and pinning
+  `club_delivery` or per-shot results is not supported.
+- Sessionless shots (rēlā without a drill) do not appear in Analyze at all.
 
 ## TraceCapture Premier memory source — 2026-10-11
 

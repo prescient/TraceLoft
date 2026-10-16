@@ -20,7 +20,7 @@ Screen capture/OCR lives in the separate private TraceCapture app and never belo
 | Service authority: active session, mutations, live revision | `web_service.py` (`GolfService`) |
 | Shot input and simulator relay | `shot_input.py`, `open_connect.py` |
 | SQLite store: writer transactions, snapshot reads, backup | `storage.py` |
-| Frozen schema upgrades (1→6) | `migrations/` (`sql/000N_*.sql`, `v000N_*.py`, `STEPS`) |
+| Frozen schema upgrades (1→7) | `migrations/` (`sql/000N_*.sql`, `v000N_*.py`, `STEPS`) |
 | CSV/ZIP export; pre-SQLite import; offline CLI | `storage_export.py`, `legacy_import.py`, `database_tools.py` |
 | Schema layers (DDL, backfill, readers) | `shot_schema.py`, `domain_schema.py`, `analysis_schema.py`, `recalculation.py` |
 | Drill registry (catalog, creation, restore) | `drills.py` |

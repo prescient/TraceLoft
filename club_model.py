@@ -55,9 +55,12 @@ def club_type(equipment, vals):
     return ('putter' if finite(speed) and speed < PUTT_SPEED else 'iron'), 'default'
 
 
-def estimate(vals, equipment=None):
-    """Estimated face angle, face to path, dynamic loft and spin loft (None when inputs are missing)."""
-    kind, source = club_type(equipment, vals)
+def estimate(vals, equipment=None, club=None):
+    """Estimated face angle, face to path, dynamic loft and spin loft (None when inputs are missing).
+
+    club: an explicit (type, how it was chosen) that overrides club_type(), for callers that know more
+    than the ball speed, e.g. a shot with measured spin is not a putt however slow it is (D71)."""
+    kind, source = club or club_type(equipment, vals)
     k, a = WEIGHTS[kind]
     hla, path = vals.get('launch_dir'), vals.get('club_path')
     vla, attack = vals.get('launch_ang'), vals.get('attack_angle')

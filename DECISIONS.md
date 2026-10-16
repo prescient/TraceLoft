@@ -1,5 +1,29 @@
 # TraceLoft architecture decisions
 
+## D71 — TraceLoft's estimates for every non-putt shot (2026-10-16)
+
+Until now TraceLoft computed its own estimates only inside range-family sessions. rēlā shots arrive
+with no session, so they had none. The user chose to calculate them for every shot that is not a
+putt, flight and club delivery both, backfilled, stored and exported (Analyze stays session-based).
+- **Per shot:** `shot_schema.shot_estimates` writes two selected results with context `shot` in
+  `shot_derived_metrics`:
+  - `flight`: OpenGolfCoach carry, total, offline, apex, descent, hang time and trajectory;
+  - `club_delivery`: D64 face angle, face to path, dynamic loft, spin loft and the spin-axis
+    cross-check (new columns, schema 7).
+  Attempt results in sessions are unchanged.
+- **Putt rule:** a putt is a shot tagged as a putter or with no measured spin (> 0). Ball speed
+  alone does not decide it: rēlā chips at 8.5-11.5 mph spin and launch at 22-30°, and the D64
+  "untagged under 25 mph" rule would call them putts. Untagged non-putts use iron weights, recorded
+  as `default_non_putt`.
+- **Unknowns:** no session means no golfer, club or handedness. Flight assumes right-handed (D58) and
+  says so in the run parameters. Nothing is written into measurements.
+- **Record first:** computed after the shot's rows, in a savepoint; a failure is logged and rolled back
+  to the savepoint, never the shot. OpenGolfCoach takes about 1.5 ms per shot.
+- **Schema 7** adds the club columns, rebuilds `v_shots_analysis` as one row per shot with its source
+  features, `model_*` flight and `est_*` club estimates, and backfills every existing shot. The CSV
+  export adds `shots_analysis.csv`. The results writer now inserts only the columns a result supplies,
+  so released steps still run on older schemas.
+
 ## D70 — A source's own estimates get their own table (2026-10-16)
 
 rēlā sends GSPro face angle, lie, loft, closure rate, impact location and carry for the Foresight

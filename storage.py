@@ -4,6 +4,7 @@ import contextlib
 import copy
 import hashlib
 import json
+import logging
 import math
 import os
 import re
@@ -14,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 FIELDS = {
     'ball_speed': ('ball.speed', 'mph', 0.44704),
     'launch_ang': ('ball.launch_angle', 'deg', 1),
@@ -768,7 +769,21 @@ class Store:
         write_source(self.connection, observation_id)
         if shot_id:
             source_features(self.connection, shot_id)
+            self.shot_estimates(shot_id)
         return event_id
+
+    def shot_estimates(self, shot_id):
+        """TraceLoft's per-shot flight and club estimates (D71), inside the caller's transaction.
+        Record first: a failing estimate is rolled back to its savepoint and logged, never the shot."""
+        from shot_schema import shot_estimates
+
+        self.connection.execute('SAVEPOINT shot_estimates')
+        try:
+            shot_estimates(self.connection, shot_id)
+        except (ValueError, TypeError, KeyError, sqlite3.Error) as exc:
+            self.connection.execute('ROLLBACK TO shot_estimates')
+            logging.getLogger(__name__).warning('Shot estimates skipped for %s: %s', shot_id, exc)
+        self.connection.execute('RELEASE shot_estimates')
 
     def _source_estimates(self, observation_id, shot_id, estimates):
         """One source_estimates row per value a source estimated for this shot (D70). Never written
@@ -996,11 +1011,17 @@ class Store:
                             'DELETE FROM calculation_inputs WHERE result_id IN (SELECT result_id FROM shot_derived_metrics WHERE shot_id=?)',
                             (own_shot,),
                         )
+                        # Per-shot flight estimates (D71) carry a trajectory row.
+                        self.connection.execute(
+                            'DELETE FROM shot_trajectories WHERE result_id IN (SELECT result_id FROM shot_derived_metrics WHERE shot_id=?)',
+                            (own_shot,),
+                        )
                         self.connection.execute(
                             'DELETE FROM shot_derived_metrics WHERE shot_id=?', (own_shot,)
                         )
                         write_source(self.connection, obs_id)
                         source_features(self.connection, linked_shot)
+                        self.shot_estimates(linked_shot)
                         self.connection.execute(
                             'DELETE FROM shot_owners WHERE shot_id=?', (own_shot,)
                         )
@@ -1025,6 +1046,7 @@ class Store:
 
                 write_source(self.connection, obs_id)
                 source_features(self.connection, shot_id)
+                self.shot_estimates(shot_id)
                 save_attempt_results(self.connection, data, shot, ordinal, legacy=imported)
             from domain_schema import write_session
 

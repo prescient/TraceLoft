@@ -1,4 +1,4 @@
-# Readable shot database — schema 6
+# Readable shot database — schema 7
 
 SQLite is authoritative at `%USERPROFILE%\GolfData\data\golfdata.sqlite3`, outside OneDrive.
 The additive migration retains existing shot IDs, raw packets, reports, original units, sessions,
@@ -9,6 +9,7 @@ scores, inclusion decisions and correction history. [ERD](DATABASE_ERD.md) shows
 | View | Row meaning |
 | --- | --- |
 | `v_shots_source` | One physical shot and its explicitly selected source report |
+| `v_shots_analysis` | One physical shot: source columns, source features, TraceLoft's per-shot `model_*` flight and `est_*` club estimates (D71) |
 | `v_session_current_metrics` | One attempt, golfer/equipment context, all source columns and selected analytical outputs |
 | `v_session_shots` | One attempt with its original pinned flight/putting results for historical review |
 | `v_session_equipment` | Original or corrected effective club/bag identity and configuration |
@@ -87,12 +88,27 @@ face angle, dynamic lie and loft, closure rate, impact location and carry for a 
 measures none of them. One immutable row per observation and metric: `estimator` (e.g. `rela`),
 `metric_key` and `real_value` in the canonical unit (`canonical_unit`), and the value as sent
 (`source_field`, `source_value`, `source_unit`). They never enter `metric_values` or
-`shot_source_metrics`, so analysis cannot mistake them for measurements. Compare them with
-TraceLoft's own estimates (D64 `club_estimates`, D63 `range_vals`) by `shot_id`:
+`shot_source_metrics`, so analysis cannot mistake them for measurements.
+
+## TraceLoft's per-shot estimates (schema 7, D71)
+
+Every shot that is not a putt (tagged putter, or no measured spin) gets two selected results with
+`context_id = 'shot'` in `shot_derived_metrics`, session or not: `flight` (OpenGolfCoach carry,
+total, offline, apex, descent, hang time, trajectory) and `club_delivery` (D64 face angle, face to
+path, dynamic loft, spin loft, spin-axis cross-check). Untagged shots use iron weights; handedness is
+assumed right-handed (D58). `v_shots_analysis` shows them beside the source columns. Compare rēlā's
+estimates with TraceLoft's by shot:
 
 ```sql
-SELECT e.shot_id, e.metric_key, e.real_value AS rela_estimate, e.canonical_unit
-FROM source_estimates e WHERE e.estimator = 'rela' ORDER BY e.shot_id, e.metric_key;
+SELECT a.shot_id, a.occurred_at,
+       a.est_face_angle_deg, f.real_value AS rela_face_angle_deg,
+       a.est_dynamic_loft_deg, l.real_value AS rela_dynamic_loft_deg,
+       a.model_carry_distance_yd, c.source_value AS rela_carry_yd
+FROM v_shots_analysis a
+LEFT JOIN source_estimates f ON f.shot_id = a.shot_id AND f.metric_key = 'club.face_angle'
+LEFT JOIN source_estimates l ON l.shot_id = a.shot_id AND l.metric_key = 'club.dynamic_loft'
+LEFT JOIN source_estimates c ON c.shot_id = a.shot_id AND c.metric_key = 'flight.carry_distance'
+WHERE a.club_estimate_status IS NOT NULL ORDER BY a.occurred_at;
 ```
 
 
