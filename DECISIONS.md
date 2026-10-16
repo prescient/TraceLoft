@@ -1,5 +1,21 @@
 # TraceLoft architecture decisions
 
+## D67 — Random distances (2026-10-15)
+
+The user wants a range mode that asks for random distances, to practice swinging between clubs.
+Their choices:
+- **Its own drill** in Practice → Full swing (`random-distances`, persisted name `Random
+  distances`), built on the range workspace like Bag mapping and Wedge matrix, so it has its own
+  Sessions entries instead of mixing with free range practice.
+- **No club hint:** only the yardage is shown; choosing the club is the practice.
+- **A fixed number of targets:** the session finishes itself after that many scored shots.
+
+Implementation choices: targets are drawn one at a time from a grid (shortest + whole steps), each
+at least the minimum change from the last and never a repeat, like Random pace. Scoring is the
+range's OpenGolfCoach carry within ±depth/2 (D63). A shot without carry is unscored and keeps the
+target. The session's draw, not the published context, is the scoring target. Exclusion changes
+the score, not the progression. See [docs/RANDOM_DISTANCES.md](docs/RANDOM_DISTANCES.md).
+
 ## D66 — Shot input from other machines (2026-10-13)
 
 The user wants shot sources on other machines to reach TraceLoft, for example rēlā in a VM on a

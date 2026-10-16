@@ -32,7 +32,7 @@ are the verified distribution path.
 
 - **Relay**: accept a launch monitor or external adapter, preserve raw payloads, record first, and
   optionally forward documented Open Connect fields directly to a simulator.
-- **Practice**: range, distance/putting ladders, bag mapping, wedge matrix and putting drills.
+- **Practice**: range, random distances, distance/putting ladders, bag mapping, wedge matrix and putting drills.
 - **Play**: lightweight 2D golf, registered course artwork, terrain and historical dispersion preview.
 - **Analyze**: multi-metric Trends, linked Explore filters and named Compare cohorts, with
   collapsible selections, multi-club colors, robust coverage and matching CSV exports.

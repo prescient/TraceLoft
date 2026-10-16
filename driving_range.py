@@ -1,6 +1,7 @@
 """Open-ended range, immutable flight predictions and session-scoped recoverable cleanup."""
 
 import copy
+import functools
 import random
 import statistics
 import uuid
@@ -148,9 +149,7 @@ class DrivingRangeSession(PuttingSession):
         equipment = copy.deepcopy(
             event.get('equipment_selection', self.data.get('equipment_selection')) or {}
         )
-        context = event.get('range_context') or {
-            k: self.data[k] for k in ('range_target', 'range_width', 'range_depth')
-        }
+        context = self.shot_context(event)
         target = context['range_target']
         flight = (
             copy.deepcopy(event.get('_demo_flight'))
@@ -184,8 +183,18 @@ class DrivingRangeSession(PuttingSession):
         shot['flight'] = flight
         shot['club_estimates'] = club_model.estimate(vals, equipment)  # D64: face, loft (estimated)
         self.data['shots'].append(shot)
+        self.advance(shot)
         self.save(append=True)
         return True
+
+    def shot_context(self, event):
+        """The target a new shot is scored against: the one published when it was taken."""
+        return event.get('range_context') or {
+            k: self.data[k] for k in ('range_target', 'range_width', 'range_depth')
+        }
+
+    def advance(self, shot):
+        """Session state that follows a recorded shot. An open-ended range has none."""
 
     def fill_club_estimates(self):
         """Derived values added after a shot was recorded: club_estimates (D64) from the stored
@@ -305,6 +314,24 @@ class DrivingRangeSession(PuttingSession):
         return batch['id']
 
 
+@functools.lru_cache(maxsize=512)
+def demo_speed(carry, launch, spin):
+    """Ball speed whose modeled straight carry is `carry` yd (bisection over 20–220 mph)."""
+
+    def modeled(speed):
+        flight = predict(
+            dict(ball_speed=speed, launch_ang=launch, launch_dir=0, total_spin=spin, spin_axis=0),
+            'right_handed',
+        )
+        return modeled_distances(flight).get('carry') or 0
+
+    low, high = 20.0, 220.0
+    for _ in range(25):
+        middle = (low + high) / 2
+        low, high = (middle, high) if modeled(middle) < carry else (low, middle)
+    return round((low + high) / 2, 1)
+
+
 def demo_event(session, seq):
     """Repeatable diverse flight inputs; never hardware capture or GSPro delivery."""
     rng = random.Random(session.data['id'] + str(seq))
@@ -317,6 +344,11 @@ def demo_event(session, seq):
         if any(x in label for x in ('wedge', 'pw', 'gw', 'sw', 'lw', '°'))
         else (112, 20, 5500)
     )
+    if session.data.get('target_plan') == 'random':
+        # Aim at the drawn target, so synthetic shots land around its window.
+        target = session.data['range_target']
+        launch, spin = (30, 8500) if target < 110 else (20, 5500) if target < 200 else (13, 2700)
+        speed = demo_speed(target, launch, spin)
     if session.data.get('collection_kind') == 'wedge':
         labels = session.data['swing_labels']
         speed *= 0.55 + 0.45 * (labels.index(session.data['swing_label']) + 1) / len(labels)

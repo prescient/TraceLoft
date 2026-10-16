@@ -10,6 +10,7 @@ from distance_ladder import DistanceLadderSession
 from driving_range import DrivingRangeSession
 from golf_sim import GolfSimSession
 from putting import PuttingSession
+from random_distances import RandomDistanceSession
 from web_app import create_app
 from web_service import GolfService
 
@@ -20,6 +21,7 @@ EXPECTED_CATALOG = [
     ('wedge-matrix', 'Wedge matrix', 'WEDGES', False),
     ('bag-mapping', 'Bag mapping', 'FULL SWING', False),
     ('driving-range', 'Driving range', 'FULL SWING', False),
+    ('random-distances', 'Random distances', 'FULL SWING', False),
     ('distance-ladder', 'Distance ladder', 'FULL SWING', False),
     ('pace', 'Pace consistency', None, False),
     ('line', 'Start line', None, False),
@@ -58,6 +60,11 @@ class DrillCatalogTests(unittest.TestCase):
                 'collection',
                 CollectionSession,
             ),
+            (
+                dict(session_kind='driving_range', target_plan='random'),
+                'random_distances',
+                RandomDistanceSession,
+            ),
             (dict(practice_type='full_swing'), 'distance_ladder', DistanceLadderSession),
             (dict(practice_type='putting'), 'putting', PuttingSession),
             ({}, 'putting', PuttingSession),
@@ -78,8 +85,10 @@ class TypedParamsTests(unittest.TestCase):
         from distance_ladder import RANGE_FIELDS
         from driving_range import DRIVING_FIELDS
         from golf_sim import GAME_FIELDS
+        from random_distances import RANDOM_FIELDS
 
         expected = {
+            'Random distances': {*RANDOM_FIELDS, 'range_bag_id', 'range_club_id'},
             '2D golf': {*GAME_FIELDS, 'demo', 'stimp', 'range_bag_id', 'range_club_id'},
             'Bag mapping': {
                 *COLLECTION_FIELDS,
@@ -106,7 +115,7 @@ class TypedParamsTests(unittest.TestCase):
 
         union = set().union(*(model.model_fields for model in SCORER_PARAMS))
         self.assertEqual(set(PracticeParams.model_fields), union)
-        self.assertEqual(len(union), 48)
+        self.assertEqual(len(union), 53)
         with self.assertRaises(pydantic.ValidationError):
             PracticeParams(drill='Driving range', not_a_field=1)
 

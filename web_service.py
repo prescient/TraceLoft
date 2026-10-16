@@ -590,6 +590,8 @@ class GolfService:
         saved = self.range_session(session_id)
         if saved is not self.practice or saved.data['ended']:
             raise ValueError('Only the active range can change its next-shot target.')
+        if saved.data.get('target_plan') == 'random':
+            raise ValueError('Random distances choose each target. Edit setup to change the range.')
         with self._changing(saved):
             saved.data.update(
                 range_target=target, target=target, range_width=width, range_depth=depth

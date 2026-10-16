@@ -71,10 +71,21 @@ class DistanceLadderParams(EquipmentChoice, DistanceMetric, DrillParams):
     range_club: str = Field(default='', max_length=80)
 
 
-class RangeParams(EquipmentChoice, DemoChoice, Handedness, DrillParams):
-    range_target: float = Field(default=150, ge=0, le=450, allow_inf_nan=False)
+class TargetWindow(BaseModel):
     range_width: float = Field(default=30, ge=1, le=200, allow_inf_nan=False)
     range_depth: float = Field(default=20, ge=1, le=200, allow_inf_nan=False)
+
+
+class RangeParams(EquipmentChoice, DemoChoice, Handedness, TargetWindow, DrillParams):
+    range_target: float = Field(default=150, ge=0, le=450, allow_inf_nan=False)
+
+
+class RandomDistanceParams(EquipmentChoice, DemoChoice, Handedness, TargetWindow, DrillParams):
+    random_min: float = Field(default=60, ge=1, le=450, allow_inf_nan=False)
+    random_max: float = Field(default=180, ge=1, le=450, allow_inf_nan=False)
+    random_step: float = Field(default=5, ge=1, le=50, allow_inf_nan=False)
+    random_gap: float = Field(default=15, ge=0, le=200, allow_inf_nan=False)
+    random_count: int = Field(default=20, ge=1, le=200)
 
 
 class CollectionParams(EquipmentChoice, DistanceMetric, DemoChoice, Handedness, DrillParams):
@@ -98,7 +109,14 @@ class GolfParams(EquipmentChoice, DemoChoice, GreenSpeed, DrillParams):
     game_acknowledged: bool = False
 
 
-SCORER_PARAMS = (PuttingParams, DistanceLadderParams, RangeParams, CollectionParams, GolfParams)
+SCORER_PARAMS = (
+    PuttingParams,
+    DistanceLadderParams,
+    RangeParams,
+    RandomDistanceParams,
+    CollectionParams,
+    GolfParams,
+)
 
 
 def envelope(models, name='PracticeParams'):

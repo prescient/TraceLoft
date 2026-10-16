@@ -24,6 +24,7 @@ from drill_params import (
     DistanceLadderParams,
     GolfParams,
     PuttingParams,
+    RandomDistanceParams,
     RangeParams,
 )
 
@@ -73,6 +74,13 @@ CATALOG = (
         'Driving range',
         'Free practice, shot dispersion, flight estimates and a workspace to review your shots.',
         'Driving range',
+        category='FULL SWING',
+    ),
+    Drill(
+        'random-distances',
+        'Random distances',
+        'A new carry target after every shot. Pick the club, commit to the number.',
+        'Random distances',
         category='FULL SWING',
     ),
     Drill(
@@ -168,6 +176,17 @@ def create_range(service, params):
     )
 
 
+def create_random_distances(service, params):
+    from random_distances import RANDOM_FIELDS, RandomDistanceSession
+
+    return RandomDistanceSession(
+        _folder(service),
+        store=service.store,
+        equipment_selection=_selected(service, params),
+        **params.model_dump(include=set(RANDOM_FIELDS)),
+    )
+
+
 def create_distance_ladder(service, params):
     from distance_ladder import RANGE_FIELDS, DistanceLadderSession
 
@@ -202,6 +221,7 @@ SCORERS = {
     'Bag mapping': COLLECTION,
     'Wedge matrix': COLLECTION,
     'Driving range': Scorer(RangeParams, create_range),
+    'Random distances': Scorer(RandomDistanceParams, create_random_distances),
     'Distance ladder': Scorer(DistanceLadderParams, create_distance_ladder),
 }
 
@@ -227,6 +247,8 @@ def session_kind(data):
     if data.get('session_kind') == 'golf_sim':
         return 'golf_sim'
     if data.get('session_kind') == 'driving_range':
+        if data.get('target_plan') == 'random':
+            return 'random_distances'
         return 'collection' if data.get('collection_kind') else 'driving_range'
     if data.get('practice_type') == 'full_swing':
         return 'distance_ladder'
@@ -242,6 +264,10 @@ def _session_class(kind):
         from collection import CollectionSession
 
         return CollectionSession
+    if kind == 'random_distances':
+        from random_distances import RandomDistanceSession
+
+        return RandomDistanceSession
     if kind == 'driving_range':
         from driving_range import DrivingRangeSession
 

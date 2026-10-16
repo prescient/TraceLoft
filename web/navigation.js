@@ -7,6 +7,7 @@ const drillIds = new Set([
   'ladder',
   'distance-ladder',
   'driving-range',
+  'random-distances',
   'iron-ladder',
   'wedge-ladder',
   'bag-mapping',

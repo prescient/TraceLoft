@@ -213,6 +213,10 @@ lateral scoring. Model failure never discards the shot. Demo sessions display a 
 identity and cannot accept live shots. Cleanup exposes scope/counts, a reason, history and Undo;
 all-recorded comparisons preserve evidence of inconsistency. See [range operation](docs/DRIVING_RANGE.md).
 
+Random distances puts the next carry target first, with the club picker directly below it. It shows
+no club suggestion, because choosing the club is the practice (D67). The latest result is stated in
+words (short/long, in or outside the window, estimated carry), and each shot keeps its own target.
+
 Range scatter uses bag/club colors with a labeled legend; preserve club color on selection and use
 a dark outline/size change for focus. Excluded points keep a lighter tint of their club color and a
 dashed edge; untagged points use neutral gray. Show excluded context in the default chart, while

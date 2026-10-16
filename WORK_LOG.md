@@ -1,5 +1,57 @@
 # TraceLoft work log
 
+## 2026-10-15 — Random distances (D67)
+
+- New Full swing drill `random-distances` ("Random distances"), chosen by the user as its own drill
+  with no club hint and a fixed number of targets. `random_distances.RandomDistanceSession` extends
+  the driving range:
+  - It draws a carry target from a grid (shortest + whole steps), each at least the minimum change
+    from the last and never a repeat.
+  - Each scored shot advances; the session finishes itself after the chosen count.
+  - A shot without carry is unscored and keeps the target.
+  - The session's draw, not the published context, is the scoring target.
+  - Exclusions change the score, not progression.
+  - `summary()['targets']` adds in-window, mean and mean absolute error, and short/long counts.
+- Range hooks: `DrivingRangeSession.shot_context()` and `advance()` (no behavior change for the
+  range). Demo shots in this drill aim at the drawn target: `demo_speed()` inverts the flight
+  model by bisection.
+- Registry: `RandomDistanceParams` and a shared `TargetWindow` mixin (drill_params.py), a catalog
+  entry, factory and scorer, and `session_kind()` → `random_distances` from `target_plan: 'random'`
+  (no migration). The service refuses Change target for this drill.
+- Browser:
+  - `web/random-distances.js` holds the setup screen with a live preview that explains invalid
+    setups, and the runner decoration: a next-target panel above the club picker, the last result in
+    words, the score and progress, and a result headline when finished.
+  - Registered in `web/features.js`, `web/navigation.js` and the Full swing category.
+  - The range runner now receives the server summary.
+  - The progress bar is SVG because the CSP forbids inline styles.
+- Tests:
+  - `tests/test_random_distances.py` (11): grid and gap; progression to completion and the
+    published next target; unscored shots; stale context; refused target change; setup validation;
+    exclusion vs progression; restore after restart; demo aiming; Analyze and the CSV export.
+  - `tests/test_random_distances_ui.mjs` (4): grid parity, setup preview, result wording,
+    route/category/feature.
+  - `tests/test_drills.py` updated for the catalog, envelope (53 fields) and session kind.
+- Browser check in an isolated instance (fresh database, input 9902, HTTP 8798):
+  - The Full swing card leads to setup; the invalid-setup message showed for 100–110 yd with a
+    15 yd change.
+  - Demo of 6: the target advanced after every shot with ≥ 15 yd change (110 → 65 → 180 → 110 …).
+    The result line and score updated, and the session ended itself with Session over and the
+    result panel.
+  - After reload, the finished live view titles without "review". Sessions shows
+    "4 in window · Complete". The saved review highlights Sessions. Edit setup copied every
+    parameter.
+  - Live session of 3: synthetic Open Connect shots to port 9902 were scored against 170, 75 and
+    90 yd in turn. Each reply's `range_context` carried the next target and none after
+    completion. The club tag was kept.
+  - A shot without spin is rejected by Open Connect itself (501), so the unscored path is covered
+    by the unit test only.
+  - Abandon returned to Practice with the banner and notice. No script errors.
+  - Layouts: 1366 × 1024 and 1366 × 900 show the next target and the club picker above the fold;
+    390 × 844 stacks with no horizontal overflow.
+- Not verified: a physical iPad and a real shot source.
+- Verified: `python verify.py` passed **246 Python** and **85 JavaScript** tests and lint.
+
 ## 2026-10-13 — Shot input from other machines (D66)
 
 - `--remote-input` (web_app.py, launch_web.py) makes the Open Connect input bind 0.0.0.0:900 through

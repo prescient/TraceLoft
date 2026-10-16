@@ -24,7 +24,7 @@ Screen capture/OCR lives in the separate private TraceCapture app and never belo
 | CSV/ZIP export; pre-SQLite import; offline CLI | `storage_export.py`, `legacy_import.py`, `database_tools.py` |
 | Schema layers (DDL, backfill, readers) | `shot_schema.py`, `domain_schema.py`, `analysis_schema.py`, `recalculation.py` |
 | Drill registry (catalog, creation, restore) | `drills.py` |
-| Drill/game scorers | `putting.py`, `distance_ladder.py`, `driving_range.py`, `collection.py`, `golf_sim.py` |
+| Drill/game scorers | `putting.py`, `distance_ladder.py`, `driving_range.py`, `random_distances.py`, `collection.py`, `golf_sim.py` |
 | Models and estimates | `putting_distance.py`, `flight_model.py` (OpenGolfCoach), `club_preview.py` |
 | Analysis | `analysis.py`, `analysis_schema.py`, `analytics_demo.py`, `tour_demo.py` |
 | Courses | `course_import.py`, `course_workbench.py`, `course_geometry.py`, `bundled_courses.py`, `courses/` |

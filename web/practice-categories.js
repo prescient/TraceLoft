@@ -1,7 +1,12 @@
 import { html } from './charts.js';
 
 export const categories = [
-  ['full', 'Full swing', 'Explore your whole game.', ['driving-range', 'distance-ladder', 'bag-mapping']],
+  [
+    'full',
+    'Full swing',
+    'Explore your whole game.',
+    ['driving-range', 'random-distances', 'distance-ladder', 'bag-mapping']
+  ],
   ['irons', 'Irons', 'Build reliable approach distances.', ['iron-ladder']],
   ['wedges', 'Wedges', 'Dial in scoring distances.', ['wedge-ladder', 'wedge-matrix']],
   [

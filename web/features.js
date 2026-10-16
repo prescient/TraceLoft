@@ -1,6 +1,7 @@
 import { renderGameSetup, renderGame } from './golf-sim.js';
 import { renderCollectionSetup } from './collection.js';
 import { renderRangeSetup, renderRange, disposeRange } from './driving-range.js';
+import { renderRandomSetup } from './random-distances.js';
 import { renderDistanceSetup, distanceRunner } from './distance-ladder.js';
 import { renderPuttingSetup, puttingRunner } from './putting.js';
 import { bindEquipment } from './equipment.js';
@@ -71,12 +72,13 @@ function golfRunner(app, host) {
 
 function rangeRunner(app, host) {
   return {
-    update({ data, state, review }) {
+    update({ data, summary, state, review }) {
       const change = async (path, params) => {
         host.apply(await host.api(path, params));
         host.redraw();
       };
       renderRange(app, data, state, review, host.sessionNotice, {
+        summary,
         collectionAnalysis: () => host.api(`/api/collection/${data.id}/analysis`),
         publishProfile: () => host.api(`/api/collection/${data.id}/profile`, {}),
         cell: params => change(`/api/collection/${data.id}/cell`, params),
@@ -157,6 +159,13 @@ export const FEATURES = [
         host.equipment,
         drill.id === 'wedge-matrix'
       ),
+    mount: rangeRunner
+  },
+  {
+    id: 'random-distances',
+    setupIds: ['random-distances'],
+    runs: data => data.session_kind === 'driving_range' && data.target_plan === 'random',
+    setup: (app, drill, host) => renderRandomSetup(app, old(drill), host.launch, host.notice, host.equipment),
     mount: rangeRunner
   },
   {

@@ -368,8 +368,14 @@ Configurable targets, repetitions, tolerances and scoring; save results against 
   reported carry or total in yards, customizable rungs, shots per rung, rounds, distance window and
   ascending/descending order, persistent targets/results and yard-based CSV outcomes. Carry/total
   full-swing numeric capture still needs live verification. Manual bag/club selection and editing are
-  implemented; bag mapping/matrix integration and random approaches remain proposed. This is distinct
+  implemented; bag mapping/matrix integration remains proposed. This is distinct
   from the implemented estimated-distance putting ladder.
+- **Random distances (requested 2026-10-15):** implemented 2026-10-15 as its own Full swing drill
+  on the range workspace (D67, [operation](docs/RANDOM_DISTANCES.md)): a random carry target after
+  every scored shot, no club hint, a fixed number of targets, scored on OpenGolfCoach carry.
+  Possible follow-ups, not requested: an optional club hint or after-shot comparison with gapping
+  history; drawing targets from a bag map or wedge matrix; per-club accuracy in the result.
+  Physical-device and real-source checks remain open (verified with synthetic Open Connect shots).
   See `docs/DISTANCE_LADDER.md` and WORK_LOG.md for actual verification.
 - **Target rings:** proximity-based points for solo or multiplayer practice.
 - **Beat your baseline:** compare accuracy/consistency or a drill score with a previous session.

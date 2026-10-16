@@ -70,7 +70,7 @@ Routes are parsed in `web/navigation.js`; an unknown location falls back to `#pr
 | Screen | Location | Identity in the interface |
 | --- | --- | --- |
 | Practice selector | `#practice` | Practice navigation selected; four collapsible categories |
-| Drill setup | `#setup/<drill>` for `pace`, `line`, `combined`, `random`, `ladder`, `distance-ladder`, `iron-ladder`, `wedge-ladder`, `driving-range`, `bag-mapping`, `wedge-matrix` | Drill title and parameter form; Practice selected |
+| Drill setup | `#setup/<drill>` for `pace`, `line`, `combined`, `random`, `ladder`, `distance-ladder`, `iron-ladder`, `wedge-ladder`, `driving-range`, `random-distances`, `bag-mapping`, `wedge-matrix` | Drill title and parameter form; Practice selected |
 | Setup copied from saved results | `#setup/<drill>/<session-id>` | Parameters loaded from that saved session |
 | Active or recently completed session | `#practice/<session-id>` | Drill runner (putting, distance ladder, range, collection); Practice selected |
 | Session list | `#sessions` | Sessions navigation selected |
@@ -243,6 +243,23 @@ colors and circles persisted on review. iPad landscape and phone layouts were ch
 no route/session change. Click/tap again, outside click, focus leaving or Escape dismisses it.
 Hover/focus previews it and click/tap pins it. Fresh isolated click, keyboard, source-switch and
 saved-review checks passed at large iPad landscape and phone sizes; physical touch remains unverified.
+
+### Random distances
+
+| Origin / control | Destination / effect |
+| --- | --- |
+| Practice → Full swing → Random distances → Set up | `#setup/random-distances`; blocked while another session is active |
+| Setup → Start random distances / Start demo | `#practice/<id>`; real and synthetic identities are distinct |
+| Active runner → club picker / Add simulated shot | Same runner; next target and score update in place |
+| Last target scored | Same route; session ends itself with the red Session over banner |
+| End / Exit / Abandon | Existing lifecycle guards; Abandon returns to Practice |
+| Saved review (`#sessions/<id>`) → Exit review / Practice selector | Sessions / Practice respectively |
+| Results/review → New session / edit setup | `#setup/random-distances/<id>` copies parameters; active-session guard applies |
+
+Change target is not offered: the drill draws each target (the service refuses a target change).
+The shared range workspace, cleanup and recoverable delete apply unchanged. Isolated browser checks
+on 2026-10-15 covered setup, invalid-setup guidance, demo and live sessions, automatic completion,
+review, copied setup, abandon and the 1366 × 1024, 1366 × 900 and 390 × 844 layouts (WORK_LOG).
 
 ### Bag mapping
 

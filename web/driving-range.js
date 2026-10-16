@@ -9,6 +9,7 @@ import {
 } from './shot-motion.js';
 import { preserveInteraction } from './interaction-state.js';
 import { decorateCollection } from './collection.js';
+import { decorateRandomTargets } from './random-distances.js';
 import { html } from './charts.js';
 import { equipmentControls, bindEquipment } from './equipment.js';
 import { tagDialog } from './golfers.js';
@@ -626,6 +627,7 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
       })
   );
   decorateCollection(app, data, active, { ...context, shown });
+  decorateRandomTargets(app, data, active, { ...context, isReview });
 }
 
 // One row per club: each metric's median (signed angles with their direction), IQR and n.
