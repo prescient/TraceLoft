@@ -15,7 +15,9 @@
     Ruff is not installed on this PC, so lint did not run.
   - Live: the service upgraded the real database 5 → 6 with a verified backup; the 5 existing shots
     are intact.
-  - Not yet verified: a live rēlā shot writing `source_estimates` rows.
+  - Live, 3 rēlā chips at 12:56: each has 7 `source_estimates` rows matching rēlā's packets exactly
+    (carry 1.3 yd → 1.18872 m), and only club speed, attack angle and path in `metric_values`.
+    TraceLoft computed no D64 estimates for them: they were not in a range-family session.
 
 ## 2026-10-16 — Simulator on another PC (D69)
 
