@@ -7,7 +7,7 @@ import { categorizedDrills, categoryMarkup, bindCategories } from './practice-ca
 import { html } from './charts.js';
 import { parseRoute, routeFor } from './navigation.js';
 import { refreshSetupEquipment } from './equipment.js';
-import { recordingWarnings } from './recording.js';
+import { recordingWarnings, sourceAlerts } from './recording.js';
 import { featureForDrill, featureForSession } from './features.js';
 import { bindGolferPicker } from './golfers.js';
 import { createLiveStateController, isStaleState } from './live-state.js';
@@ -198,6 +198,11 @@ function navigation() {
     : state?.capture.running
       ? 'Source ready'
       : 'Waiting for source';
+  // The source's problems in words (D73); hidden while offline, when the state is stale.
+  const alerts = document.querySelector('#source-alerts');
+  const markup = String(sourceAlerts(online ? state?.input?.alerts : []));
+  if (alerts.innerHTML !== markup) alerts.innerHTML = markup;
+  alerts.hidden = !markup;
 }
 function update(next) {
   if (isStaleState(state, next)) return;

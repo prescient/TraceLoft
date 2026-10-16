@@ -1,5 +1,15 @@
 # TraceLoft work log
 
+## 2026-10-16 — Source alerts under the header (D73)
+
+- `shot_input.source_alerts()`; heartbeats set `input.alerts`, disconnect clears it.
+- `web/recording.js sourceAlerts()`, `#source-alerts` under the header (index.html), `.source-alert`
+  styles, rendered in `navigation()`; hidden while the browser is offline.
+- **Verification:** 257 Python tests (new: alerts kept, capped, left alone by shots, cleared on
+  disconnect) and 86 UI tests (labels, escaping) pass. Live: the Relay page showed the red "Not
+  recording" banner for rēlā and the amber "Attention" banner for GSPro not answering, with the exact
+  messages TraceCapture sent.
+
 ## 2026-10-16 — Estimates for every non-putt shot, schema 7 (D71)
 
 - `shot_schema.shot_estimates()` and `is_putt()`; `Store.shot_estimates()` runs it in a savepoint after

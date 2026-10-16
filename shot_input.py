@@ -184,6 +184,26 @@ def source_estimates(value):
     return dict(estimator=estimator, values=values) if values else None
 
 
+ALERT_LEVELS = ('error', 'warning')
+
+
+def source_alerts(extension):
+    """The alerts a source's heartbeat carries (TraceLoft.Alerts, D73), cleaned for display:
+    at most 5 of {level: 'error'|'warning', message: <=300 chars}. Malformed entries are dropped,
+    never refused: they are status text, not shot data."""
+    alerts = extension.get('Alerts') if isinstance(extension, dict) else None
+    if not isinstance(alerts, list):
+        return []
+    cleaned = []
+    for alert in alerts[:5]:
+        if not isinstance(alert, dict) or alert.get('Level') not in ALERT_LEVELS:
+            continue
+        message = alert.get('Message')
+        if isinstance(message, str) and message.strip():
+            cleaned.append(dict(level=alert['Level'], message=message.strip()[:300]))
+    return cleaned
+
+
 IMPORT_PROVENANCE = 'ipad_import'
 OVERLAP_DAYS = 30  # how far back an imported shot is compared with live captures
 
@@ -437,6 +457,7 @@ class ShotInput:
             port=port,
             remote=host != LOCAL_INPUT,
             peer=None,  # address of the connected source (shown when it is another machine)
+            alerts=[],  # the connected source's problems for the golfer, from its heartbeats (D73)
             device=None,
             received=0,
             duplicates=0,
@@ -733,6 +754,9 @@ class ShotInput:
                         )
                         self.relay.ready = ready
                         self.relay.delegate(source_delivers(packet))
+                        if options.get('IsHeartBeat'):
+                            # The source's current problems; shots and other packets leave them as is.
+                            self.state['alerts'] = source_alerts(packet.get('TraceLoft'))
                         # Standard packets are numbered per connection. Extended durable receipts survive reconnects.
                         if (
                             options['ContainsBallData']
@@ -777,6 +801,7 @@ class ShotInput:
             if self.source == connection_id:
                 self.source = None
                 self.state['peer'] = None
+                self.state['alerts'] = []  # "Waiting for source" covers a missing source
                 self.service.capture.update(
                     running=False, connected=False, status='Waiting for shot source'
                 )

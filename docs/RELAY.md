@@ -53,6 +53,9 @@ Optional `TraceLoft` extension:
   disconnects. TraceLoft.Context.simulator = {destination, host, port} tells the sender where to send.
   'off' means send nothing.
 
+- Alerts = [{Level: 'error'|'warning', Message}] on heartbeats (D73): problems the golfer must act on,
+  shown under TraceLoft's header until the next heartbeat or disconnect. Error means shots are not
+  being recorded; warning means they are, but something else (such as the simulator) needs attention.
 - SourceEstimates = {Estimator, Values} carries values the source estimated rather than measured
   (D70), e.g. rēlā's face_angle, dynamic_lie, dynamic_loft, closure_rate, impact_horizontal,
   impact_vertical and carry (yards) for a Foresight LPi. They go to the `source_estimates` table,

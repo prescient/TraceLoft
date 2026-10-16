@@ -321,6 +321,39 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.exchange(r, w, p))['Code'], 501)
         self.assertEqual(self.service.store.count('shots'), 0)
 
+    async def test_heartbeat_alerts_are_kept_until_the_next_heartbeat_or_disconnect(self):
+        # D73: TraceCapture's heartbeats carry the problems the golfer must act on.
+        def beat(alerts):
+            p = heartbeat(True, 0)
+            p['DeviceID'] = 'TraceCapture'
+            p['TraceLoft'] = dict(SimulatorDelivery='source', Alerts=alerts)
+            return p
+
+        r, w = await self.client()
+        alerts = [
+            dict(Level='error', Message="rēlā isn't connected to TraceCapture. Press Connect in rēlā."),
+            dict(Level='warning', Message="GSPro isn't answering. Restart GSPro Connect." + 'x' * 400),
+            dict(Level='shout', Message='dropped: unknown level'),
+            'dropped: not an object',
+        ]
+        self.assertEqual((await self.exchange(r, w, beat(alerts)))['Code'], 200)
+        kept = self.service.input.state['alerts']
+        self.assertEqual([a['level'] for a in kept], ['error', 'warning'])
+        self.assertEqual(len(kept[1]['message']), 300)
+        one = shot()
+        one['DeviceID'] = 'TraceCapture'  # the same source as the heartbeats
+        self.assertEqual((await self.exchange(r, w, one))['Code'], 200)
+        self.assertEqual(len(self.service.input.state['alerts']), 2)  # a shot leaves them as is
+        self.assertEqual((await self.exchange(r, w, beat([])))['Code'], 200)
+        self.assertEqual(self.service.input.state['alerts'], [])
+        await self.exchange(r, w, beat(alerts[:1]))
+        w.close()
+        for _ in range(50):
+            if not self.service.input.state['alerts']:
+                break
+            await asyncio.sleep(0.02)
+        self.assertEqual(self.service.input.state['alerts'], [])  # cleared with the connection
+
     async def test_spinless_memory_putt_is_stored_with_null_spin(self):
         p = shot()
         p['BallData'] = dict(Speed=4.3, HLA=-1.2, VLA=0.0)

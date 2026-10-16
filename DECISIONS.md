@@ -1,5 +1,15 @@
 # TraceLoft architecture decisions
 
+## D73 — A source's alerts under the header (2026-10-16)
+
+Shot-path problems (rēlā not connected to TraceCapture, GSPro not answering) were visible only on
+TraceCapture's page, which the golfer does not watch, and shots were lost. The user chose to show them
+in TraceLoft. A source's heartbeat may carry `TraceLoft.Alerts = [{Level: error|warning, Message}]`.
+TraceLoft keeps the latest heartbeat's list in `input.alerts` (at most 5, messages ≤ 300 characters,
+malformed entries dropped, never refused), clears it when the source disconnects, and shows it under
+the header on every page: "Not recording" (error, red) or "Attention" (warning, amber). The messages
+are the source's own plain-language instructions; TraceLoft adds no source-specific logic.
+
 ## D71 — TraceLoft's estimates for every non-putt shot (2026-10-16)
 
 Until now TraceLoft computed its own estimates only inside range-family sessions. rēlā shots arrive

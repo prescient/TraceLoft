@@ -437,6 +437,35 @@ nav button:hover {
 .connection.offline .status-dot {
   background: var(--amber);
 }
+/* Source problems under the header (D73): square, bordered, colour paired with a leading word. */
+.source-alerts {
+  max-width: 1460px;
+  margin: 16px auto 0;
+  padding: 0 32px;
+  display: grid;
+  gap: 8px;
+}
+.source-alert {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--warning-border);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--amber);
+  font-size: 14px;
+}
+.source-alert.error {
+  border-color: var(--red);
+  color: var(--red);
+}
+.source-alert span {
+  color: var(--ink);
+}
+@media (max-width: 600px) {
+  .source-alerts {
+    padding: 0 16px;
+  }
+}
 main {
   max-width: 1460px;
   margin: auto;
