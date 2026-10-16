@@ -1,5 +1,22 @@
 # TraceLoft work log
 
+## 2026-10-16 — Source estimates table, schema 6 (D70)
+
+- First live rēlā shots (via TraceCapture's rēlā source): 2 putts and 3 chips stored with correct ball
+  data and null putt spin. But rēlā's face, lie and loft for the chips were stored as measurements;
+  rēlā's log shows the LPi measured none of them.
+- Schema 6 (`migrations/v0006_source_estimates.py`, `sql/0006_source_estimates.sql`) adds
+  `source_estimates`. `shot_input.source_estimates()` validates `TraceLoft.SourceEstimates`;
+  `Store._source_estimates` writes the rows inside `_observation`. The CSV export includes the table.
+- The v1 upgrade test now expects one backup per step (`SCHEMA_VERSION - 1`) instead of a fixed 4.
+- **Verification:**
+  - 251 Python tests pass, including 2 new intake tests (rows stored apart from `metric_values`,
+    carry converted to metres, out-of-range value left out, updates refused, malformed blocks → 501).
+    Ruff is not installed on this PC, so lint did not run.
+  - Live: the service upgraded the real database 5 → 6 with a verified backup; the 5 existing shots
+    are intact.
+  - Not yet verified: a live rēlā shot writing `source_estimates` rows.
+
 ## 2026-10-16 — Simulator on another PC (D69)
 
 - New PC setup: Python 3.12.10 via winget, `.venv` from `requirements-lock.txt`, fresh database.

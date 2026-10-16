@@ -1,4 +1,4 @@
-# Readable shot database — schema 5
+# Readable shot database — schema 6
 
 SQLite is authoritative at `%USERPROFILE%\GolfData\data\golfdata.sqlite3`, outside OneDrive.
 The additive migration retains existing shot IDs, raw packets, reports, original units, sessions,
@@ -79,6 +79,21 @@ The durable envelope's internal mapping label stays stable for old receipt retri
 observations reference the archived v2 specification. Use `TraceLoft.Metrics.smash_factor` for a
 supplied value; TraceLoft does not infer this source cell from speeds. Neither the columns nor mapping
 produce club readings absent from the source app.
+
+## Source estimates (schema 6, D70)
+
+`source_estimates` holds values a source estimated itself rather than measured, for example rēlā's
+face angle, dynamic lie and loft, closure rate, impact location and carry for a Foresight LPi, which
+measures none of them. One immutable row per observation and metric: `estimator` (e.g. `rela`),
+`metric_key` and `real_value` in the canonical unit (`canonical_unit`), and the value as sent
+(`source_field`, `source_value`, `source_unit`). They never enter `metric_values` or
+`shot_source_metrics`, so analysis cannot mistake them for measurements. Compare them with
+TraceLoft's own estimates (D64 `club_estimates`, D63 `range_vals`) by `shot_id`:
+
+```sql
+SELECT e.shot_id, e.metric_key, e.real_value AS rela_estimate, e.canonical_unit
+FROM source_estimates e WHERE e.estimator = 'rela' ORDER BY e.shot_id, e.metric_key;
+```
 
 
 ## Golfers, equipment and tags

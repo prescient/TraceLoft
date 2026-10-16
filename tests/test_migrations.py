@@ -16,10 +16,12 @@ RELEASED = {
     'sql/0003_relational_domain.sql': '18364bfdbef03af2a0b3c540d91b4caa10200145479e941f51da8fe13e65308a',
     'sql/0004_collection_cohorts.sql': '66b5b97c1657dff8ab3172bd86df87342b1ad8af0148770d6b42181124c5d386',
     'sql/0005_staged_calculations.sql': '1e22e4d8efa8c6ef904236090dc46f94095cddf3a518e61310893195357a01c1',
+    'sql/0006_source_estimates.sql': '838d8b13de080425b309d218299218e0735127632893241ff2c6966f0fccd1e9',
     'v0002_wide_metrics.py': '40892884e18206e024c732529bade6c859d26eed6f1f1eba5f768bc4d4d09c51',
     'v0003_relational_domain.py': 'e8783a9f8c29d1f9db1ec2d467a586aa3ff084810af8197d8213d4cebe58943f',
     'v0004_collection_cohorts.py': 'd05a1bb197748f438d973de57b98dff5de3669e379e53af78aabbb109c5455e5',
     'v0005_staged_calculations.py': 'b5d68b358c2931f9de64cddbce5c4fe496f97615fbc6897e8be5496438d8669d',
+    'v0006_source_estimates.py': '5d4d470b00b68287869671d8a9a29f748d3b25f7512fbfeccf802586ca141ded',
 }
 
 

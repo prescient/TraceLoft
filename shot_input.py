@@ -145,6 +145,45 @@ def live_estimate(event):
     )
 
 
+# Estimates a source may report alongside its measurements (D70): wire field -> (metric key,
+# canonical unit, factor from the source unit, source unit). Stored in source_estimates only,
+# never as measurements, so they can be compared with TraceLoft's own estimates.
+SOURCE_ESTIMATES = {
+    'face_angle': ('club.face_angle', 'deg', 1, 'deg'),
+    'dynamic_lie': ('club.dynamic_lie', 'deg', 1, 'deg'),
+    'dynamic_loft': ('club.dynamic_loft', 'deg', 1, 'deg'),
+    'closure_rate': ('club.closure_rate', 'deg/s', 1, 'deg/s'),
+    'impact_horizontal': ('impact.horizontal', 'mm', 1, 'mm'),
+    'impact_vertical': ('impact.vertical', 'mm', 1, 'mm'),
+    'carry': ('flight.carry_distance', 'm', 0.9144, 'yd'),
+}
+
+
+def source_estimates(value):
+    """The validated TraceLoft.SourceEstimates block (D70), or None.
+
+    {Estimator: name, Values: {wire field: number}}. A malformed block is refused like any other
+    invalid extension; a number outside the field's range is left out (the raw packet keeps it),
+    because an implausible estimate must not cost the shot's measurements.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, dict) or not isinstance(value.get('Values'), dict):
+        raise ValueError('Invalid source estimates.')
+    estimator = value.get('Estimator')
+    if not isinstance(estimator, str) or not re.fullmatch(r'[A-Za-z0-9 _.-]{1,100}', estimator):
+        raise ValueError('Invalid source estimator.')
+    values = {}
+    for key, number in value['Values'].items():
+        if key not in SOURCE_ESTIMATES:
+            raise ValueError('Unsupported source estimate: ' + str(key)[:50])
+        if isinstance(number, bool) or not isinstance(number, (int, float)):
+            raise ValueError('Invalid source estimate: ' + key)
+        if math.isfinite(number) and FIELDS[key][0] <= number <= FIELDS[key][1]:
+            values[key] = number
+    return dict(estimator=estimator, values=values) if values else None
+
+
 IMPORT_PROVENANCE = 'ipad_import'
 OVERLAP_DAYS = 30  # how far back an imported shot is compared with live captures
 
@@ -517,6 +556,9 @@ class ShotInput:
                 if k in evidence
             }
         )
+        estimates = source_estimates(extension.get('SourceEstimates'))
+        if estimates and result == 'validated':
+            event['source_estimates'] = estimates
         batch = import_batch(extension.get('Import'))
         if batch:
             # An iPad table import (D65): never live, never forwarded, and never part of the active

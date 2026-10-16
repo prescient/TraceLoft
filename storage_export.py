@@ -154,6 +154,7 @@ def export_archive(store):
             'calculation_attempt_contexts',
             'calculation_publications',
             'calculation_publication_items',
+            'source_estimates',
         ):
             cursor = connection.execute(f'SELECT * FROM {table} ORDER BY rowid')
             files[table + '.csv'] = [dict(r) for r in cursor]
@@ -202,6 +203,7 @@ def export_archive(store):
                             'shot_source_metrics.csv': 'all observations including competing reports',
                             'session_shots_wide.csv': 'one row per session attempt, including excluded/deleted history',
                             'shot_derived_metrics.csv': 'all result versions; filter model family/context before aggregating',
+                            'source_estimates.csv': "a source's own estimates (e.g. rēlā face/loft), never measurements",
                         },
                         timestamps='time_basis declares UTC receipts versus timezone-unknown legacy local times',
                         text_safety='formula-leading text prefixed with apostrophe',

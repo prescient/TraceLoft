@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 FIELDS = {
     'ball_speed': ('ball.speed', 'mph', 0.44704),
     'launch_ang': ('ball.launch_angle', 'deg', 1),
@@ -761,12 +761,38 @@ class Store:
                 ),
             ),
         )
+        if shot_id and event.get('source_estimates'):
+            self._source_estimates(observation_id, shot_id, event['source_estimates'])
         from shot_schema import write_source, source_features
 
         write_source(self.connection, observation_id)
         if shot_id:
             source_features(self.connection, shot_id)
         return event_id
+
+    def _source_estimates(self, observation_id, shot_id, estimates):
+        """One source_estimates row per value a source estimated for this shot (D70). Never written
+        to metric_values: an estimate is not a measurement."""
+        from shot_input import SOURCE_ESTIMATES
+
+        created = now()
+        for field, value in estimates['values'].items():
+            metric, unit, factor, source_unit = SOURCE_ESTIMATES[field]
+            self.connection.execute(
+                'INSERT INTO source_estimates VALUES(?,?,?,?,?,?,?,?,?,?)',
+                (
+                    observation_id,
+                    shot_id,
+                    estimates['estimator'],
+                    metric,
+                    float(value) * factor,
+                    unit,
+                    field,
+                    float(value),
+                    source_unit,
+                    created,
+                ),
+            )
 
     def load_session(self, session_id, deleted=False):
         if not re.fullmatch('[0-9a-f]{32}', session_id):

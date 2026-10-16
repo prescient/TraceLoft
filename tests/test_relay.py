@@ -258,6 +258,69 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue((await self.service.input.accept_packet(p, 'second'))['duplicate'])
         self.assertEqual(self.service.store.count('shots'), 1)
 
+    async def test_source_estimates_are_stored_apart_from_measurements(self):
+        # D70: rēlā's own face/lie/loft/carry estimates for an LPi chip (rela.log, 2026-10-16).
+        p = shot()
+        p['BallData'] = dict(Speed=11.06, SpinAxis=15.29, TotalSpin=1077.12, HLA=-5.11, VLA=30.27)
+        p['TraceLoft'] = dict(
+            ReceiptId='chip5',
+            ProducerId='capture',
+            StreamId='rela-20261016-122600',
+            CapturedAt=datetime.now(timezone.utc).isoformat(),
+            Metrics=dict(club_speed=11.28, attack_angle=-9.71, club_path=-15.71),
+            Source=dict(acquisition='rela_open_connect'),
+            SourceEstimates=dict(
+                Estimator='rela',
+                Values=dict(face_angle=-8.92, dynamic_lie=2.07, dynamic_loft=12.64, carry=2.4,
+                            closure_rate=602.0, impact_vertical=15.2, impact_horizontal=1e9),
+            ),
+        )
+        r, w = await self.client()
+        self.assertEqual((await self.exchange(r, w, p))['Code'], 200)
+        c = self.service.store.connection
+        rows = {
+            row[0]: tuple(row[1:])
+            for row in c.execute(
+                'SELECT metric_key, estimator, real_value, canonical_unit, source_value, source_unit'
+                ' FROM source_estimates'
+            )
+        }
+        self.assertEqual(rows['club.face_angle'], ('rela', -8.92, 'deg', -8.92, 'deg'))
+        self.assertAlmostEqual(rows['flight.carry_distance'][1], 2.4 * 0.9144)
+        self.assertEqual(rows['flight.carry_distance'][4], 'yd')
+        self.assertNotIn('impact.horizontal', rows)  # out of range: left out, the raw packet keeps it
+        self.assertEqual(len(rows), 6)
+        measured = {
+            row[0]
+            for row in c.execute("SELECT metric_key FROM metric_values WHERE availability='available'")
+        }
+        self.assertTrue({'club.speed', 'club.attack_angle', 'club.path'} <= measured)
+        self.assertFalse({'club.face_angle', 'club.dynamic_lie', 'club.dynamic_loft'} & measured)
+        self.assertNotIn('flight.carry_distance', measured)
+        with self.assertRaises(sqlite3.DatabaseError):
+            c.execute("UPDATE source_estimates SET real_value=0")
+
+    async def test_malformed_source_estimates_are_refused(self):
+        from shot_input import source_estimates
+
+        self.assertIsNone(source_estimates(None))
+        self.assertIsNone(source_estimates(dict(Estimator='rela', Values=dict(carry=-5))))
+        for bad in (
+            [],
+            dict(Values={}),
+            dict(Estimator='', Values={}),
+            dict(Estimator='rela', Values=dict(ball_speed=100)),  # a measurement, not an estimate
+            dict(Estimator='rela', Values=dict(face_angle='open')),
+            dict(Estimator='rela', Values=dict(face_angle=True)),
+        ):
+            with self.assertRaises(ValueError):
+                source_estimates(bad)
+        p = shot()
+        p['TraceLoft'] = dict(SourceEstimates=dict(Estimator='rela', Values=dict(spin=1)))
+        r, w = await self.client()
+        self.assertEqual((await self.exchange(r, w, p))['Code'], 501)
+        self.assertEqual(self.service.store.count('shots'), 0)
+
     async def test_spinless_memory_putt_is_stored_with_null_spin(self):
         p = shot()
         p['BallData'] = dict(Speed=4.3, HLA=-1.2, VLA=0.0)

@@ -23,6 +23,7 @@ from . import (
     v0003_relational_domain,
     v0004_collection_cohorts,
     v0005_staged_calculations,
+    v0006_source_estimates,
 )
 
 SQL_DIR = Path(__file__).resolve().parent / 'sql'
@@ -33,6 +34,7 @@ STEPS = {
     2: v0003_relational_domain,
     3: v0004_collection_cohorts,
     4: v0005_staged_calculations,
+    5: v0006_source_estimates,
 }
 
 

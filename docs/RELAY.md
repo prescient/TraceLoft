@@ -53,6 +53,11 @@ Optional `TraceLoft` extension:
   disconnects. TraceLoft.Context.simulator = {destination, host, port} tells the sender where to send.
   'off' means send nothing.
 
+- SourceEstimates = {Estimator, Values} carries values the source estimated rather than measured
+  (D70), e.g. rēlā's face_angle, dynamic_lie, dynamic_loft, closure_rate, impact_horizontal,
+  impact_vertical and carry (yards) for a Foresight LPi. They go to the `source_estimates` table,
+  never to the measurements. An unknown key or a non-number is refused (501); a value outside
+  the field's range is left out, and the raw packet keeps it.
 - Import = {BatchId, Index, Count, BagId, ClubId, Label} marks a shot from an iPad table import (D65).
   - Such shots are stored like recovered receipts: never live, never forwarded, never added to the
     active drill.

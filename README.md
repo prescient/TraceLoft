@@ -89,14 +89,15 @@ history. Play saves flight estimates for new full shots; older rounds keep their
 
 ## Storage and contracts
 
-The database is SQLite **schema 5**. It holds:
+The database is SQLite **schema 6**. It holds:
 
 - 18 named source metrics, including reported total distance;
 - immutable, versioned TraceLoft results (wide derived metrics);
 - relational golfers, equipment/configurations, shot context, tags, collection plans and session state;
 - SQL-backed Analyze;
 - immutable bag/wedge cohorts;
-- staged recalculation with explicit publication.
+- staged recalculation with explicit publication;
+- a source's own estimates (such as rēlā's face, lie and loft), kept apart from measurements (D70).
 
 Existing IDs, raw evidence, sessions and game scores are preserved, and historical outcomes stay
 pinned. Each upgrade creates a verified pre-upgrade backup; the frozen, numbered upgrade steps

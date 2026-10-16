@@ -1,5 +1,21 @@
 # TraceLoft architecture decisions
 
+## D70 — A source's own estimates get their own table (2026-10-16)
+
+rēlā sends GSPro face angle, lie, loft, closure rate, impact location and carry for the Foresight
+LPi, which measures none of them; rēlā's own log shows them as n/a. They are rēlā's estimates. The
+user chose: never store them as TraceLoft measurements, but keep them in a table to compare with
+TraceLoft's own estimates later.
+- **Schema 6** adds `source_estimates`: one immutable row per observation and metric, with the
+  estimator, the canonical metric key and value, and the value and unit as sent.
+- **Wire:** `TraceLoft.SourceEstimates = {Estimator, Values}`, validated on intake and written in the
+  shot's transaction, for accepted shots only. Allowed keys: face_angle, dynamic_lie,
+  dynamic_loft, closure_rate, impact_horizontal, impact_vertical, carry (yd, stored in metres).
+- `metric_values` was not reused: it allows one value per metric per observation and every row is
+  read as a measurement (an estimated carry would become the reported carry).
+- The three chips recorded before this change (2026-10-16 12:28) keep rēlā's face, lie and loft in
+  `metric_values`; stored evidence is never rewritten.
+
 ## D69 — Simulator on another PC on the private network (2026-10-16)
 
 GSPro runs on a separate PC on the same network (10.10.0.190), and the user asked TraceLoft to relay

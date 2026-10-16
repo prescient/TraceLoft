@@ -224,7 +224,10 @@ class ShotSchemaTests(unittest.TestCase):
         self.store.close()
         self.store = Store(self.path)
         self.assertEqual(self.store.load_session(data['id']), data)
-        self.assertEqual(len(list((self.path.parent / 'backups').glob('*.sqlite3'))), 4)
+        # One verified backup per upgrade step from schema 1.
+        self.assertEqual(
+            len(list((self.path.parent / 'backups').glob('*.sqlite3'))), SCHEMA_VERSION - 1
+        )
 
     def test_failed_migration_rolls_back_to_v1(self):
         data, _, _, before = self.legacy_database()

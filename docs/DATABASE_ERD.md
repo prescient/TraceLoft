@@ -1,4 +1,4 @@
-# TraceLoft database relationships — schema 5
+# TraceLoft database relationships — schema 6
 
 These diagrams show the principal implemented relationships. Auxiliary mapping/quality/import,
 typed-state and audit tables are described in [the database guide](SHOT_DATABASE.md).
@@ -36,6 +36,7 @@ erDiagram
     observations ||--|| shot_source_metrics : normalized_report
     shots ||--o| shot_primary_source : chooses_report
     shot_source_metrics ||--o{ source_metric_quality : explains_availability
+    observations ||--o{ source_estimates : source_also_estimated
     shots ||--o{ shot_derived_metrics : calculated_versions
     calculation_runs ||--o{ shot_derived_metrics : specifies_method
     shot_source_metrics ||--o{ calculation_inputs : exact_source_dependency
