@@ -2,6 +2,7 @@
 
 import asyncio
 import copy
+import socket
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -86,7 +87,8 @@ class RelaDirectTests(unittest.IsolatedAsyncioTestCase):
         self.temp.cleanup()
 
     async def gspro(self, silent=False):
-        """A fake GSPro: 201 on connect, then 200 and 202 per shot (none when silent)."""
+        """A fake GSPro: 201 on connect, then 200 and 202 per shot (none when silent), worded as
+        GSPro 2026 answered rēlā's shots live (WORK_LOG 2026-10-17)."""
         async def serve(reader, writer):
             self.writers.append(writer)
             if not silent:
@@ -97,7 +99,7 @@ class RelaDirectTests(unittest.IsolatedAsyncioTestCase):
                     for p in frames.feed(data):
                         self.received.append(p)
                         if p['ShotDataOptions']['ContainsBallData'] and not silent:
-                            writer.write(wire(dict(Code=200, Message='Shot received successfully')))
+                            writer.write(wire(dict(Code=200, Message='Club & Ball Data received')))
                             writer.write(wire(dict(Code=202, Message='GSPro ready')))
                     await writer.drain()
             except OSError:
@@ -123,7 +125,8 @@ class RelaDirectTests(unittest.IsolatedAsyncioTestCase):
         reply = await self.service.input.accept_packet(copy.deepcopy(CHIP), 'rela', entry)
         self.assertTrue(reply['forwarded'])
         self.assertTrue(await self.wait(lambda: entry['simulator']['status'] == 'acknowledged'))
-        self.assertEqual(entry['simulator']['reply'], '200 Shot received successfully')
+        self.assertEqual(entry['simulator']['reply'], '200 Club & Ball Data received')
+        self.assertEqual(relay.state['reply_codes'], {'201': 1, '200': 1, '202': 1})
         self.assertEqual(entry['profile'], 'rela_lpi')
         self.assertEqual(set(entry['stored']['estimates']), ESTIMATED)
         # GSPro gets rēlā's packet as sent, club data included.
@@ -138,7 +141,8 @@ class RelaDirectTests(unittest.IsolatedAsyncioTestCase):
         source = c.execute('SELECT configuration_json FROM sources').fetchone()[0]
         self.assertIn('"input_profile": "rela_lpi"', source)
 
-    async def test_a_silent_gspro_is_retried_once_then_reported_and_the_shot_marked(self):
+    async def test_a_silent_gspro_keeps_its_one_connection_and_says_how_to_reset_it(self):
+        # D77: reconnecting a quiet GSPro Connect jams its single client slot, so never do it.
         with patch('shot_input.REPLY_TIMEOUT', 0.3):
             await self.gspro(silent=True)
             relay = self.service.input.relay
@@ -146,11 +150,43 @@ class RelaDirectTests(unittest.IsolatedAsyncioTestCase):
             entry = self.service.input.diagnose(CHIP)
             await self.service.input.accept_packet(copy.deepcopy(CHIP), 'rela', entry)
             self.assertTrue(await self.wait(lambda: entry['simulator']['status'] == 'no_reply', 6))
-            self.assertTrue(await self.wait(lambda: relay.state['answering'] is False, 8))
-        self.assertTrue(relay.retried)
+            self.assertTrue(await self.wait(lambda: relay.state['answering'] is False, 3))
+            await asyncio.sleep(1.5)
+        self.assertEqual(len(self.writers), 1)
+        self.assertTrue(relay.state['connected'])
         warnings = [a for a in self.service.input.alerts() if a['level'] == 'warning']
         self.assertIn("isn't answering", warnings[0]['message'])
         self.assertIn('range', warnings[0]['message'])
+        self.assertIn('Reset GSPro Connect', warnings[0]['message'])
+
+    async def test_heartbeats_go_only_on_connect_and_when_readiness_changes(self):
+        await self.gspro()
+        relay = self.service.input.relay
+        self.assertTrue(await self.wait(lambda: relay.state['answering'] is True))
+        beats = lambda: [p for p in self.received if not p['ShotDataOptions']['ContainsBallData']]
+        await asyncio.sleep(1.5)
+        self.assertEqual(len(beats()), 1)
+        relay.ready = True
+        self.assertTrue(await self.wait(lambda: len(beats()) == 2))
+        self.assertTrue(beats()[-1]['ShotDataOptions']['LaunchMonitorIsReady'])
+        await asyncio.sleep(1.5)
+        self.assertEqual(len(beats()), 2)
+        sock = self.service.input.relay.writer.get_extra_info('socket')
+        self.assertEqual(sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE), 1)
+
+    async def test_a_closed_connection_reconnects_with_growing_waits(self):
+        with patch('shot_input.RECONNECT_WAITS', (0.1, 0.4)):
+            self.sim = await asyncio.start_server(
+                lambda r, w: (self.writers.append(w), w.close()), '127.0.0.1', 0
+            )
+            relay = self.service.input.relay
+            await relay.configure(
+                dict(destination='gspro', port=self.sim.sockets[0].getsockname()[1]),
+                self.service.input.port,
+            )
+            self.assertTrue(await self.wait(lambda: len(self.writers) >= 3))
+        self.assertIn('Retrying in', relay.state['status'])
+        self.assertGreaterEqual(relay.attempt, 2)
 
     async def test_alerts_when_rela_is_not_connected(self):
         errors = [a['message'] for a in self.service.input.alerts() if a['level'] == 'error']

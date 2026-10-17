@@ -106,8 +106,12 @@ GSPro defaults to localhost:921; Infinite Tees to localhost:999. The simulator m
 PC: set Connection details → Simulator address to its private-network IP address (D69). Host names and
 public addresses are refused. Changing the destination keeps the address and resets the port. Only documented fields are forwarded,
 with a relay-owned monotonically increasing ShotNumber per service run. Private extensions stay in
-SQLite. The relay sends readiness heartbeats, reconnects automatically, and never queues/replays shots
-for a disconnected simulator. Socket-write evidence is labeled unacknowledged: simulator Code 200 has
+SQLite. The relay holds one connection (D77): it sends a readiness heartbeat on connect and when
+readiness changes, never on a timer; it reconnects only when the connection closes or fails, waiting
+2, 5, 10, then 30 s between attempts; TCP keepalive finds a dead link. A quiet simulator keeps its
+connection and raises an "isn't answering" alert (for GSPro: be on the range or in a round, else
+Settings → System → Reset GSPro Connect), because reconnecting jams GSPro Connect's single client
+slot. The relay never queues/replays shots for a disconnected simulator. Socket-write evidence is labeled unacknowledged: simulator Code 200 has
 no shot identifier, so it cannot establish durable per-shot delivery. Avoid claiming exactly-once
 simulator receipt. Local durable receipt and simulator response are separate evidence.
 

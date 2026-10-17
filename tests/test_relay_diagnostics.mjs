@@ -1,6 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { confirmationList, profileControl, statusItems, statusStrip, voicePanel } from '../web/relay-diagnostics.js';
+import {
+  confirmationList,
+  profileControl,
+  replyCounts,
+  statusItems,
+  statusStrip,
+  voicePanel,
+} from '../web/relay-diagnostics.js';
+
+test('simulator replies are counted by code in code order (D77)', () => {
+  assert.equal(replyCounts({}), '');
+  assert.equal(replyCounts({ reply_codes: { 202: 4, 200: 9, 201: 3 } }), 'Replies: 200 ×9 · 201 ×3 · 202 ×4');
+});
 
 test('the voice panel says when it is not installed, listening, and what it heard (D76)', () => {
   const missing = String(voicePanel({ available: false, missing: 'Needs the vosk package.' }));

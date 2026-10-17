@@ -8,7 +8,7 @@ import { html } from './charts.js';
 import { parseRoute, routeFor } from './navigation.js';
 import { refreshSetupEquipment } from './equipment.js';
 import { recordingWarnings, sourceAlerts } from './recording.js';
-import { confirmationList, profileControl, statusStrip, voicePanel } from './relay-diagnostics.js';
+import { confirmationList, profileControl, replyCounts, statusStrip, voicePanel } from './relay-diagnostics.js';
 import { featureForDrill, featureForSession } from './features.js';
 import { bindGolferPicker } from './golfers.js';
 import { createLiveStateController, isStaleState } from './live-state.js';
@@ -621,7 +621,7 @@ function updateRelay() {
   app.querySelector('#relay-output').innerHTML =
     relay.delegated && relay.enabled
       ? html`<strong>${relay.status}</strong><p>${state.input.device} sends each live shot to the simulator itself, using this destination. Relay forwards nothing while it is connected.</p>`
-      : html`<strong>${relay.status}</strong><p>${relay.sent} shots sent this run</p>${relay.enabled && !relay.connected ? html`<p class="form-hint">Open the selected simulator. Relay reconnects automatically; earlier shots are not replayed.</p>` : ''}`;
+      : html`<strong>${relay.status}</strong><p>${relay.sent} shots sent this run${replyCounts(relay) ? ` · ${replyCounts(relay)}` : ''}</p>${relay.enabled && !relay.connected ? html`<p class="form-hint">Open the selected simulator. Relay reconnects automatically; earlier shots are not replayed.</p>` : ''}`;
   const select = app.querySelector('#relay-destination');
   if (!select.disabled) select.value = relay.destination;
   app.querySelector('#relay-logs').textContent = state.logs.join('\n');

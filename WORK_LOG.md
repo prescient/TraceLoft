@@ -1,5 +1,28 @@
 # TraceLoft work log
 
+## 2026-10-17 — One quiet, persistent GSPro connection (D77), branch `rela-direct`
+
+- Live test before the change (TraceLoft-next on input 921, relaying to GSPro at 10.10.0.190:921):
+  shots #1–3 got no GSPro reply; after the user restarted GSPro Connect, #4–11 were acknowledged in
+  18–195 ms ("200 Club & Ball Data received" / "200 Ball Data received", then "202 GSPro ready").
+  Putt #9 was auto-tagged Putter; voice "seven iron" and "gap wedge" selected those clubs. GSPro's
+  own club stayed DR (Open Connect v1 cannot set it).
+- `Relay._connect`: no reconnect on silence, heartbeat on connect and on readiness change only,
+  `keep_alive()` (SO_KEEPALIVE plus TCP_KEEPIDLE 30 / KEEPINTVL 5 / KEEPCNT 4, all accepted by
+  Windows 11 through asyncio's socket wrapper; `ioctl(SIO_KEEPALIVE_VALS)` is not available there),
+  `RECONNECT_WAITS` 2/5/10/30 s reset by a reply, `reply_codes`; the silence alert names Settings →
+  System → Reset GSPro Connect. Relay page shows "Replies: 200 ×n · …" (`replyCounts`).
+- **Verification:**
+  - `tests/test_rela_direct.py`: a silent GSPro keeps one connection and the alert names Reset GSPro
+    Connect; heartbeats only on connect and readiness change, keepalive set; a closing peer is
+    retried with growing waits; the fake GSPro uses GSPro's live wording and reply codes are counted.
+    `replyCounts` in `tests/test_relay_diagnostics.mjs`. 95 UI tests pass. Ruff is not installed in
+    this worktree's venv, so lint was not run.
+  - Test instance restarted on the new code: it connected to GSPro and, as expected after the old
+    instance's connection was killed, GSPro did not answer; the connection stayed open and the alert
+    named Reset GSPro Connect. Not yet verified: that after one reset GSPro keeps answering for a
+    whole session with no further resets.
+
 ## 2026-10-17 — Quick range, putter tags, status strip, one-tap club, voice clubs (D75, D76)
 
 - Quick range: `GolfService.start_quick_range`, `_close_quick_range` (in `create_practice`,

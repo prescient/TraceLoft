@@ -1,5 +1,25 @@
 # TraceLoft architecture decisions
 
+## D77 — One quiet, persistent GSPro connection (2026-10-17)
+
+In the live test, GSPro stopped answering TraceLoft-next until GSPro Connect was restarted, after
+which every shot was acknowledged in 18–195 ms. GSPro Connect serves one client, and its slot can jam
+when a client keeps reconnecting. TraceLoft's relay was doing exactly that: a readiness heartbeat
+every 5 s, and a fresh connection whenever GSPro stayed quiet (D74). Working GSPro connectors hold
+one connection and stay quiet between shots. Replaces the reconnect-once rule in D74.
+- **One connection.** The relay reconnects only when the connection really closes or fails. Waits
+  between attempts grow 2 → 5 → 10 → 30 s and start over once a connection gets a reply. Silence
+  never closes the connection.
+- **Heartbeats only on connect and when readiness changes**, not on a timer. A dead link is found
+  by TCP keepalive (idle 30 s, 4 probes 5 s apart, about 50 s), which GSPro Connect never sees.
+- **Silence is reported, not "fixed".** After 5 s without a reply, the connection stays open, the
+  shot is marked "No reply", and the alert says to put GSPro on the range or in a round and, if it
+  is, to choose Settings → System → Reset GSPro Connect (or restart GSPro Connect).
+- **Reply counts.** The Relay page shows this run's simulator replies by code (`reply_codes`).
+- GSPro 2026 answers a shot with "200 Club & Ball Data received" ("200 Ball Data received" without
+  club data) and then "202 GSPro ready". The player's club in GSPro (Code 201) stays GSPro's own:
+  Open Connect v1 gives a launch monitor no way to set it.
+
 ## D76 — Voice club selection on the PC's microphone, offline (2026-10-17)
 
 The user asked for voice-activated club selection. The iPad reaches TraceLoft over plain http on the
@@ -53,7 +73,7 @@ copy was untouched during a playing session.
   documented fields of the original packet.
 - **Relay acknowledgement:** a reply is expected within 5 s of connecting and of each shot. On the
   first silence the relay reconnects once, then reports "isn't answering" (GSPro answers only on
-  the range or in a round). The first 200 after a shot is taken as its acknowledgement, because
+  the range or in a round). *Superseded by D77: the relay no longer reconnects on silence.* The first 200 after a shot is taken as its acknowledgement, because
   GSPro replies carry no shot id.
 - **Alerts:** besides the source's own (D73), TraceLoft raises "rēlā isn't connected" (profile with a
   named source and no client) and "GSPro isn't connected / answering" (TraceLoft relaying).

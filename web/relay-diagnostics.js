@@ -55,6 +55,12 @@ export function statusItems(state) {
   return [source, recording, simulator].map(([kind, name, text]) => ({ kind, name, text, profile: profile?.title }));
 }
 
+// Simulator replies this run by code (D77), e.g. "Replies: 200 ×9 · 201 ×3", or '' before any.
+export function replyCounts(relay = {}) {
+  const codes = Object.entries(relay.reply_codes ?? {}).sort(([a], [b]) => Number(a) - Number(b));
+  return codes.length ? `Replies: ${codes.map(([code, n]) => `${code} ×${n}`).join(' · ')}` : '';
+}
+
 export function statusStrip(state) {
   return html`<ol class="relay-status" aria-label="Shot path status">${statusItems(state).map(
     item =>

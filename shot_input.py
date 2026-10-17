@@ -6,6 +6,7 @@ import ipaddress
 import json
 import math
 import re
+import socket
 import sqlite3
 import time
 import uuid
@@ -17,7 +18,8 @@ from storage import encoded, digest, now
 
 SIMULATOR_NAMES = {'off': 'The simulator', 'gspro': 'GSPro', 'infinite_tees': 'Infinite Tees'}
 REPLY_TIMEOUT = 5.0  # seconds a connect or a sent shot may go unanswered by the simulator (D74)
-HEARTBEAT_INTERVAL = 5.0  # seconds between readiness heartbeats to the simulator
+# D77: after a real disconnect, wait 2, 5, 10, then 30 s between attempts; a reply starts over.
+RECONNECT_WAITS = (2.0, 5.0, 10.0, 30.0)
 DIAGNOSTICS_KEPT = 25  # shots shown in the Relay diagnostics (this service run)
 
 FIELDS = {
@@ -300,6 +302,21 @@ def source_delivers(packet):
     return isinstance(extension, dict) and extension.get('SimulatorDelivery') == 'source'
 
 
+def keep_alive(writer):
+    """D77: TCP keepalive finds a dead simulator link (about 50 s: idle 30 s, then 4 probes 5 s
+    apart) without any traffic GSPro Connect would see, so a quiet connection is never dropped."""
+    sock = writer.get_extra_info('socket')
+    if sock is None:
+        return
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        for option, value in (('TCP_KEEPIDLE', 30), ('TCP_KEEPINTVL', 5), ('TCP_KEEPCNT', 4)):
+            if hasattr(socket, option):
+                sock.setsockopt(socket.IPPROTO_TCP, getattr(socket, option), value)
+    except OSError:
+        pass  # the operating system's default keepalive timing still applies
+
+
 class Relay:
     """Direct optional simulator output. A reconnect never replays a stored shot.
 
@@ -320,7 +337,7 @@ class Relay:
         # the range or in a round, and its replies carry no shot id, so the first 200 after a shot is
         # taken as that shot's acknowledgement.
         self.awaiting_since = None  # monotonic time since which a reply is expected
-        self.retried = False  # one automatic reconnect per silent spell
+        self.attempt = 0  # reconnects since the last connection that got a reply (RECONNECT_WAITS)
         self.pending = []  # [(diagnostics entry, monotonic send time)] awaiting acknowledgement
         self.state = dict(
             destination='off',
@@ -334,6 +351,7 @@ class Relay:
             sent=0,
             delegated=False,
             replies=0,
+            reply_codes={},  # replies by code, e.g. {'200': 9, '201': 3}, this service run
             last_reply=None,
             answering=None,  # None until a reply is due, then whether one came in REPLY_TIMEOUT
         )
@@ -359,10 +377,11 @@ class Relay:
         clock = time.perf_counter()
         code = reply['Code']
         self.state['replies'] += 1
+        codes = self.state['reply_codes']
+        codes[str(code)] = codes.get(str(code), 0) + 1
         self.state['last_reply'] = f"{code} {reply.get('Message', '')}".strip()[:200]
         self.state['answering'] = True
         self.awaiting_since = None
-        self.retried = False
         if self.pending and (code == 200 or code >= 300):
             entry, sent = self.pending.pop(0)
             entry['simulator'].update(
@@ -396,7 +415,7 @@ class Relay:
         if port == input_port and host in LOCAL_SIMULATOR_HOSTS:
             raise ValueError('Simulator port must differ from input port.')
         await self.close()
-        self.retried = False
+        self.attempt = 0
         self.state.update(
             destination=destination,
             enabled=destination != 'off',
@@ -418,17 +437,20 @@ class Relay:
                 await asyncio.sleep(0.5)
                 continue
             writer = None
+            answered = False  # this connection got a reply, so the backoff starts over
+            wait = RECONNECT_WAITS[0]
             try:
                 reader, writer = await asyncio.wait_for(
                     asyncio.open_connection(self.state['host'], self.state['port']), 2
                 )
+                keep_alive(writer)
                 self.writer = writer
                 self.state.update(
                     connected=True, status='Connected; waiting for simulator response'
                 )
                 self.awaiting_since = time.monotonic()  # the connect heartbeat must be answered
-                await self.send(heartbeat(self.ready, self.number))
-                last_beat = time.monotonic()
+                sent_ready = self.ready
+                await self.send(heartbeat(sent_ready, self.number))
                 frames = Frames()
                 name = SIMULATOR_NAMES[self.state['destination']]
                 while True:
@@ -436,19 +458,19 @@ class Relay:
                         data = await asyncio.wait_for(reader.read(8192), 1)
                     except asyncio.TimeoutError:
                         data = None
-                    clock = time.monotonic()
                     if data is None:
                         self._expire()
+                        clock = time.monotonic()
                         if self.awaiting_since and clock - self.awaiting_since > REPLY_TIMEOUT:
-                            if not self.retried:
-                                self.retried = True  # one fresh connection, then report it
-                                raise ConnectionError(f"{name} didn't answer; reconnecting")
+                            # D77: keep the connection. Reconnecting a silent GSPro Connect only
+                            # churns its single client slot; a dead link is found by keepalive.
                             self.state.update(answering=False, status=(
-                                f"{name} isn't answering. Make sure {name} is on the range or in "
-                                'a round; if it is, restart GSPro Connect on the simulator PC.'))
-                        if clock - last_beat >= HEARTBEAT_INTERVAL:
-                            last_beat = clock
-                            if not await self.send(heartbeat(self.ready, self.number)):
+                                f"{name} isn't answering. Make sure {name} is on the range or in a "
+                                f'round; if it is, in {name} choose Settings → System → Reset GSPro '
+                                'Connect (or restart GSPro Connect on that PC).'))
+                        if self.ready != sent_ready:  # D77: heartbeats only when readiness changes
+                            sent_ready = self.ready
+                            if not await self.send(heartbeat(sent_ready, self.number)):
                                 raise ConnectionError('Heartbeat write failed')
                         continue
                     if not data:
@@ -456,6 +478,7 @@ class Relay:
                     for reply in frames.feed(data):
                         if type(reply.get('Code')) is not int:
                             raise ValueError('Invalid simulator response')
+                        answered = True
                         self.state['last_response'] = reply
                         if reply['Code'] == 201:
                             self.state['player'] = reply.get('Player', {})
@@ -468,7 +491,20 @@ class Relay:
             except asyncio.CancelledError:
                 raise
             except (OSError, ValueError, UnicodeError, asyncio.TimeoutError) as ex:
-                self.state['status'] = 'Disconnected: ' + str(ex)
+                where = f"{self.state['host']}:{self.state['port']}"
+                if isinstance(ex, (asyncio.TimeoutError, ConnectionRefusedError)) and not self.writer:
+                    # Windows retries a refused connect past the 2 s limit, so both mean the same.
+                    reason = (f'nothing answered at {where}. Is GSPro Connect (its Open API '
+                              'connector) running on that PC?')
+                else:
+                    reason = str(ex) or type(ex).__name__
+                if answered:
+                    self.attempt = 0
+                if not self.delegated:
+                    wait = RECONNECT_WAITS[min(self.attempt, len(RECONNECT_WAITS) - 1)]
+                    self.attempt += 1
+                end = '' if reason.endswith(('.', '?', '!')) else '.'
+                self.state['status'] = f'Disconnected: {reason}{end} Retrying in {wait:.0f} s.'
             finally:
                 if writer:
                     writer.close()
@@ -480,7 +516,7 @@ class Relay:
                 if self.state['answering'] is not False:
                     self.state['answering'] = None
             if not self.delegated:
-                await asyncio.sleep(2)
+                await asyncio.sleep(wait)
 
     def delegate(self, delegated):
         """Step aside while the connected source delivers to the simulator (see the class doc)."""
