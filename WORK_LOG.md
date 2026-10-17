@@ -1,5 +1,23 @@
 # TraceLoft work log
 
+## 2026-10-17 — Desktop start/stop icons for TraceLoft-next (user request)
+
+- `launch_next.py` with `Start TraceLoft-next.cmd` / `Stop TraceLoft-next.cmd`: start runs
+  `web_app.py --port 8775` hidden, with `GOLFDATA_DATABASE=%USERPROFILE%\GolfData-next\golfdata.sqlite3`
+  and the input port saved on the Relay page, then opens the browser. Stop calls
+  `/api/service/stop`, so the active session is kept. Desktop shortcuts "Start TraceLoft-next" and
+  "Stop TraceLoft-next" use `icons/start-next.ico` / `stop-next.ico`: green and red like the real
+  TraceLoft icons, with a cobalt ring (`icons/make_icons.py`, run with TraceCapture's venv for Pillow).
+- **Verification:** the stop shortcut's script stopped the running test copy (exit 0, ports 8775
+  and 921 closed); the launcher started it again with the same Driving range session restored. Input
+  port 921 was saved through `/api/input/port` (it had been 931 from testing), so the environment
+  override is no longer needed. The shortcuts themselves were not double-clicked.
+- **Finding (GSPro Connect jam):** after the clean stop, the old GSPro connection sat in FIN_WAIT_2.
+  TraceLoft had closed its side, but GSPro Connect never closed its own, so it still held the
+  old client and ignored the new connection (no replies, "isn't answering"). So any TraceLoft
+  restart jams GSPro Connect until it is reset, whatever D77 does while running. Untested idea: close
+  with an abortive reset (SO_LINGER 0) so GSPro Connect sees an error and frees the slot.
+
 ## 2026-10-17 — One quiet, persistent GSPro connection (D77), branch `rela-direct`
 
 - Live test before the change (TraceLoft-next on input 921, relaying to GSPro at 10.10.0.190:921):
