@@ -20,8 +20,11 @@
     this worktree's venv, so lint was not run.
   - Test instance restarted on the new code: it connected to GSPro and, as expected after the old
     instance's connection was killed, GSPro did not answer; the connection stayed open and the alert
-    named Reset GSPro Connect. Not yet verified: that after one reset GSPro keeps answering for a
-    whole session with no further resets.
+    named Reset GSPro Connect.
+  - After the user reset GSPro Connect, the relay connected once (13:43:19 UTC) and GSPro
+    acknowledged all three rēlā shots on that one connection in 201, 103 and 116 ms ("200 Club & Ball
+    Data received"); replies 200 ×3, 201 ×6, 202 ×3; the first shot started a Quick range. Not yet
+    verified: a whole session (an hour or more, idle spells) with no further resets.
 
 ## 2026-10-17 — Quick range, putter tags, status strip, one-tap club, voice clubs (D75, D76)
 
