@@ -18,6 +18,12 @@ details → Simulator address, as a private-network IP address (D69); that PC mu
 With **rēlā**, point rēlā's GSPro output at TraceLoft's input port and choose Relay → Shot source →
 **rēlā · Foresight LPi**: rēlā's estimated club values stay estimates, GSPro still gets rēlā's full
 shot, and Relay → Shot confirmation shows each shot received, stored and acknowledged by GSPro (D74).
+Shots that arrive with no drill running start a **Quick range** (switch on Relay), so they appear in
+Sessions and Analyze; launching a drill finishes it. Shots without measured spin are tagged with your
+putter automatically ("Putter · auto"). Tap a shot's club to correct it. **Voice clubs** (Relay):
+say a club ("seven iron") and it is selected for the next shot, using this PC's microphone offline;
+it needs `pip install vosk sounddevice` in `.venv` and the Vosk small English model in
+`%USERPROFILE%\GolfData\voice` (D75, D76).
 Use **Launch TraceLoft LAN.cmd** for browser access on your trusted local network. It also accepts
 shots from other machines on port 900 (`--remote-input`, D66), such as rēlā in a VM or over a VPN.
 This has no password: allow inbound TCP 900 in Windows Firewall, and never port-forward it to the

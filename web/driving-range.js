@@ -11,7 +11,7 @@ import { preserveInteraction } from './interaction-state.js';
 import { decorateCollection } from './collection.js';
 import { decorateRandomTargets } from './random-distances.js';
 import { html } from './charts.js';
-import { equipmentControls, bindEquipment } from './equipment.js';
+import { equipmentControls, bindEquipment, shortClubLabel } from './equipment.js';
 import { tagDialog } from './golfers.js';
 import { recordingWarnings } from './recording.js';
 import {
@@ -261,6 +261,65 @@ function cleanupDialog(data, keys, action, catalog, apply, notice) {
   };
 }
 
+// One-tap club correction (user, 2026-10-17): tap a shot's club, then tap the right club. It uses the
+// same retag correction as the workspace (history, Undo, original tag kept) with an automatic reason.
+export function quickClubDialog(data, key, catalog, apply, notice) {
+  const index = data.shots.findIndex(s => s.key === key);
+  const shot = index >= 0 ? { ...data.shots[index], ordinal: index + 1 } : null;
+  if (!shot || !catalog.bags.length) {
+    notice('Add a bag in Manage bags before tagging clubs.');
+    return;
+  }
+  const current = equipment(shot);
+  let bagId = catalog.bags.some(b => b.id === current.bag_id) ? current.bag_id : catalog.bags[0].id;
+  const dialog = document.createElement('dialog');
+  dialog.className = 'confirm-dialog quick-club';
+  dialog.setAttribute('aria-labelledby', 'quick-club-title');
+  const draw = () => {
+    const bag = catalog.bags.find(b => b.id === bagId);
+    dialog.innerHTML = html`<h2 id="quick-club-title">Shot ${shot.ordinal ?? ''}: which club?</h2><p class="form-hint">Now ${current.club_label || 'untagged'}${current.selection_mode === 'auto_putt' ? ' (automatic putt tag)' : ''}. Tap the club you hit; the original tag stays in history and Undo is available.</p>${
+      catalog.bags.length > 1
+        ? html`<div class="range-segment" role="group" aria-label="Bag">${catalog.bags.map(
+            b =>
+              html`<button type="button" class="btn ${b.id === bagId ? 'primary' : 'quiet'}" data-quick-bag="${b.id}" aria-pressed="${b.id === bagId}">${b.name}</button>`
+          )}</div>`
+        : ''
+    }<div class="quick-club-grid">${bag.clubs.map(
+      c =>
+        html`<button type="button" class="club-button ${c.id === current.club_id && bagId === current.bag_id ? 'current' : ''}" data-quick-club="${c.id}" aria-label="${c.label}" title="${c.label}">${shortClubLabel(c.label)}</button>`
+    )}</div><p class="session-error" role="alert" hidden></p><div class="confirm-actions"><button class="btn quiet" type="button" data-quick-untag>Mark untagged</button><button class="btn quiet" type="button" data-cancel>Cancel</button></div>`;
+    dialog.querySelectorAll('[data-quick-bag]').forEach(b => (b.onclick = () => ((bagId = b.dataset.quickBag), draw())));
+    dialog.querySelectorAll('[data-quick-club]').forEach(b => (b.onclick = () => choose(b.dataset.quickClub)));
+    dialog.querySelector('[data-quick-untag]').onclick = () => choose('');
+    dialog.querySelector('[data-cancel]').onclick = () => dialog.close();
+  };
+  const choose = async clubId => {
+    dialog.querySelectorAll('button').forEach(b => (b.disabled = true));
+    try {
+      await apply({
+        action: 'retag',
+        keys: [key],
+        revision: data.cleanup_revision,
+        reason: 'Corrected club with one tap',
+        bag_id: bagId,
+        club_id: clubId
+      });
+      dialog.close();
+      const label = catalog.bags.find(b => b.id === bagId)?.clubs.find(c => c.id === clubId)?.label;
+      notice(`Shot ${shot.ordinal ?? ''} is now ${label || 'untagged'}. Undo is in the shot workspace.`);
+    } catch (error) {
+      const p = dialog.querySelector('[role=alert]');
+      p.hidden = false;
+      p.textContent = error.message;
+      dialog.querySelectorAll('button').forEach(b => (b.disabled = false));
+    }
+  };
+  draw();
+  document.body.append(dialog);
+  dialog.showModal();
+  dialog.onclose = () => dialog.remove();
+}
+
 export function disposeRange() {
   scatterResize?.disconnect();
   scatterResize = null;
@@ -389,7 +448,7 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
   const shotRows = matched.length
     ? matched.map(s => {
         const e = equipment(s);
-        return html`<tr class="${s.key === v.focus ? 'selected' : ''} ${included(s) ? '' : 'excluded'}"><td><input type="checkbox" data-select-shot="${s.key}" aria-label="Select shot ${s.ordinal}" ${v.selected.has(s.key) ? 'checked' : ''}></td><td><button class="btn quiet small" data-inspect-shot="${s.key}" aria-label="Inspect shot ${s.ordinal}">#${s.ordinal}</button></td><td><strong>${e.club_label || 'Untagged'}</strong><small>${e.bag_name || 'No bag'}${s.corrected_equipment ? ' · corrected' : ''}${data.collection_kind === 'wedge' ? ` · ${s.swing_label ?? 'Swing unavailable'}` : ''}</small></td><td>${n(rangeValue(s, 'carry'))}</td><td>${n(rangeValue(s, 'total'))}</td><td>${n(rangeValue(s, 'offline'))}</td><td>${n(s.vals.ball_speed)}</td><td>${n(s.vals.launch_ang)}</td><td>${n(s.vals.total_spin, 0)}</td><td>${s.flight?.shape ?? 'Unavailable'}</td><td>${s.removed ? 'Removed' : s.excluded ? 'Excluded' : 'Included'}${s.possible_duplicate ? ' · possible duplicate' : ''}</td></tr>`;
+        return html`<tr class="${s.key === v.focus ? 'selected' : ''} ${included(s) ? '' : 'excluded'}"><td><input type="checkbox" data-select-shot="${s.key}" aria-label="Select shot ${s.ordinal}" ${v.selected.has(s.key) ? 'checked' : ''}></td><td><button class="btn quiet small" data-inspect-shot="${s.key}" aria-label="Inspect shot ${s.ordinal}">#${s.ordinal}</button></td><td><button type="button" class="club-chip" data-quick-club-shot="${s.key}" aria-label="Change the club for shot ${s.ordinal}" ${s.removed ? 'disabled' : ''}>${e.club_label || 'Untagged'}${e.selection_mode === 'auto_putt' ? ' · auto' : ''}</button><small>${e.bag_name || 'No bag'}${s.corrected_equipment ? ' · corrected' : ''}${data.collection_kind === 'wedge' ? ` · ${s.swing_label ?? 'Swing unavailable'}` : ''}</small></td><td>${n(rangeValue(s, 'carry'))}</td><td>${n(rangeValue(s, 'total'))}</td><td>${n(rangeValue(s, 'offline'))}</td><td>${n(s.vals.ball_speed)}</td><td>${n(s.vals.launch_ang)}</td><td>${n(s.vals.total_spin, 0)}</td><td>${s.flight?.shape ?? 'Unavailable'}</td><td>${s.removed ? 'Removed' : s.excluded ? 'Excluded' : 'Included'}${s.possible_duplicate ? ' · possible duplicate' : ''}</td></tr>`;
       })
     : html`<tr><td colspan="11" class="empty">No shots match this view. Change the filters or add a shot.</td></tr>`;
   const history = data.cleanup_history.length
@@ -401,11 +460,12 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
             html`<p><strong>${b.action} · ${b.items.length} shots${b.undone ? ' · undone' : ''}</strong> — ${b.reason}<br><span class="form-hint">${b.at}</span></p>`
         )
     : html`<p>No cleanup changes yet.</p>`;
-  app.innerHTML = html`<div class="range-view"><div class="page-head"><div><div class="eyebrow">${data.demo ? 'DEMO / ' : ''}FULL SWING · ${isReview ? 'SAVED REVIEW' : active ? 'FREE PRACTICE' : 'RESULTS'}</div><h1>${isReview ? 'Range review' : 'Driving range'}</h1><p class="subtitle">${shots.length} recorded · ${shots.filter(included).length} included · ${data.handedness === 'left_handed' ? 'Left' : 'Right'}-handed${data.import_source ? ` · Imported from iPad table${shots.some(s => s.possible_duplicate) ? ` · ${shots.filter(s => s.possible_duplicate).length} possible duplicates of live shots` : ''}` : ''}</p></div><div class="head-actions">${active && !data.demo ? btn('Relay', 'relay', 'quiet') : ''}${active ? btn('End session', 'finish', 'danger') : btn('New range / edit setup', 'edit')}${isReview ? btn('Practice selector', 'home') : ''}${btn(isReview ? 'Exit review' : 'Exit session', 'exit-session', 'primary')}</div></div>
+  app.innerHTML = html`<div class="range-view"><div class="page-head"><div><div class="eyebrow">${data.demo ? 'DEMO / ' : ''}FULL SWING · ${isReview ? 'SAVED REVIEW' : active ? 'FREE PRACTICE' : 'RESULTS'}</div><h1>${isReview ? 'Range review' : data.quick_range ? 'Quick range' : 'Driving range'}</h1><p class="subtitle">${shots.length} recorded · ${shots.filter(included).length} included · ${data.handedness === 'left_handed' ? 'Left' : 'Right'}-handed${data.import_source ? ` · Imported from iPad table${shots.some(s => s.possible_duplicate) ? ` · ${shots.filter(s => s.possible_duplicate).length} possible duplicates of live shots` : ''}` : ''}</p></div><div class="head-actions">${active && !data.demo ? btn('Relay', 'relay', 'quiet') : ''}${active ? btn('End session', 'finish', 'danger') : btn('New range / edit setup', 'edit')}${isReview ? btn('Practice selector', 'home') : ''}${btn(isReview ? 'Exit review' : 'Exit session', 'exit-session', 'primary')}</div></div>
   ${data.demo ? html`<section class="range-demo" role="status"><div><strong>SIMULATED DATA · Demo range</strong><span>Generated shots only. Live capture does not enter this session.</span></div>${active ? html`<div>${local('＋ Add simulated shot', 'simulate', 'primary')}${local('Generate sample set (10)', 'sample', '')}</div>` : ''}</section>` : ''}
+  ${active && data.quick_range ? html`<p class="form-hint quick-range-note" role="note">Started automatically: a shot arrived with no drill running. Choosing a drill in Practice finishes this Quick range and starts the drill.</p>` : ''}
   ${active && !data.demo ? html`<div id="recording-feedback">${recordingWarnings(state.capture)}</div>` : ''}${!active ? sessionNotice(data, isReview) : ''}${state.practice_error && !isReview ? html`<div class="session-error" role="alert">${state.practice_error}</div>` : ''}
   ${active ? html`<section class="card equipment-card" aria-label="Tag upcoming shots">${equipmentControls(state.equipment, data.equipment_selection)}</section>` : ''}
-  <section class="card range-hero"><div class="range-hero-heading"><div><span class="eyebrow">${shown === last ? 'LATEST SHOT' : `SHOT ${shown?.ordinal ?? '—'}`}</span><p>${eq.bag_name ?? ''}${eq.club_label ? ' / ' + eq.club_label : ' · Untagged'} ${shown?.corrected_equipment ? '· Corrected tag' : ''}</p></div><div>${shown && shown !== last ? local('Back to latest', 'latest') : ''}<span class="range-shape">${flight?.shape ?? (shown ? 'Model unavailable' : 'Waiting for a shot')}</span><p class="form-hint">OpenGolfCoach classification · estimated</p></div></div><div class="range-metrics">${metricTiles}</div>${clubTiles}<p class="form-hint">${data.demo_reference ? 'Synthetic Tour-reference samples; OpenGolfCoach estimates are separate' : data.demo ? 'Synthetic values generated from the flight model' : estimated(shown) ? 'Carry, total and offline: OpenGolfCoach estimates · other values source-reported' : 'source-reported values'} · ${shown ? `Shot ${shown.ordinal} · ${shown.removed ? 'Removed' : shown.excluded ? 'Excluded' : 'Saved'}${shown.target_distance_yd ? ` · Carry target ${n(shown.target_distance_yd)} yd${valid(rangeValue(shown, 'carry')) ? ` · ${shown.success ? 'In distance window' : 'Outside distance window'} · ${n(Math.abs(rangeValue(shown, 'carry') - shown.target_distance_yd))} yd ${rangeValue(shown, 'carry') < shown.target_distance_yd ? 'short' : 'long'}${est(shown)}` : ''}` : ''}` : 'Waiting for your first shot. Missing values stay unavailable.'}</p></section>
+  <section class="card range-hero"><div class="range-hero-heading"><div><span class="eyebrow">${shown === last ? 'LATEST SHOT' : `SHOT ${shown?.ordinal ?? '—'}`}</span><p>${eq.bag_name ?? ''} ${shown ? html`<button type="button" class="club-chip" data-quick-club-shot="${shown.key}" aria-label="Change the club for this shot">${eq.club_label || 'Untagged'}${eq.selection_mode === 'auto_putt' ? ' · auto' : ''}</button>` : ''} ${shown?.corrected_equipment ? '· Corrected tag' : ''}</p></div><div>${shown && shown !== last ? local('Back to latest', 'latest') : ''}<span class="range-shape">${flight?.shape ?? (shown ? 'Model unavailable' : 'Waiting for a shot')}</span><p class="form-hint">OpenGolfCoach classification · estimated</p></div></div><div class="range-metrics">${metricTiles}</div>${clubTiles}<p class="form-hint">${data.demo_reference ? 'Synthetic Tour-reference samples; OpenGolfCoach estimates are separate' : data.demo ? 'Synthetic values generated from the flight model' : estimated(shown) ? 'Carry, total and offline: OpenGolfCoach estimates · other values source-reported' : 'source-reported values'} · ${shown ? `Shot ${shown.ordinal} · ${shown.removed ? 'Removed' : shown.excluded ? 'Excluded' : 'Saved'}${shown.target_distance_yd ? ` · Carry target ${n(shown.target_distance_yd)} yd${valid(rangeValue(shown, 'carry')) ? ` · ${shown.success ? 'In distance window' : 'Outside distance window'} · ${n(Math.abs(rangeValue(shown, 'carry') - shown.target_distance_yd))} yd ${rangeValue(shown, 'carry') < shown.target_distance_yd ? 'short' : 'long'}${est(shown)}` : ''}` : ''}` : 'Waiting for your first shot. Missing values stay unavailable.'}</p></section>
   <section class="range-analysis-controls"><div class="range-segment" aria-label="Scatter distance">${['carry', 'total'].map(m => html`<button class="btn ${v.metric === m ? 'primary' : 'quiet'}" data-distance="${m}" aria-pressed="${v.metric === m}">${m === 'carry' ? 'Carry' : 'Total'}</button>`)}</div>${select(
     'source',
     'Plot source',
@@ -531,6 +591,20 @@ export function renderRange(app, data, state, isReview, sessionNotice, context) 
       };
     });
   bindInspection(app);
+  app.querySelectorAll('[data-quick-club-shot]').forEach(
+    b =>
+      (b.onclick = () =>
+        quickClubDialog(
+          data,
+          b.dataset.quickClubShot,
+          state.equipment,
+          async params => {
+            await context.cleanup(params);
+            context.redraw();
+          },
+          context.notice
+        ))
+  );
   const stage = app.querySelector('.range-scatter-stage');
   // Redraw coordinates at the available aspect ratio, retaining readable SVG text and markers.
   // The SVG is positioned out of flow, so changing its viewBox cannot grow the observed stage.

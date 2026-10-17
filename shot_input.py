@@ -545,6 +545,8 @@ class ShotInput:
             peer=None,  # address of the connected source (shown when it is another machine)
             alerts=[],  # the connected source's problems for the golfer, from its heartbeats (D73)
             profile=source_profiles.DEFAULT,  # how to read a standard sender's values (D74)
+            quick_range=True,  # start a Quick range for shots arriving with nothing running (D75)
+            connected=False,  # a shot source holds the input connection now (Relay status strip)
             diagnostics_revision=0,
             device=None,
             received=0,
@@ -560,6 +562,34 @@ class ShotInput:
         if profile not in source_profiles.PROFILES:
             raise ValueError('Choose a listed input profile.')
         self.state['profile'] = profile
+
+    def putt_selection(self, event):
+        """D75 (user, 2026-10-17): a shot with no measured spin is a putt, tagged with the bag's
+        putter as an automatic choice (`selection_mode: 'auto_putt'`) for that shot only. The bag is
+        the shot's own, or the only bag; no bag or no club labelled as a putter means no tag."""
+        from club_model import club_type
+        from equipment import selection
+
+        if event.get('result') != 'validated' or event.get('simulated') or event.get('import_batch'):
+            return None
+        vals = event.get('vals', {})
+        if any(
+            isinstance(vals.get(k), (int, float)) and vals[k] != 0
+            for k in ('total_spin', 'back_spin', 'side_spin')
+        ):
+            return None
+        current = event.get('equipment_selection') or {}
+        bags = self.service.equipment.get('bags', [])
+        bag_id = current.get('bag_id') or (bags[0]['id'] if len(bags) == 1 else '')
+        bag = next((b for b in bags if b['id'] == bag_id), None)
+        putter = next(
+            (c for c in (bag or {}).get('clubs', [])
+             if club_type({'club_label': c['label']}, {}) == ('putter', 'tag')),
+            None,
+        )
+        if not putter or current.get('club_id') == putter['id']:
+            return None
+        return dict(selection(self.service.equipment, bag_id, putter['id']), selection_mode='auto_putt')
 
     def diagnose(self, packet):
         """A new diagnostics entry for a shot packet (None for heartbeats and status packets)."""
@@ -786,6 +816,33 @@ class ShotInput:
                 return dict(
                     accepted=True, duplicate=True, forwarded=False, receipt_id=event['receipt_id']
                 )
+            practice = self.service.practice
+            if (
+                live
+                and result == 'validated'
+                and not batch
+                and self.state['quick_range']
+                and not (practice and not practice.data['ended'])
+            ):
+                # D75: nothing running, so the shot starts a Quick range instead of being left out
+                # of Sessions and Analyze. The shot joins it unless its sender froze another session.
+                session = self.service.start_quick_range()
+                if event.get('practice_session_id') is None:
+                    event.update(
+                        practice_session_id=session.data['id'],
+                        user_id=event.get('user_id') or self.service.input_context.get('user_id'),
+                        equipment_selection=event.get('equipment_selection')
+                        or copy.deepcopy(session.data.get('equipment_selection')),
+                        range_context=event.get('range_context')
+                        or copy.deepcopy(self.service.input_context.get('range_context')),
+                    )
+                if diagnostic is not None:
+                    diagnostic['quick_range'] = session.data['id']
+            putter = self.putt_selection(event)
+            if putter:
+                event['equipment_selection'] = putter  # this shot only; the chosen club stays
+                if diagnostic is not None:
+                    diagnostic['auto_club'] = putter['club_label']
             target = self.import_session(batch) if batch else self.service.practice
             if not batch and (
                 not live
@@ -933,6 +990,7 @@ class ShotInput:
             self.tasks.discard(task)
             return
         self.clients.add(writer)
+        self.state['connected'] = True
         self.source = connection_id
         peer = writer.get_extra_info('peername')
         self.state['peer'] = peer[0] if peer else None
@@ -1019,6 +1077,7 @@ class ShotInput:
             self.state['error'] = str(ex)
         finally:
             self.clients.discard(writer)
+            self.state['connected'] = bool(self.clients)
             self.tasks.discard(task)
             writer.close()
             if self.source == connection_id:

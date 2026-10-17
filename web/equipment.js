@@ -24,7 +24,7 @@ export function equipmentControls(catalog, selected, setup = false, clubsOnly = 
     <div class="club-column"><div class="eyebrow club-heading">CLUB FOR NEXT SHOT${clubsOnly ? html`<span class="game-bag-name">${bag?.name ?? selected?.bag_name ?? 'No bag selected'}</span>` : ''}</div><div class="club-buttons" role="group" aria-label="Club for next shot">${clubButtons}</div><div class="equipment-foot"><p class="form-hint equipment-status" role="status">${status}${clubsOnly ? '' : html`<span>${setup ? 'You can switch clubs during the drill.' : 'Earlier shots keep their tags.'}</span>`}</p>${club ? html`<button type="button" class="btn quiet small" data-clear-club>Clear club</button>` : ''}</div></div></div></div>`;
 }
 
-function shortClubLabel(label) {
+export function shortClubLabel(label) {
   const s = label.trim(),
     degree = s.match(/(\d{1,2}(?:\.\d)?)\s*°/);
   if (degree) return degree[1] + '°';

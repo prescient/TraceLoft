@@ -1,6 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { confirmationList, profileControl } from '../web/relay-diagnostics.js';
+import { confirmationList, profileControl, statusItems, statusStrip, voicePanel } from '../web/relay-diagnostics.js';
+
+test('the voice panel says when it is not installed, listening, and what it heard (D76)', () => {
+  const missing = String(voicePanel({ available: false, missing: 'Needs the vosk package.' }));
+  assert.match(missing, /id="voice-toggle"\s+disabled/);
+  assert.match(missing, /Not installed yet. Needs the vosk package./);
+  const on = String(
+    voicePanel({
+      available: true,
+      enabled: true,
+      listening: true,
+      message: '"seven iron" → 7 iron for the next shot',
+      phrases: ['putter', 'seven iron']
+    })
+  );
+  assert.match(on, /checked/);
+  assert.match(on, /voice-status listening/);
+  assert.match(on, /→ 7 iron for the next shot/);
+  assert.match(on, /Phrases it knows \(2\)/);
+});
 
 const entry = (overrides = {}) => ({
   id: 'a1',
@@ -42,6 +61,43 @@ test('refusals, silence and not-sent shots read as such, and text is escaped', (
   assert.match(markup, /Not sent <small>Not stored<\/small>/);
   assert.match(markup, /No reply <small>No reply within 5 s<\/small>/);
   assert.match(String(confirmationList([])), /No shots yet this run/);
+});
+
+test('the status strip names each link with words beside the colour (D75)', () => {
+  const base = {
+    input: { profile: 'rela_lpi', connected: true, quick_range: true },
+    capture: { running: true },
+    relay: { enabled: true, destination: 'gspro', connected: true, answering: true },
+    practice: { drill: 'Driving range', quick_range: true, ended: false }
+  };
+  assert.deepEqual(
+    statusItems(base).map(i => [i.kind, i.name, i.text]),
+    [
+      ['ok', 'rēlā', 'Connected · ready'],
+      ['ok', 'TraceLoft', 'Recording · Quick range'],
+      ['ok', 'GSPro', 'Answering']
+    ]
+  );
+  const broken = {
+    ...base,
+    input: { profile: 'standard', connected: false, quick_range: false, device: 'Monitor' },
+    practice: null,
+    relay: { enabled: true, destination: 'gspro', connected: true, answering: false }
+  };
+  assert.deepEqual(
+    statusItems(broken).map(i => [i.kind, i.text]),
+    [
+      ['bad', 'Not connected'],
+      ['wait', 'Recording without a session (not in Sessions or Analyze)'],
+      ['bad', 'Not answering']
+    ]
+  );
+  const off = { ...base, practice: null, relay: { enabled: false } };
+  assert.deepEqual(statusItems(off).slice(1).map(i => i.text), [
+    'Ready · a Quick range starts with the next shot',
+    'Off · record only'
+  ]);
+  assert.match(String(statusStrip(base)), /<li class="status-ok"><span class="status-dot" aria-hidden="true"><\/span><strong>GSPro<\/strong><span>Answering<\/span><\/li>/);
 });
 
 test('the profile control marks the saved profile and explains it', () => {

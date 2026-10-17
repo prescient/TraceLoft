@@ -76,7 +76,54 @@ class GolfService:
         self._live_revision = 0
         self._live_fingerprint = None
         self.equipment = self.store.equipment_catalog()
+        # Voice club selection (D76): state for the Relay page, the listener (off until enabled) and
+        # the vocabulary it uses, rebuilt on the event loop by publish_context.
+        self.voice_state = dict(enabled=False, available=False, missing='', listening=False,
+                                last_heard='', last_club='', message='', error='')
+        self.voice_listener = None
+        self.voice_vocab, self.voice_bag_id = {}, ''
         self.publish_context()
+
+    # ----- voice club selection (D76) -----
+
+    def _voice_bag(self):
+        """The bag voice picks from: the active session's, else the only bag."""
+        selected = (self.practice.data.get('equipment_selection') or {}) if self.practice and not self.practice.data['ended'] else {}
+        bags = self.equipment.get('bags', [])
+        bag_id = selected.get('bag_id') or (bags[0]['id'] if len(bags) == 1 else '')
+        return next((b for b in bags if b['id'] == bag_id), None)
+
+    def set_voice(self, enabled):
+        """Turn listening on or off. Refused with what is missing when Vosk or the model is absent."""
+        import voice
+
+        ok, missing = voice.available()
+        self.voice_state.update(available=ok, missing=missing)
+        if enabled and not ok:
+            raise ValueError('Voice clubs are not installed yet. ' + missing)
+        if self.voice_listener:
+            self.voice_listener.stop()
+            self.voice_listener = None
+        self.voice_state.update(enabled=bool(enabled), error='', listening=False)
+        if enabled:
+            self.voice_listener = voice.VoiceListener(
+                lambda: self.voice_vocab, self.voice_heard, asyncio.get_running_loop(), self.voice_state
+            )
+            self.voice_listener.start()
+
+    def voice_heard(self, club, phrase):
+        """A recognized club, on the event loop: select it for the next shot like a tap would."""
+        self.voice_state.update(last_heard=phrase, last_club=club['label'])
+        bag_id = self.voice_bag_id
+        try:
+            if not (self.practice and not self.practice.data['ended']):
+                if not self.input.state['quick_range']:
+                    raise ValueError('Start a full-swing drill to choose clubs by voice.')
+                self.start_quick_range()
+            self.select_equipment(self.practice.data['id'], bag_id, club['id'])
+            self.voice_state['message'] = f'"{phrase}" → {club["label"]} for the next shot'
+        except ValueError as exc:
+            self.voice_state['message'] = f'Heard "{phrase}", but {str(exc)[0].lower()}{str(exc)[1:]}'
 
     def publish_context(self):
         active = (
@@ -105,6 +152,12 @@ class GolfService:
             if active and self.practice.data.get('session_kind') == 'driving_range'
             else None,
         )
+        if hasattr(self, 'voice_state'):  # D76: the listener thread reads this snapshot only
+            import voice
+
+            bag = self._voice_bag()
+            self.voice_bag_id = bag['id'] if bag else ''
+            self.voice_vocab = voice.vocabulary(bag) if bag else {}
         return True
 
     def load_session(self, session_id, deleted=False):
@@ -170,6 +223,7 @@ class GolfService:
                 error=self.save_error,
                 records=self._records,
                 logs=(len(self.logs), tuple(self.logs)),
+                voice=self.voice_state,
             ),
             sort_keys=True,
         )
@@ -204,6 +258,7 @@ class GolfService:
                 storage=dict(engine='sqlite', path=str(self.store.path), backup='local_only'),
                 # D74: what to act on, how standard senders are read, and each recent shot's trail.
                 alerts=self.input.alerts(),
+                voice=dict(self.voice_state, phrases=sorted(self.voice_vocab)),
                 input_profiles=source_profiles.describe(),
                 diagnostics=list(self.input.diagnostics),
             )
@@ -314,6 +369,8 @@ class GolfService:
             await asyncio.sleep(0.05)
 
     async def shutdown(self):
+        if self.voice_listener:
+            await asyncio.to_thread(self.voice_listener.stop)
         await self.input.close()
         self.flush_practice()
         await asyncio.to_thread(self.store.wait_for_background)
@@ -335,7 +392,34 @@ class GolfService:
             self.store.close()
             self.lease.close()
 
+    # ----- Quick range (D75): shots that arrive with no drill running still land in a session -----
+
+    def quick_range_active(self):
+        return bool(self.practice and not self.practice.data['ended']
+                    and self.practice.data.get('quick_range'))
+
+    def start_quick_range(self):
+        """Start a Driving range with no target for shots that arrived with nothing running. With one
+        bag it is preselected (no club). It finishes itself when a drill is launched (D75)."""
+        bags = self.equipment.get('bags', [])
+        params = dict(drill='Driving range', range_target=0)
+        if len(bags) == 1:
+            params['range_bag_id'] = bags[0]['id']
+        self.practice = drills.create(self, params)
+        self.practice.data['quick_range'] = True
+        self.practice.save()
+        self.publish_context()
+        self.sessions_revision += 1
+        self.logs.append('A shot arrived with no drill running, so a Quick range session started.')
+        return self.practice
+
+    def _close_quick_range(self):
+        """A Quick range never blocks a deliberate choice: finish it first."""
+        if self.quick_range_active():
+            self.change_practice(self.practice.data['id'], 'finish')
+
     def create_practice(self, params):
+        self._close_quick_range()
         if self.practice and not self.practice.data["ended"]:
             raise ValueError("Finish or abandon the active session before launching another drill.")
         self.practice = drills.create(self, params)
@@ -344,6 +428,7 @@ class GolfService:
         return self.practice.data
 
     def change_golfer(self, user_id=None, name=None, handedness='right_handed'):
+        self._close_quick_range()
         if self.practice and not self.practice.data['ended']:
             raise ValueError('Finish or abandon the active session before changing golfer.')
         self._require_saved('Resolve pending saves before changing golfer.')

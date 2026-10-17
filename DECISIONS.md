@@ -1,5 +1,42 @@
 # TraceLoft architecture decisions
 
+## D76 — Voice club selection on the PC's microphone, offline (2026-10-17)
+
+The user asked for voice-activated club selection. The iPad reaches TraceLoft over plain http on the
+LAN, where browsers refuse the microphone, so the user chose the golf PC's microphone with an
+offline recognizer over HTTPS for the iPad or following GSPro's club.
+- `voice.py`: Vosk (small English model, `%USERPROFILE%\GolfData\voice`) with a grammar of only the
+  active bag's club phrases ("seven iron", "pitching wedge", "putter", "fifty six degree"…) plus
+  `[unk]`, so other speech cannot pick a club. A phrase two clubs share is left out. Every word must be
+  at least 75% confident. No audio is stored; nothing leaves the PC.
+- A recognized club selects that club for the next shot, exactly like tapping it. With nothing
+  running and Quick range on, it starts a Quick range with that club.
+- Optional install: `vosk` and `sounddevice` are not in the lock file; without them or the model the
+  Relay page says what is missing and the switch stays off. Relay → Incoming shots has the switch
+  (saved as `voice.v1`), the listening state, the last phrase heard and the phrases it knows.
+- The listener thread only reads a vocabulary snapshot prepared on the event loop and hands each
+  recognized club back to the loop, so it never touches the session itself.
+
+## D75 — Quick range, automatic putter tags, Relay status strip, one-tap club correction (2026-10-17)
+
+Chosen by the user from a UI review, on branch `rela-direct`.
+- **Quick range:** a live shot arriving with no drill running starts a Driving range with no target
+  (`quick_range: true`, range target 0 like iPad imports), and the shot joins it unless its sender
+  froze another session. With one bag, that bag is preselected (no club). It never blocks a choice:
+  launching a drill or changing golfer finishes it first. Relay → Incoming shots has an on/off switch
+  (on by default, saved as `quick_range.v1`). Before this, rēlā shots hit with nothing running never
+  appeared in Sessions or Analyze.
+- **Putts:** a shot with no measured spin (no spin value other than 0) is tagged with its bag's
+  putter, for that shot only (`selection_mode: 'auto_putt'`, shown as "Putter · auto"); the chosen
+  club stays selected. The bag is the shot's own or the only bag, and the putter is the club whose
+  label reads as a putter (club_model). No bag or no putter means no tag. Demo, simulated and
+  imported shots are left alone.
+- **Relay status strip:** source · TraceLoft · simulator, each with a dot and words (connected/ready,
+  recording and which session, answering/not answering/off).
+- **One-tap club correction:** the club in a Range shot row or on the latest-shot card opens a picker
+  of the bag's clubs; one tap applies the existing retag correction with the reason "Corrected club
+  with one tap", so history, the original tag and Undo are kept.
+
 ## D74 — rēlā straight into TraceLoft: input profiles and shot confirmation (2026-10-17)
 
 The user asked to consume rēlā directly (no TraceCapture in between), push to GSPro, and see what

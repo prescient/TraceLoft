@@ -1,5 +1,26 @@
 # TraceLoft work log
 
+## 2026-10-17 — Quick range, putter tags, status strip, one-tap club, voice clubs (D75, D76)
+
+- Quick range: `GolfService.start_quick_range`, `_close_quick_range` (in `create_practice`,
+  `change_golfer`); intake starts it for a live shot with nothing running; `/api/input/quick-range`.
+- Putts: `ShotInput.putt_selection` (no measured spin → bag's putter, `auto_putt`, that shot only).
+- Relay: status strip (`statusItems`/`statusStrip`), input `connected` flag, Quick range switch,
+  voice panel. Range: club chips on rows and the latest-shot card open `quickClubDialog`.
+- Voice: `voice.py`, `GolfService.set_voice`/`voice_heard`, `/api/voice`, vocabulary rebuilt in
+  `publish_context`. Installed into this worktree's venv with the user's approval: vosk 0.3.45,
+  sounddevice 0.5.6; model vosk-model-small-en-us-0.15 (39.3 MB, alphacephei.com).
+- **Verification:**
+  - New tests: `tests/test_quick_range.py` (5), `tests/test_voice.py` (7), status strip and voice
+    panel in `tests/test_relay_diagnostics.mjs`. Full suite: 279 Python and 94 UI tests pass.
+  - Test instance: replayed rēlā shots with nothing running started one Quick range holding all 21.
+    In the browser, the status strip read rēlā not connected / Recording · Quick range / GSPro
+    answering, and one tap on the latest shot's club changed it to SW with history and Undo.
+  - Voice: Windows text-to-speech files "seven iron", "pitching wedge" and "putter" were recognized as
+    7 iron, PW and Putter (confidence 1.0); "what a nice day" was ignored. The microphone (Intel Smart
+    Sound array) opened. Not yet verified: a person speaking at the hitting position, with ambient
+    noise and the launch monitor running.
+
 ## 2026-10-17 — Reorder Analyze trend panels (user request), branch `rela-direct`
 
 - `web/sortable.js`: `moveItem`, `dropIndex` (nearest tile centre, so one column and the grid both

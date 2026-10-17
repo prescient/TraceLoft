@@ -498,6 +498,105 @@ nav button:hover {
     padding: 0 16px;
   }
 }
+/* Relay status strip (D75): source · TraceLoft · simulator, a dot and words for each. */
+.relay-status {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  border: 1px solid var(--border);
+}
+.relay-status li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  column-gap: 10px;
+  align-items: center;
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+}
+.relay-status li:last-child {
+  border-right: 0;
+}
+.relay-status .status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--muted);
+  grid-row: span 2;
+}
+.relay-status strong {
+  font-size: 16px;
+}
+.relay-status li > span:last-child {
+  color: var(--muted);
+  font-size: 13px;
+}
+.relay-status .status-ok .status-dot {
+  background: var(--success);
+}
+.relay-status .status-wait .status-dot {
+  background: var(--amber);
+}
+.relay-status .status-bad .status-dot {
+  background: var(--red);
+}
+.relay-status .status-bad > span:last-child {
+  color: var(--red);
+}
+/* Voice clubs (D76) */
+.voice-status {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+}
+.voice-status .status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+.voice-status.listening .status-dot {
+  background: var(--success);
+}
+.voice-heard {
+  font-size: 16px;
+  font-weight: 600;
+}
+/* One-tap club correction (D75): the club in a shot row or on the hero opens the quick picker. */
+.club-chip {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+.club-chip:hover,
+.club-chip:focus-visible {
+  border-color: var(--accent);
+}
+.quick-club .range-segment {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.quick-club-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+.quick-club-grid .club-button.current {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+}
+.quick-range-note {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
 /* Relay shot confirmation trail (D74): one row per shot, one chip per hop, words beside colours. */
 .shot-trail {
   list-style: none;

@@ -30,6 +30,20 @@ class InputPortParams(BaseModel):
     port: int = Field(ge=1, le=65535)
 
 
+class VoiceParams(BaseModel):
+    """Voice club selection on this PC's microphone (D76)."""
+
+    model_config = ConfigDict(extra='forbid')
+    enabled: bool
+
+
+class QuickRangeParams(BaseModel):
+    """Start a Quick range for shots arriving with no drill running (D75)."""
+
+    model_config = ConfigDict(extra='forbid')
+    enabled: bool
+
+
 class InputProfileParams(BaseModel):
     """How TraceLoft reads a standard Open Connect sender (source_profiles, D74)."""
 
@@ -198,6 +212,22 @@ def create_app(service=None):
             if profile:
                 with contextlib.suppress(ValueError):  # a retired profile falls back to standard
                     service.input.set_profile(json.loads(profile[0]))
+            quick = service.store.connection.execute(
+                "SELECT value FROM metadata WHERE key='quick_range.v1'"
+            ).fetchone()
+            if quick:
+                service.input.state['quick_range'] = bool(json.loads(quick[0]))
+            # Voice clubs (D76): report what is installed; resume listening if it was on.
+            import voice
+
+            ok, missing = voice.available()
+            service.voice_state.update(available=ok, missing=missing)
+            spoken = service.store.connection.execute(
+                "SELECT value FROM metadata WHERE key='voice.v1'"
+            ).fetchone()
+            if ok and spoken and json.loads(spoken[0]):
+                with contextlib.suppress(ValueError):
+                    service.set_voice(True)
             task = asyncio.create_task(service.run())
             yield
         finally:
@@ -369,6 +399,25 @@ def create_app(service=None):
         except (OSError, sqlite3.Error):
             await service.input.move(previous)
             raise
+        return service.snapshot()
+
+    @app.post('/api/voice')
+    async def voice_clubs(params: VoiceParams):
+        service.set_voice(params.enabled)
+        with service.store.transaction():
+            service.store.connection.execute(
+                "INSERT OR REPLACE INTO metadata VALUES('voice.v1',?)", (json.dumps(params.enabled),)
+            )
+        return service.snapshot()
+
+    @app.post('/api/input/quick-range')
+    async def input_quick_range(params: QuickRangeParams):
+        with service.store.transaction():
+            service.store.connection.execute(
+                "INSERT OR REPLACE INTO metadata VALUES('quick_range.v1',?)",
+                (json.dumps(params.enabled),),
+            )
+        service.input.state['quick_range'] = params.enabled
         return service.snapshot()
 
     @app.post('/api/input/profile')

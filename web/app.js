@@ -8,7 +8,7 @@ import { html } from './charts.js';
 import { parseRoute, routeFor } from './navigation.js';
 import { refreshSetupEquipment } from './equipment.js';
 import { recordingWarnings, sourceAlerts } from './recording.js';
-import { confirmationList, profileControl } from './relay-diagnostics.js';
+import { confirmationList, profileControl, statusStrip, voicePanel } from './relay-diagnostics.js';
 import { featureForDrill, featureForSession } from './features.js';
 import { bindGolferPicker } from './golfers.js';
 import { createLiveStateController, isStaleState } from './live-state.js';
@@ -514,7 +514,8 @@ async function renderSessions() {
 function renderRelay() {
   const relay = state.relay;
   app.innerHTML = html`<div class="page-head"><div><p class="eyebrow">CONNECT / RECORD / FORWARD</p><h1>Relay</h1><p class="subtitle">Incoming shots save automatically. Choose where they go next.</p></div><span class="chip accent">Always listening · TCP ${state.input.port}${state.input.remote ? ' · any machine' : ''}</span></div>
-  <div class="capture-grid"><section class="card"><h2>Incoming shots</h2><div id="relay-source" class="section-space"></div><p class="form-hint">${
+  <div id="relay-status"></div>
+  <div class="capture-grid"><section class="card"><h2>Incoming shots</h2><div id="relay-source" class="section-space"></div><label class="collection-option section-space"><input type="checkbox" id="quick-range-toggle" ${state.input.quick_range ? 'checked' : ''}>Start a Quick range when shots arrive with no drill running, so they appear in Sessions and Analyze</label><div id="voice-panel" class="section-space"></div><p class="form-hint">${
     state.input.remote
       ? html`Point a source on this PC at <strong>127.0.0.1:${state.input.port}</strong>, or one on another machine at <strong>${state.input.address ?? "this PC's address"}:${state.input.port}</strong>, using GSPro Open Connect. Remote input has no password: anyone who can reach this port can send shots.`
       : html`Point your shot source at <strong>127.0.0.1:${state.input.port}</strong> using GSPro Open Connect.`
@@ -569,6 +570,29 @@ function renderRelay() {
       field.value = state.input.port;
     }
   };
+  app.querySelector('#quick-range-toggle').onchange = async e => {
+    e.target.disabled = true;
+    try {
+      update(await api('/api/input/quick-range', { enabled: e.target.checked }));
+    } catch (err) {
+      notice(err.message);
+      e.target.checked = state.input.quick_range;
+    } finally {
+      e.target.disabled = false;
+    }
+  };
+  app.querySelector('#voice-panel').onchange = async e => {
+    if (e.target.id !== 'voice-toggle') return;
+    e.target.disabled = true;
+    e.target.dataset.busy = '1';
+    try {
+      update(await api('/api/voice', { enabled: e.target.checked }));
+    } catch (err) {
+      notice(err.message);
+    }
+    delete e.target.dataset.busy;
+    updateRelay();
+  };
   // Keep expanded shot trails open across live repaints.
   app.querySelector('#shot-trail').addEventListener(
     'toggle',
@@ -602,6 +626,15 @@ function updateRelay() {
   if (!select.disabled) select.value = relay.destination;
   app.querySelector('#relay-logs').textContent = state.logs.join('\n');
   renderProfileControl();
+  const strip = app.querySelector('#relay-status');
+  const stripMarkup = String(statusStrip(state));
+  if (strip.innerHTML !== stripMarkup) strip.innerHTML = stripMarkup;
+  const quick = app.querySelector('#quick-range-toggle');
+  if (!quick.disabled) quick.checked = state.input.quick_range;
+  const voiceBox = app.querySelector('#voice-panel');
+  const voiceMarkup = String(voicePanel(state.voice));
+  if (voiceBox.innerHTML !== voiceMarkup && !voiceBox.querySelector('#voice-toggle:disabled[data-busy]'))
+    voiceBox.innerHTML = voiceMarkup;
   const trail = app.querySelector('#shot-trail');
   const trailMarkup = String(confirmationList(state.diagnostics ?? [], openTrails));
   if (trail.innerHTML !== trailMarkup) trail.innerHTML = trailMarkup;
