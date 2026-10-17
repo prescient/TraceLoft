@@ -2,20 +2,34 @@
 
 ## Wish — one installable app with updates (user, 2026-10-17, not started)
 
-A local web server works for the user, but not for an "average" golfer. Goal: one executable (or
-installer) that starts TraceLoft and opens it in its own window, with a way to deliver updates to
-people's installs.
-- **Packaging:** bundle Python and the dependencies (e.g. PyInstaller or Nuitka) with a native window
-  (e.g. pywebview / WebView2) instead of a browser tab, a tray icon for "running / stop", and a Start
-  menu entry. Data stays in `%USERPROFILE%\GolfData` so reinstalling never touches it. OpenGolfCoach
-  is a compiled dependency: check its license and packaging.
-- **Updates:** check a release feed (e.g. GitHub Releases) at start; download, verify a signature or
-  hash, and install on the next restart, never during an active session. Schema upgrades already take
-  a verified backup first (migrations). Code-sign the executable so Windows SmartScreen trusts it.
+A local web server works for the user, but not for an "average" golfer. Goal: one installer that
+gives a normal Windows app (Start menu icon, its own window), with a way to deliver updates to
+people's installs. Since D78 the laptop is the only required screen, so the window is the app; the
+browser and iPad stay optional.
+- **Proposed approach (2026-10-17, not decided):** keep the Python service and the web UI as they
+  are and wrap them, rather than rewriting:
+  - Window: pywebview on Edge WebView2 (built into Windows 11) showing the existing UI.
+  - Bundle: PyInstaller, one-folder build (starts faster, fewer antivirus false alarms than one-file).
+  - Tray: pystray, so closing the window keeps capture running; Quit stops the service cleanly.
+  - Installer and updates: Velopack (install, delta updates, rollback, GitHub Releases as the feed)
+    or Inno Setup plus our own update check. Updates install on the next restart, never during a
+    session; schema upgrades already take a verified backup first (migrations).
+  - Code signing (e.g. Azure Trusted Signing) so SmartScreen does not warn "unknown publisher".
+  - Rejected: Electron or Tauri around a Python sidecar (a second toolchain for the same result), a
+    native rewrite (months, discards the tested service), an installable web app (still needs the
+    server installed).
+- Data stays in `%USERPROFILE%\GolfData` so reinstalling never touches it. OpenGolfCoach is a
+  compiled dependency: check its license and packaging. The voice model (39 MB) downloads on first
+  use rather than shipping in the installer.
+- The UI is served on localhost only by default; LAN access becomes an opt-in setting, and the
+  installer adds a firewall rule only when remote shot input or LAN access is turned on.
 - **First run:** a short setup asking for the shot source (input profile and port) and the
   simulator address, replacing the README steps.
-- Open: installer technology, who hosts releases, and auto vs. prompted updates. Depends on the
-  release and license review noted in the README.
+- Rough size: a few days for a prototype window with tray from TraceLoft-next; about one to two
+  weeks more for signing, installer, updates and first run, mostly clean-PC install testing.
+- Open: Velopack vs. Inno Setup, who hosts releases (public or private repo), automatic vs. prompted
+  updates, and whether TraceCapture ships in the same installer. Depends on the release and license
+  review noted in the README.
 
 ## Wish — video analysis, like Uneekor's swing video (user, 2026-10-17, not started)
 

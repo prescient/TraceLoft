@@ -146,7 +146,7 @@ layout and every control. Earlier dark studio and alternate layouts are historic
   dispersion grows with the adjacent flight/shape panels while retaining readable text/markers and
   keeping its legend/summary below. Stacked layouts retain bounded chart proportions.
 
-## 8. Target iPad Pro landscape; support desktop and phone
+## 8. Target the golf laptop; other screens are best-effort
 
 Analyze selection and filter controls must expand/collapse to preserve chart space. A collapsed
 summary keeps active bag/clubs, date range, metric choices and constraints visible. Retain query
@@ -155,19 +155,24 @@ Implemented in the [Analyze workspace](docs/ANALYZE.md). Keep real/demo, source/
 coverage and removable numeric filters visible outside the drawer. Inspection and query filters
 must remain distinct; dynamic browser-saved views must not be presented as frozen publications.
 
-- Primary device: **13-inch / 12.9-inch iPad Pro in landscape**. Design and verify at CSS viewports
-  1376 × 1032 and 1366 × 1024, plus reduced height (1366 × 900) for browser chrome. CSS pixels,
-  rather than the display panel's physical pixels, determine responsive layout. Record viewport
-  emulation separately from actual iPad Safari, touch and LAN verification.
-- Keep the range latest-shot bar readable as one row of seven readings at the primary landscape
-  sizes. Wrap on smaller widths; preserve units, unavailable values and source/model distinctions.
+- Primary device: **the golf laptop (Windows), with TraceLoft in its own window** (D78, 2026-10-17;
+  this replaces the earlier iPad Pro target). Design and verify at CSS viewports 1536 × 864 and
+  1280 × 720 (a 1920 × 1080 screen at 125 % and 150 % scaling), plus 1920 × 1080 for a desktop
+  monitor. CSS pixels, rather than the display panel's physical pixels, determine responsive layout.
+  Confirm these against the laptop's real resolution and scaling when it is known.
+- An iPad, other tablet or phone in a browser is best-effort: layouts must not break, but they are
+  not design targets and need no separate verification. iPad table import (D65, TraceCapture) is
+  shot capture, not a TraceLoft screen, and is unaffected.
+- Keep the range latest-shot bar readable as one row of seven readings at the primary sizes. Wrap on
+  smaller widths; preserve units, unavailable values and source/model distinctions.
 - Keep main actions reachable with touch and keyboard; use meaningful labels and visible focus.
-- Aim for at least 44 px touch targets for primary controls. Do not rely on hover to expose essential actions.
+- Aim for at least 44 px targets for primary controls (a gloved hand, a touchscreen laptop or a mouse
+  from the hitting position). Do not rely on hover to expose essential actions.
 - Stack charts and cards on narrow screens. Keep the page within the viewport; allow a wide shot table
   to scroll inside its own container without pushing navigation off screen.
 - Use headings, labels and status announcements that communicate purpose beyond visual styling.
-- Check the primary iPad Pro landscape sizes, a smaller tablet fallback and a phone around 390 px wide. Verify exits and
-  warnings at both the top of the screen and after scrolling through the log.
+- Check the primary laptop sizes. Verify exits and warnings at both the top of the screen and after
+  scrolling through the log.
 
 ## 9. Keep the service responsive and the user's data recoverable
 

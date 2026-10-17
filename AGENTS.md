@@ -28,7 +28,7 @@ they change an established project preference; update the affected documentation
 ## Finishing work
 
 - Verify the affected user journeys, states and responsive layouts described in the design principles.
-  Primary UI target: 13-inch / 12.9-inch iPad Pro landscape; retain desktop and phone support.
+  Primary UI target: the Windows golf laptop (D78); tablets and phones are best-effort.
   Run tests appropriate to behavior changes; documentation-only edits need link/consistency checks.
 - When navigation changes, update the map and guards in NAVIGATION.md and check the new paths in the app.
   Do not treat a prior audit as verification of later changes.

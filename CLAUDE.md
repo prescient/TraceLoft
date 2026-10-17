@@ -148,10 +148,11 @@ verified upgrade. Helper tests do not verify the interface in a real browser.
    navy text, cobalt primary/selection, green success, amber warning, red error/destructive. Type
    scale: page headings 32 px (28 px on phones), panel headings 20, body 14, secondary 13, latest
    metrics 36. Wrap rather than shrink.
-8. **Device targets.** The primary target is iPad Pro 13"/12.9" landscape. Check CSS viewports
-   1376×1032, 1366×1024 and 1366×900, plus a smaller tablet and a ~390 px phone. Touch targets are
-   at least 44 px, and nothing essential may depend on hover. Wide tables scroll inside their own
-   container. Record emulated viewports separately from real iPad Safari checks.
+8. **Device targets.** The primary target is the Windows golf laptop with TraceLoft in its own
+   window (D78; the iPad target is retired). Check CSS viewports 1536×864 and 1280×720, plus
+   1920×1080. Tablets and phones in a browser are best-effort: nothing may break, but they need no
+   separate checks. Primary controls are at least 44 px, and nothing essential may depend on hover.
+   Wide tables scroll inside their own container.
 9. **Responsive service, recoverable data.** UI work and requests must never block shot intake.
    Report failed saves visibly, ignore stale responses, and reconnect from an authoritative snapshot.
 10. **Verify the whole journey.** Enter, act, cancel, leave and return. Cover live, completed,

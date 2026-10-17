@@ -1,5 +1,17 @@
 # TraceLoft architecture decisions
 
+## D78 — The golf laptop replaces the iPad as the primary screen (2026-10-17)
+
+The user retired the iPad requirement: shots read from the iPad come in through TraceCapture's
+table import (D65), and elsewhere the user brings a golf laptop. This opens the way to a normal
+Windows app (BACKLOG: one installable app).
+- Primary target: the Windows laptop, TraceLoft in its own window; layouts are checked at CSS
+  1536×864, 1280×720 and 1920×1080 (DESIGN_PRINCIPLES §8). Tablets and phones are best-effort.
+- The service keeps serving the UI on localhost; LAN access (`--lan`) and remote shot input (D66)
+  stay as options, not requirements.
+- Earlier iPad verification records in WORK_LOG, NAVIGATION and designs/ are history and stay as
+  written.
+
 ## D77 — One quiet, persistent GSPro connection (2026-10-17)
 
 In the live test, GSPro stopped answering TraceLoft-next until GSPro Connect was restarted, after
