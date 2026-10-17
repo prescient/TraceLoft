@@ -1,5 +1,35 @@
 # TraceLoft architecture decisions
 
+## D74 — rēlā straight into TraceLoft: input profiles and shot confirmation (2026-10-17)
+
+The user asked to consume rēlā directly (no TraceCapture in between), push to GSPro, and see what
+was confirmed for each rēlā shot. Built on branch `rela-direct` in a separate worktree so the live
+copy was untouched during a playing session.
+- **Input profiles** (`source_profiles.py`, Relay → Shot source): how to read a standard Open
+  Connect sender, which cannot say what it measured. `standard` stores everything as sent.
+  `rela_lpi` stores only ball data plus club speed, attack angle and path as measurements. rēlā's
+  face, lie, loft, closure rate, impact and carry go to `source_estimates` (D70, estimator `rela`).
+  All-zero spin and exact-zero club values are "not measured". Club data without club speed is
+  ignored. Senders using the TraceLoft extension (TraceCapture) classify their own values. The
+  profile is recorded in the source configuration and saved in metadata (`input_profile.v1`).
+- **GSPro still gets rēlā's packet as sent** (club data included): the relay already forwards the
+  documented fields of the original packet.
+- **Relay acknowledgement:** a reply is expected within 5 s of connecting and of each shot. On the
+  first silence the relay reconnects once, then reports "isn't answering" (GSPro answers only on
+  the range or in a round). The first 200 after a shot is taken as its acknowledgement, because
+  GSPro replies carry no shot id.
+- **Alerts:** besides the source's own (D73), TraceLoft raises "rēlā isn't connected" (profile with a
+  named source and no client) and "GSPro isn't connected / answering" (TraceLoft relaying).
+- **Shot confirmation** (Relay page): the last 25 shots of this run, with what was received, the
+  classification of every value and why, the stored receipt (or the refusal), and the simulator
+  status (acknowledged with reply and ms, no reply, rejected, not sent and why). It is kept in
+  memory, not in SQLite.
+- A source hanging up is logged as a disconnect, not shown as an error.
+- **Input port** (user, same day): Relay → Input port sets the port TraceLoft listens on, saved as
+  `input_port.v1` and applied live. The new port opens before the old one closes, so a port in use is
+  refused and nothing changes. On one PC with GSPro (which holds 921), rēlā's GSPro port is set to
+  TraceLoft's port, e.g. 900. `TRACELOFT_INPUT_PORT` still overrides it (test instances).
+
 ## D73 — A source's alerts under the header (2026-10-16)
 
 Shot-path problems (rēlā not connected to TraceCapture, GSPro not answering) were visible only on

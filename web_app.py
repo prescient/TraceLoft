@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import contextlib
 import json
+import os
 import socket
 import sqlite3
 import webbrowser
@@ -20,6 +21,20 @@ import drills as drill_registry
 from analysis import report_csv
 from drill_params import PracticeParams
 from web_service import ROOT, GolfService
+
+
+class InputPortParams(BaseModel):
+    """The TCP port TraceLoft listens on for shots (D74)."""
+
+    model_config = ConfigDict(extra='forbid')
+    port: int = Field(ge=1, le=65535)
+
+
+class InputProfileParams(BaseModel):
+    """How TraceLoft reads a standard Open Connect sender (source_profiles, D74)."""
+
+    model_config = ConfigDict(extra='forbid')
+    profile: str = Field(min_length=1, max_length=40)
 
 
 class CalculationParams(BaseModel):
@@ -165,12 +180,24 @@ def create_app(service=None):
     async def lifespan(app):
         task = None
         try:
+            # The saved input port (Relay → Input port, D74) unless the launcher or a test chose one.
+            saved_port = service.store.connection.execute(
+                "SELECT value FROM metadata WHERE key='input_port.v1'"
+            ).fetchone()
+            if saved_port and service.input.port and 'TRACELOFT_INPUT_PORT' not in os.environ:
+                service.input.port = json.loads(saved_port[0])
             await service.input.start()
             saved = service.store.connection.execute(
                 "SELECT value FROM metadata WHERE key='relay_settings.v1'"
             ).fetchone()
             if saved:
                 await service.input.relay.configure(json.loads(saved[0]), service.input.port)
+            profile = service.store.connection.execute(
+                "SELECT value FROM metadata WHERE key='input_profile.v1'"
+            ).fetchone()
+            if profile:
+                with contextlib.suppress(ValueError):  # a retired profile falls back to standard
+                    service.input.set_profile(json.loads(profile[0]))
             task = asyncio.create_task(service.run())
             yield
         finally:
@@ -328,6 +355,36 @@ def create_app(service=None):
                 k: service.input.relay.state[k] for k in ('host', 'port', 'enabled')
             }
             return service.snapshot()
+
+    @app.post('/api/input/port')
+    async def input_port(params: InputPortParams):
+        previous = service.input.port
+        await service.input.move(params.port)
+        try:
+            with service.store.transaction():
+                service.store.connection.execute(
+                    "INSERT OR REPLACE INTO metadata VALUES('input_port.v1',?)",
+                    (json.dumps(params.port),),
+                )
+        except (OSError, sqlite3.Error):
+            await service.input.move(previous)
+            raise
+        return service.snapshot()
+
+    @app.post('/api/input/profile')
+    async def input_profile(params: InputProfileParams):
+        previous = service.input.state['profile']
+        service.input.set_profile(params.profile)
+        try:
+            with service.store.transaction():
+                service.store.connection.execute(
+                    "INSERT OR REPLACE INTO metadata VALUES('input_profile.v1',?)",
+                    (json.dumps(params.profile),),
+                )
+        except (OSError, sqlite3.Error):
+            service.input.set_profile(previous)
+            raise
+        return service.snapshot()
 
     @app.get("/api/drills")
     async def drills():

@@ -10,6 +10,7 @@ import uuid
 from collections import deque
 from pathlib import Path
 
+import source_profiles
 from shot_input import ShotInput
 from putting import PuttingSession
 import drills
@@ -201,6 +202,10 @@ class GolfService:
                 golfers=golfers,
                 golfer_id=golfer_id,
                 storage=dict(engine='sqlite', path=str(self.store.path), backup='local_only'),
+                # D74: what to act on, how standard senders are read, and each recent shot's trail.
+                alerts=self.input.alerts(),
+                input_profiles=source_profiles.describe(),
+                diagnostics=list(self.input.diagnostics),
             )
         )
 

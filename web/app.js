@@ -8,6 +8,7 @@ import { html } from './charts.js';
 import { parseRoute, routeFor } from './navigation.js';
 import { refreshSetupEquipment } from './equipment.js';
 import { recordingWarnings, sourceAlerts } from './recording.js';
+import { confirmationList, profileControl } from './relay-diagnostics.js';
 import { featureForDrill, featureForSession } from './features.js';
 import { bindGolferPicker } from './golfers.js';
 import { createLiveStateController, isStaleState } from './live-state.js';
@@ -32,6 +33,7 @@ let navigationRequest = 0;
 let courses = [];
 let runner = null; // { context, feature, handle } for the mounted runner; see features.js.
 let reviewRequest = 0;
+const openTrails = new Set(); // Relay shot trails the golfer expanded (D74)
 
 function notice(message, undo = null) {
   const box = document.querySelector('#notice');
@@ -200,7 +202,8 @@ function navigation() {
       : 'Waiting for source';
   // The source's problems in words (D73); hidden while offline, when the state is stale.
   const alerts = document.querySelector('#source-alerts');
-  const markup = String(sourceAlerts(online ? state?.input?.alerts : []));
+  // The source's alerts plus TraceLoft's own (profiled source missing, simulator silent; D74).
+  const markup = String(sourceAlerts(online ? (state?.alerts ?? state?.input?.alerts) : []));
   if (alerts.innerHTML !== markup) alerts.innerHTML = markup;
   alerts.hidden = !markup;
 }
@@ -515,8 +518,9 @@ function renderRelay() {
     state.input.remote
       ? html`Point a source on this PC at <strong>127.0.0.1:${state.input.port}</strong>, or one on another machine at <strong>${state.input.address ?? "this PC's address"}:${state.input.port}</strong>, using GSPro Open Connect. Remote input has no password: anyone who can reach this port can send shots.`
       : html`Point your shot source at <strong>127.0.0.1:${state.input.port}</strong> using GSPro Open Connect.`
-  }</p><div class="table-wrap section-space" id="relay-read"></div></section>
+  }</p><div id="input-profile-control">${profileControl(state.input_profiles ?? [], state.input.profile)}</div><details class="details section-space"><summary>Input port</summary><form id="input-port-form"><label class="field">Listen for shots on port<input name="port" type="number" min="1" max="65535" value="${state.input.port}" required></label><p class="form-hint">Set rēlā's GSPro port (rēlā Settings) to this number. When GSPro runs on this PC it uses 921, so pick another, such as 900. TraceCapture's "TraceLoft input port" must match too. The source reconnects after a change.</p><button class="btn" type="submit">Save port</button></form></details><div class="table-wrap section-space" id="relay-read"></div></section>
   <section class="card"><h2>Send shots to</h2><label class="field section-space">Destination<select id="relay-destination"><option value="off">Off · record only</option><option value="gspro">GSPro</option><option value="infinite_tees">Infinite Tees</option></select></label><p class="form-hint">Saved automatically. Direct connection; no adapter app required.</p><div id="relay-output" class="section-space" role="status"></div><details class="details section-space"><summary>Connection details</summary><form id="relay-connection"><label class="field">Simulator address<input name="host" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="${relay.host}" required></label><label class="field">Simulator port<input name="port" type="number" min="1" max="65535" value="${relay.port}" required></label><p class="form-hint">127.0.0.1 for this PC, or the simulator PC's network address. GSPro defaults to 921; Infinite Tees to 999.</p><button class="btn" type="submit">Save connection</button></form></details></section></div>
+  <section class="card section-space"><h2>Shot confirmation</h2><p class="form-hint">Each recent shot from the source: received, stored (and how each value was classified), and sent to and acknowledged by the simulator. This service run only; the newest shot is first.</p><div id="shot-trail" class="section-space"></div></section>
   <section class="card section-space"><h2>Data & backups</h2><p class="form-hint">Shots and sessions save to SQLite, even when forwarding is off or the simulator is disconnected.</p><div class="form-foot"><a class="btn" href="/api/exports/csv" download>Export CSV</a>${button('Back up database', 'backup-database', 'quiet')}</div><p id="database-backup-status" class="backup-status" role="status"></p></section>
   <details class="card section-space"><summary>Access & diagnostics</summary><p>${state.access.addresses.map((url, i) => [i ? ' · ' : '', html`<a href="${url}">${url}</a>`])}</p><pre id="relay-logs" class="diagnostic-log"></pre></details>`;
   const select = app.querySelector('#relay-destination');
@@ -542,7 +546,45 @@ function renderRelay() {
     const { host, port } = e.target.elements;
     await save({ destination: select.value, host: host.value.trim(), port: Number(port.value) });
   };
+  // How a standard sender's values are read (D74); saved at once like the destination.
+  app.querySelector('#input-profile-control').onchange = async event => {
+    if (event.target.id !== 'input-profile') return;
+    event.target.disabled = true;
+    try {
+      update(await api('/api/input/profile', { profile: event.target.value }));
+    } catch (e) {
+      notice(e.message);
+    }
+    renderProfileControl();
+  };
+  app.querySelector('#input-port-form').onsubmit = async e => {
+    e.preventDefault();
+    const field = e.target.elements.port;
+    try {
+      update(await api('/api/input/port', { port: Number(field.value) }));
+      renderRelay(); // the port appears in the heading chip and the instructions
+      notice(`Listening for shots on port ${state.input.port}.`);
+    } catch (err) {
+      notice(err.message);
+      field.value = state.input.port;
+    }
+  };
+  // Keep expanded shot trails open across live repaints.
+  app.querySelector('#shot-trail').addEventListener(
+    'toggle',
+    event => {
+      const id = event.target.dataset?.trail;
+      if (id) event.target.open ? openTrails.add(id) : openTrails.delete(id);
+    },
+    true
+  );
   updateRelay();
+}
+function renderProfileControl() {
+  const control = app.querySelector('#input-profile-control');
+  if (!control || control.contains(document.activeElement)) return;
+  const markup = String(profileControl(state.input_profiles ?? [], state.input.profile));
+  if (control.innerHTML !== markup) control.innerHTML = markup;
 }
 function updateRelay() {
   const source = app.querySelector('#relay-source');
@@ -559,6 +601,10 @@ function updateRelay() {
   const select = app.querySelector('#relay-destination');
   if (!select.disabled) select.value = relay.destination;
   app.querySelector('#relay-logs').textContent = state.logs.join('\n');
+  renderProfileControl();
+  const trail = app.querySelector('#shot-trail');
+  const trailMarkup = String(confirmationList(state.diagnostics ?? [], openTrails));
+  if (trail.innerHTML !== trailMarkup) trail.innerHTML = trailMarkup;
   const units = {
     ball_speed: 'mph',
     launch_ang: '°',

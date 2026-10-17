@@ -15,6 +15,9 @@ TraceLoft automatically listens for GSPro Open Connect v1 JSON on **127.0.0.1:90
 On Relay, choose **Off**, **GSPro** (921), or **Infinite Tees** (999). The choice saves immediately
 and reconnects automatically. A simulator on another PC on your network goes in Relay → Connection
 details → Simulator address, as a private-network IP address (D69); that PC must allow inbound TCP 921. No rēlā adapter is needed. All three choices record incoming shots.
+With **rēlā**, point rēlā's GSPro output at TraceLoft's input port and choose Relay → Shot source →
+**rēlā · Foresight LPi**: rēlā's estimated club values stay estimates, GSPro still gets rēlā's full
+shot, and Relay → Shot confirmation shows each shot received, stored and acknowledged by GSPro (D74).
 Use **Launch TraceLoft LAN.cmd** for browser access on your trusted local network. It also accepts
 shots from other machines on port 900 (`--remote-input`, D66), such as rēlā in a VM or over a VPN.
 This has no password: allow inbound TCP 900 in Windows Firewall, and never port-forward it to the

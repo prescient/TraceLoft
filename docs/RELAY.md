@@ -80,6 +80,26 @@ Extended stable receipt IDs make retries idempotent even after restart. Readings
 old are stored but neither added to the active drill nor forwarded. Historical imports require their
 own review workflow, still planned. Extra top-level vendor fields survive in raw_packet in SQLite.
 
+## Input profiles and shot confirmation (D74)
+
+A standard sender cannot mark a value as estimated or a zero as "not measured", so Relay → Shot
+source chooses how its values are read. **Standard Open Connect** stores everything as sent.
+**rēlā · Foresight LPi** stores ball data plus club speed, attack angle and path. rēlā's face, lie,
+loft, closure rate, impact and carry are stored as rēlā estimates (`source_estimates`); all-zero spin
+and exact-zero club values count as not measured. To use rēlā directly, set rēlā's simulator to
+GSPro with TraceLoft's input port and press Connect. Relay → Input port changes that port live (saved;
+900 by default; `TRACELOFT_INPUT_PORT` overrides it). On one PC with GSPro, which uses 921, choose
+another port for TraceLoft and give rēlā the same one.
+
+Relay → Shot confirmation lists each recent shot: received, stored (with each value's
+classification and reason) or refused, and the simulator status (acknowledged with GSPro's reply and
+milliseconds, no reply within 5 s, rejected, or not sent and why). GSPro answers only on the range or
+in a round, and its replies carry no shot id: the first 200 after a shot is its acknowledgement.
+
+Test tools (never against the live ports): `tools/fake_gspro.py` answers like GSPro (201 on connect,
+200 + 202 per shot; `--silent` never answers); `tools/rela_replay.py --port <test input>` replays
+rēlā's logged packets from `%LOCALAPPDATA%\rela\rela.log`.
+
 ## Forwarding
 
 GSPro defaults to localhost:921; Infinite Tees to localhost:999. The simulator may also run on another

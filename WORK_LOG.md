@@ -1,5 +1,33 @@
 # TraceLoft work log
 
+## 2026-10-17 — rēlā straight into TraceLoft (D74), branch `rela-direct`
+
+- Built in a separate worktree (`Apps\TraceLoft-next`) with its own venv and database
+  (`%USERPROFILE%\GolfData-next`), web 8775, input 931, so the user's live session was untouched.
+- `source_profiles.py` (standard, rela_lpi) with per-field reasons; `ShotInput.set_profile`,
+  `diagnose`, `answered`, `alerts`; `/api/input/profile` saved in metadata `input_profile.v1`.
+- `Relay`: replies/last_reply/answering, `track` and per-shot acknowledgement, 5 s reply watchdog
+  with one reconnect, pending shots marked "no reply" on timeout or lost connection.
+- Relay page: Shot source selector, Shot confirmation panel (`web/relay-diagnostics.js`); the header
+  banner shows source and TraceLoft alerts.
+- A source hanging up (WinError 64/10053/10054, connection errors) is a logged disconnect, not an error.
+- Tools: `tools/fake_gspro.py`, `tools/rela_replay.py`. Backlog: video analysis; one installable
+  app with updates.
+- Input port setting: `ShotInput.move()` (new port first, then close the old), `/api/input/port`,
+  metadata `input_port.v1` applied at start unless `TRACELOFT_INPUT_PORT` is set; Relay → Input port.
+- **Verification:**
+  - New tests: `tests/test_rela_direct.py` (8: profiles, putt zero fill, club data without speed,
+    classified + stored + forwarded + acknowledged chip, silent GSPro retried then reported, alerts,
+    refused packet in the trail, a hang-up is not an error, live port move) and
+    `tests/test_relay_diagnostics.mjs` (3). Full suite: 267 Python and 89 UI tests pass.
+  - Test instance: the input port moved 931 → 932, a replayed rēlā shot was stored and acknowledged on
+    932, a port in use (8775) was refused with nothing changed, and it moved back to 931.
+  - Test instance: 6 real rēlā packets replayed from rela.log. Each was stored with 7 rēlā estimates
+    apart, forwarded to the fake GSPro with ClubData intact, and acknowledged. Settings survived a
+    restart. The Relay page was checked in the browser (desktop width only).
+  - Not verified: live rēlā and real GSPro (deferred so as not to disturb the user's session), iPad
+    and phone layouts.
+
 ## 2026-10-16 — Source alerts under the header (D73)
 
 - `shot_input.source_alerts()`; heartbeats set `input.alerts`, disconnect clears it.

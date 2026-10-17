@@ -466,6 +466,66 @@ nav button:hover {
     padding: 0 16px;
   }
 }
+/* Relay shot confirmation trail (D74): one row per shot, one chip per hop, words beside colours. */
+.shot-trail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.shot-trail > li {
+  border: 1px solid var(--border);
+  border-radius: 0;
+  padding: 12px 16px;
+}
+.trail-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+.trail-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.trail-hops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.hop {
+  border: 1px solid var(--border);
+  border-radius: 0;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+.hop small {
+  color: var(--muted);
+}
+.hop-ok {
+  border-color: var(--success);
+  color: var(--success);
+}
+.hop-bad {
+  border-color: var(--red);
+  color: var(--red);
+}
+.hop-wait {
+  border-color: var(--warning-border);
+  color: var(--amber);
+}
+.hop-off {
+  color: var(--muted);
+}
+.shot-trail tr.stored-estimate td:nth-child(3) {
+  color: var(--amber);
+}
+.shot-trail tr.stored-missing td:nth-child(3),
+.shot-trail tr.stored-evidence td:nth-child(3) {
+  color: var(--muted);
+}
 main {
   max-width: 1460px;
   margin: auto;

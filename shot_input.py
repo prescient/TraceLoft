@@ -9,9 +9,16 @@ import re
 import sqlite3
 import time
 import uuid
+from collections import deque
 from datetime import datetime, timedelta, timezone
 
+import source_profiles
 from storage import encoded, digest, now
+
+SIMULATOR_NAMES = {'off': 'The simulator', 'gspro': 'GSPro', 'infinite_tees': 'Infinite Tees'}
+REPLY_TIMEOUT = 5.0  # seconds a connect or a sent shot may go unanswered by the simulator (D74)
+HEARTBEAT_INTERVAL = 5.0  # seconds between readiness heartbeats to the simulator
+DIAGNOSTICS_KEPT = 25  # shots shown in the Relay diagnostics (this service run)
 
 FIELDS = {
     'ball_speed': (0, 250),
@@ -302,12 +309,19 @@ class Relay:
     setting still applies: it reaches the source through TraceLoft.Context['simulator'].
     """
 
-    def __init__(self):
+    def __init__(self, on_change=None):
         self.writer = None
         self.task = None
         self.number = 0
         self.ready = False
         self.delegated = False
+        self.on_change = on_change or (lambda: None)
+        # D74: a working simulator answers after a connect and after each shot. GSPro answers only on
+        # the range or in a round, and its replies carry no shot id, so the first 200 after a shot is
+        # taken as that shot's acknowledgement.
+        self.awaiting_since = None  # monotonic time since which a reply is expected
+        self.retried = False  # one automatic reconnect per silent spell
+        self.pending = []  # [(diagnostics entry, monotonic send time)] awaiting acknowledgement
         self.state = dict(
             destination='off',
             enabled=False,
@@ -319,8 +333,55 @@ class Relay:
             player={},
             sent=0,
             delegated=False,
+            replies=0,
+            last_reply=None,
+            answering=None,  # None until a reply is due, then whether one came in REPLY_TIMEOUT
         )
         self.lock = asyncio.Lock()
+
+    def track(self, entry, forwarded):
+        """Record a shot sent (or not) to the simulator on its diagnostics entry."""
+        name = SIMULATOR_NAMES[self.state['destination']]
+        if forwarded:
+            entry['simulator'] = dict(status='awaiting_reply', destination=self.state['destination'],
+                                      host=self.state['host'], port=self.state['port'],
+                                      shot_number=self.number, sent_at=now())
+            self.pending.append((entry, time.perf_counter()))  # monotonic is ~16 ms coarse on Windows
+            if self.awaiting_since is None:
+                self.awaiting_since = time.monotonic()
+        else:
+            entry['simulator'] = dict(status='not_sent', reason=(
+                f"{name} not connected: {self.state['status']} (live only, never replayed)"))
+        self.on_change()
+
+    def _reply(self, reply):
+        """A simulator reply: it is answering, and a 200 acknowledges the oldest pending shot."""
+        clock = time.perf_counter()
+        code = reply['Code']
+        self.state['replies'] += 1
+        self.state['last_reply'] = f"{code} {reply.get('Message', '')}".strip()[:200]
+        self.state['answering'] = True
+        self.awaiting_since = None
+        self.retried = False
+        if self.pending and (code == 200 or code >= 300):
+            entry, sent = self.pending.pop(0)
+            entry['simulator'].update(
+                status='acknowledged' if code == 200 else 'rejected',
+                reply=self.state['last_reply'],
+                ms=round((clock - sent) * 1000),
+            )
+            self.on_change()
+
+    def _expire(self, reason=None):
+        """Shots unanswered for REPLY_TIMEOUT (or on a lost connection) are marked as such."""
+        clock = time.perf_counter()
+        for entry, sent in list(self.pending):
+            if reason or clock - sent > REPLY_TIMEOUT:
+                self.pending.remove((entry, sent))
+                entry['simulator'].update(
+                    status='no_reply', reason=reason or f'No reply within {REPLY_TIMEOUT:.0f} s'
+                )
+                self.on_change()
 
     async def configure(self, settings, input_port):
         if not isinstance(settings, dict):
@@ -335,6 +396,7 @@ class Relay:
         if port == input_port and host in LOCAL_SIMULATOR_HOSTS:
             raise ValueError('Simulator port must differ from input port.')
         await self.close()
+        self.retried = False
         self.state.update(
             destination=destination,
             enabled=destination != 'off',
@@ -342,6 +404,7 @@ class Relay:
             port=port,
             last_response=None,
             player={},
+            answering=None,
         )
         if self.state['enabled']:
             self.task = asyncio.create_task(self._connect())
@@ -363,14 +426,30 @@ class Relay:
                 self.state.update(
                     connected=True, status='Connected; waiting for simulator response'
                 )
+                self.awaiting_since = time.monotonic()  # the connect heartbeat must be answered
                 await self.send(heartbeat(self.ready, self.number))
+                last_beat = time.monotonic()
                 frames = Frames()
+                name = SIMULATOR_NAMES[self.state['destination']]
                 while True:
                     try:
-                        data = await asyncio.wait_for(reader.read(8192), 5)
+                        data = await asyncio.wait_for(reader.read(8192), 1)
                     except asyncio.TimeoutError:
-                        if not await self.send(heartbeat(self.ready, self.number)):
-                            raise ConnectionError('Heartbeat write failed')
+                        data = None
+                    clock = time.monotonic()
+                    if data is None:
+                        self._expire()
+                        if self.awaiting_since and clock - self.awaiting_since > REPLY_TIMEOUT:
+                            if not self.retried:
+                                self.retried = True  # one fresh connection, then report it
+                                raise ConnectionError(f"{name} didn't answer; reconnecting")
+                            self.state.update(answering=False, status=(
+                                f"{name} isn't answering. Make sure {name} is on the range or in "
+                                'a round; if it is, restart GSPro Connect on the simulator PC.'))
+                        if clock - last_beat >= HEARTBEAT_INTERVAL:
+                            last_beat = clock
+                            if not await self.send(heartbeat(self.ready, self.number)):
+                                raise ConnectionError('Heartbeat write failed')
                         continue
                     if not data:
                         raise ConnectionError('Simulator disconnected')
@@ -380,9 +459,10 @@ class Relay:
                         self.state['last_response'] = reply
                         if reply['Code'] == 201:
                             self.state['player'] = reply.get('Player', {})
+                        self._reply(reply)
                         self.state['status'] = (
                             'Simulator protocol acknowledged'
-                            if reply['Code'] in (200, 201)
+                            if reply['Code'] in (200, 201, 202)
                             else str(reply.get('Message', 'Simulator error'))[:200]
                         )
             except asyncio.CancelledError:
@@ -393,8 +473,12 @@ class Relay:
                 if writer:
                     writer.close()
                 self.writer = None
+                self.awaiting_since = None
+                self._expire(reason='Connection to the simulator was lost')
                 self.state['connected'] = False
                 self.state['player'] = {}
+                if self.state['answering'] is not False:
+                    self.state['answering'] = None
             if not self.delegated:
                 await asyncio.sleep(2)
 
@@ -446,24 +530,92 @@ class ShotInput:
     def __init__(self, service, port=900, host=LOCAL_INPUT):
         self.service, self.port, self.host = service, port, host
         self.server = None
-        self.relay = Relay()
+        self.relay = Relay(on_change=self.diagnostics_changed)
         self.last_seen = 0
         self.source = None
         self.clients = set()
         self.tasks = set()
         self.accept_lock = asyncio.Lock()
+        # Per-shot confirmation trail for the Relay page (D74): newest first, this service run only.
+        self.diagnostics = deque(maxlen=DIAGNOSTICS_KEPT)
         self.state = dict(
             listening=False,
             port=port,
             remote=host != LOCAL_INPUT,
             peer=None,  # address of the connected source (shown when it is another machine)
             alerts=[],  # the connected source's problems for the golfer, from its heartbeats (D73)
+            profile=source_profiles.DEFAULT,  # how to read a standard sender's values (D74)
+            diagnostics_revision=0,
             device=None,
             received=0,
             duplicates=0,
             last_shot=None,
             error='',
         )
+
+    # ----- input profile, diagnostics and alerts (D74) -----
+
+    def set_profile(self, profile):
+        """Choose how a standard sender's values are read (source_profiles)."""
+        if profile not in source_profiles.PROFILES:
+            raise ValueError('Choose a listed input profile.')
+        self.state['profile'] = profile
+
+    def diagnose(self, packet):
+        """A new diagnostics entry for a shot packet (None for heartbeats and status packets)."""
+        options = packet.get('ShotDataOptions') if isinstance(packet, dict) else None
+        if not isinstance(options, dict) or options.get('ContainsBallData') is not True:
+            return None
+        entry = dict(
+            id=uuid.uuid4().hex,
+            received_at=now(),
+            device=packet.get('DeviceID'),
+            shot_number=packet.get('ShotNumber'),
+            sender='extended' if 'TraceLoft' in packet else 'standard',
+            profile=None,
+            fields=[],
+            stored=None,
+            source_reply=None,
+            simulator=None,
+        )
+        self.diagnostics.appendleft(entry)
+        self.diagnostics_changed()
+        return entry
+
+    def answered(self, entry, code, message, refused=False):
+        """Record the reply TraceLoft gave the source for this shot."""
+        if entry is None:
+            return
+        entry['source_reply'] = dict(code=code, message=str(message)[:300])
+        if refused:
+            entry['stored'] = dict(ok=False, error=str(message)[:300])
+            entry['simulator'] = entry['simulator'] or dict(status='not_sent', reason='Not stored')
+        self.diagnostics_changed()
+
+    def diagnostics_changed(self):
+        self.state['diagnostics_revision'] += 1
+
+    def alerts(self):
+        """The source's own alerts (D73) plus TraceLoft's: a profiled source that is not connected,
+        and a simulator TraceLoft relays to that is not connected or not answering."""
+        found = list(self.state['alerts'])
+        profile = source_profiles.PROFILES[self.state['profile']]
+        if profile.get('source_name') and not self.clients:
+            found.append(dict(level='error', message=(
+                f"{profile['source_name']} isn't connected to TraceLoft, so shots are not being "
+                f"recorded. In {profile['source_name']}, choose GSPro with port {self.port} and press "
+                'Connect.')))
+        relay = self.relay.state
+        if relay['enabled'] and not self.relay.delegated:
+            name = SIMULATOR_NAMES[relay['destination']]
+            if not relay['connected'] and relay['status'].startswith('Disconnected'):
+                found.append(dict(level='warning', message=(
+                    f"{name} isn't connected ({relay['status']}). Shots are recorded but not played "
+                    f'in {name}.')))
+            elif relay.get('answering') is False:
+                found.append(dict(level='warning', message=(
+                    f"{relay['status']} Shots are recorded but not played in {name}.")))
+        return found
 
     def context(self):
         """Context returned with every Code 200. `simulator` is the user's Relay destination, for a
@@ -515,7 +667,9 @@ class ShotInput:
             ),
         )
 
-    async def accept_packet(self, packet, connection_id):
+    async def accept_packet(self, packet, connection_id, diagnostic=None):
+        """Validate, classify, store and forward one packet. `diagnostic` is this shot's Relay
+        diagnostics entry (D74), filled in as each step is confirmed."""
         from open_connect import validate_packet, simulator_packet
 
         vals = validate_packet(packet)
@@ -580,6 +734,20 @@ class ShotInput:
         estimates = source_estimates(extension.get('SourceEstimates'))
         if estimates and result == 'validated':
             event['source_estimates'] = estimates
+        if 'TraceLoft' not in packet:
+            # A standard sender cannot say what it measured: the chosen input profile decides (D74).
+            profile = self.state['profile']
+            measured, guessed, fields = source_profiles.classify(profile, packet, event['vals'])
+            event['vals'] = measured
+            event['source_configuration'] = dict(event['source_configuration'], input_profile=profile)
+            guessed = source_estimates(
+                dict(Estimator=source_profiles.PROFILES[profile].get('estimator', 'source'),
+                     Values=guessed)
+            ) if guessed else None
+            if guessed:
+                event['source_estimates'] = guessed
+            if diagnostic is not None:
+                diagnostic.update(profile=profile, fields=fields)
         batch = import_batch(extension.get('Import'))
         if batch:
             # An iPad table import (D65): never live, never forwarded, and never part of the active
@@ -612,6 +780,9 @@ class ShotInput:
                 if json.loads(old[0]).get('wire_digest') != event['wire_digest']:
                     raise ValueError('Receipt identity conflicts with different data.')
                 self.state['duplicates'] += 1
+                if diagnostic is not None:
+                    diagnostic.update(stored=dict(ok=True, duplicate=True, receipt_id=event['receipt_id']),
+                                      simulator=dict(status='not_sent', reason='Duplicate: already stored'))
                 return dict(
                     accepted=True, duplicate=True, forwarded=False, receipt_id=event['receipt_id']
                 )
@@ -652,6 +823,11 @@ class ShotInput:
             self.state.update(
                 received=self.state['received'] + 1, last_shot=event['captured_at'], error=''
             )
+            if diagnostic is not None:
+                diagnostic['stored'] = dict(
+                    ok=True, duplicate=False, receipt_id=event['receipt_id'],
+                    estimates=sorted(event.get('source_estimates', {}).get('values', {})),
+                )
             forwarded = False
             by_source = source_delivers(packet)
             if (
@@ -665,6 +841,14 @@ class ShotInput:
                 forwarded = await self.relay.send(simulator_packet(packet, self.relay.number))
                 if forwarded:
                     self.relay.state['sent'] += 1
+                if diagnostic is not None:
+                    self.relay.track(diagnostic, forwarded)
+            elif diagnostic is not None:
+                diagnostic['simulator'] = dict(status='not_sent', reason=(
+                    'Forwarding is off' if not self.relay.state['enabled']
+                    else 'The source sends to the simulator itself' if by_source or self.relay.delegated
+                    else 'Older than 15 s or recovered: stored only, never replayed' if not live
+                    else 'Not a validated shot'))
             try:
                 with store.transaction():
                     store.connection.execute(
@@ -710,6 +894,31 @@ class ShotInput:
         self.port = self.server.sockets[0].getsockname()[1]
         self.state.update(listening=True, port=self.port)
 
+    async def move(self, port):
+        """Listen on another port now (Relay → Input port, D74), e.g. the port rēlā's GSPro output is
+        set to. The new port is opened before the old one closes, so a port in use is refused and
+        nothing changes; the connected source is disconnected and reconnects to the new port."""
+        if type(port) is not int or not 1 <= port <= 65535:
+            raise ValueError('The input port must be a whole number from 1 to 65535.')
+        if port == self.port:
+            return
+        relay = self.relay.state
+        if relay['enabled'] and relay['port'] == port and relay['host'] in LOCAL_SIMULATOR_HOSTS:
+            raise ValueError(f'Port {port} is the simulator on this PC. Choose another input port.')
+        try:
+            server = await asyncio.start_server(self._client, self.host, port, limit=262144)
+        except OSError:
+            raise ValueError(
+                f'Port {port} is already in use on this PC. Choose another, or close the program '
+                'using it.'
+            ) from None
+        old, self.server, self.port = self.server, server, port
+        self.state.update(port=port)
+        if old:
+            old.close()
+        for writer in list(self.clients):
+            writer.close()
+
     async def _client(self, reader, writer):
         from open_connect import Frames, wire, validate_packet
 
@@ -736,6 +945,7 @@ class ShotInput:
                 if not data:
                     break
                 for packet in frames.feed(data):
+                    diagnostic = self.diagnose(packet)
                     try:
                         validate_packet(packet)
                         if device is not None and device != packet['DeviceID']:
@@ -766,7 +976,7 @@ class ShotInput:
                             raise ValueError(
                                 'Stale shot number; reconnect when starting a new shot sequence.'
                             )
-                        reply = await self.accept_packet(packet, connection_id)
+                        reply = await self.accept_packet(packet, connection_id, diagnostic)
                         if reply:
                             last = max(last, packet['ShotNumber'])
                         response = dict(
@@ -775,6 +985,7 @@ class ShotInput:
                             TraceLoft=dict(Context=self.context(), **(reply or {})),
                         )
                         writer.write(wire(response))
+                        self.answered(diagnostic, 200, response['Message'])
                         if self.relay.state['player']:
                             writer.write(
                                 wire(
@@ -788,11 +999,23 @@ class ShotInput:
                     except (ValueError, TypeError, KeyError) as ex:
                         self.state['error'] = str(ex)
                         writer.write(wire(dict(Code=501, Message=str(ex))))
+                        self.answered(diagnostic, 501, str(ex), refused=True)
                     except (OSError, sqlite3.Error) as ex:
                         self.service.save_error = 'Shot save failed: ' + str(ex)
                         writer.write(wire(dict(Code=503, Message=self.service.save_error)))
+                        self.answered(diagnostic, 503, self.service.save_error, refused=True)
                     await writer.drain()
-        except (OSError, ValueError, UnicodeError, asyncio.TimeoutError) as ex:
+        except asyncio.TimeoutError:  # first: TimeoutError is also an OSError
+            self.state['error'] = 'The shot source went silent for 20 s and was disconnected.'
+        except (ConnectionError, OSError) as ex:
+            if isinstance(ex, ConnectionError) or getattr(ex, 'winerror', None) in (64, 10053, 10054):
+                # The source hung up (closed, restarted, network gone): a disconnect, not an error.
+                # "Waiting for source" and the profile's alert already say what to do.
+                self.service.logs.append(f'Shot source disconnected ({ex}).')
+                self.state['error'] = ''
+            else:
+                self.state['error'] = str(ex)
+        except (ValueError, UnicodeError) as ex:
             self.state['error'] = str(ex)
         finally:
             self.clients.discard(writer)

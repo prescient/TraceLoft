@@ -1,5 +1,39 @@
 # TraceLoft backlog
 
+## Wish — one installable app with updates (user, 2026-10-17, not started)
+
+A local web server works for the user, but not for an "average" golfer. Goal: one executable (or
+installer) that starts TraceLoft and opens it in its own window, with a way to deliver updates to
+people's installs.
+- **Packaging:** bundle Python and the dependencies (e.g. PyInstaller or Nuitka) with a native window
+  (e.g. pywebview / WebView2) instead of a browser tab, a tray icon for "running / stop", and a Start
+  menu entry. Data stays in `%USERPROFILE%\GolfData` so reinstalling never touches it. OpenGolfCoach
+  is a compiled dependency: check its license and packaging.
+- **Updates:** check a release feed (e.g. GitHub Releases) at start; download, verify a signature or
+  hash, and install on the next restart, never during an active session. Schema upgrades already take
+  a verified backup first (migrations). Code-sign the executable so Windows SmartScreen trusts it.
+- **First run:** a short setup asking for the shot source (input profile and port) and the
+  simulator address, replacing the README steps.
+- Open: installer technology, who hosts releases, and auto vs. prompted updates. Depends on the
+  release and license review noted in the README.
+
+## Wish — video analysis, like Uneekor's swing video (user, 2026-10-17, not started)
+
+The user wants some form of video analysis similar to Uneekor's: each shot's swing (and ideally
+impact) video saved with the shot and replayed beside its numbers. Ideas to scope with the user:
+- **Capture:** one or two cameras (face-on and down-the-line; webcams or a phone over the LAN)
+  record into a rolling buffer; when a shot arrives, keep a few seconds before and after it and
+  attach the clip to that shot. Shot time is TraceLoft's receipt time, so the clock offset per
+  camera has to be measured.
+- **Review:** play with the shot's data overlaid; frame-step and slow motion; compare two shots side
+  by side (e.g. best vs. latest of a club); simple drawing lines (shaft plane, head position).
+- **Storage:** clips are large; keep them outside SQLite (files keyed by shot id) with a retention
+  limit, like TraceCapture's crop retention, and never inside the session-deletion lifecycle.
+- **Later:** an impact camera for strike location (the LPi does not measure it; rēlā only estimates
+  it), and pose estimation for tempo or body angles. Labeled as estimates (design principle 6).
+- Not decided: which cameras, frame rate (impact needs high-speed), and whether capture belongs in
+  TraceLoft or in a separate capture app like TraceCapture.
+
 ## Option — club estimates in calculation management (2026-10-13; storage done 2026-10-16)
 
 Done (D71, schema 7): every non-putt shot stores per-shot `club_delivery` and `flight` results
