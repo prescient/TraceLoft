@@ -108,8 +108,10 @@ public addresses are refused. Changing the destination keeps the address and res
 with a relay-owned monotonically increasing ShotNumber per service run. Private extensions stay in
 SQLite. The relay holds one connection (D77): it sends a readiness heartbeat on connect and when
 readiness changes, never on a timer; it reconnects only when the connection closes or fails, waiting
-2, 5, 10, then 30 s between attempts; TCP keepalive finds a dead link. A quiet simulator keeps its
-connection and raises an "isn't answering" alert (for GSPro: be on the range or in a round, else
+2, 5, 10, then 30 s between attempts; TCP keepalive finds a dead link; every close is a TCP reset,
+because GSPro Connect ignores a polite close and keeps the gone client. GSPro answers shots only,
+not the connect heartbeat. A shot left unanswered keeps the connection and raises an "isn't
+answering" alert (for GSPro: be on the range or in a round, else
 Settings → System → Reset GSPro Connect), because reconnecting jams GSPro Connect's single client
 slot. The relay never queues/replays shots for a disconnected simulator. Socket-write evidence is labeled unacknowledged: simulator Code 200 has
 no shot identifier, so it cannot establish durable per-shot delivery. Avoid claiming exactly-once

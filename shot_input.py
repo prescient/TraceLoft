@@ -5,9 +5,11 @@ import copy
 import ipaddress
 import json
 import math
+import os
 import re
 import socket
 import sqlite3
+import struct
 import time
 import uuid
 from collections import deque
@@ -317,6 +319,38 @@ def keep_alive(writer):
         pass  # the operating system's default keepalive timing still applies
 
 
+def reset_on_close(writer):
+    """Make closing the simulator connection send a TCP reset instead of a polite FIN (SO_LINGER 0).
+
+    Seen live on 2026-10-17: after TraceLoft closed normally, GSPro Connect never closed its side
+    (the socket sat in FIN_WAIT_2), kept treating the gone client as connected and ignored the next
+    one until it was reset. A reset is an error GSPro Connect cannot overlook. Set on connect, so it
+    also applies when the process exits; shots are drained before a send returns, so none are lost."""
+    sock = writer.get_extra_info('socket')
+    if sock is None:
+        return
+    linger = struct.pack('HH' if os.name == 'nt' else 'ii', 1, 0)  # Windows' linger is two u_short
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, linger)
+    except OSError:
+        pass  # a normal close still works; GSPro Connect may then need a reset
+
+
+def close_with_reset(writer):
+    """Close a simulator connection so the reset from `reset_on_close` is what the peer sees.
+
+    asyncio's Windows transport calls shutdown() (a FIN) before closing, which would defeat the
+    linger setting, so abort the transport and close its socket before that shutdown can run."""
+    transport = writer.transport
+    raw = getattr(transport, '_sock', None)  # private, but the only handle that can skip shutdown
+    transport.abort()
+    if isinstance(raw, socket.socket):
+        try:
+            raw.close()
+        except OSError:
+            pass
+
+
 class Relay:
     """Direct optional simulator output. A reconnect never replays a stored shot.
 
@@ -444,11 +478,13 @@ class Relay:
                     asyncio.open_connection(self.state['host'], self.state['port']), 2
                 )
                 keep_alive(writer)
+                reset_on_close(writer)
                 self.writer = writer
                 self.state.update(
-                    connected=True, status='Connected; waiting for simulator response'
+                    connected=True, status='Connected; the simulator answers with the next shot'
                 )
-                self.awaiting_since = time.monotonic()  # the connect heartbeat must be answered
+                # GSPro answers shots only, never the connect heartbeat (seen live 2026-10-17), so a
+                # reply is first due after a shot (`track`).
                 sent_ready = self.ready
                 await self.send(heartbeat(sent_ready, self.number))
                 frames = Frames()
@@ -496,6 +532,9 @@ class Relay:
                     # Windows retries a refused connect past the 2 s limit, so both mean the same.
                     reason = (f'nothing answered at {where}. Is GSPro Connect (its Open API '
                               'connector) running on that PC?')
+                elif self.writer and getattr(ex, 'winerror', None) in (64, 10053, 10054):
+                    # GSPro Connect drops a new client while it clears an old one (seen on restart).
+                    reason = f'{SIMULATOR_NAMES[self.state["destination"]]} closed the connection'
                 else:
                     reason = str(ex) or type(ex).__name__
                 if answered:
@@ -507,7 +546,7 @@ class Relay:
                 self.state['status'] = f'Disconnected: {reason}{end} Retrying in {wait:.0f} s.'
             finally:
                 if writer:
-                    writer.close()
+                    close_with_reset(writer)
                 self.writer = None
                 self.awaiting_since = None
                 self._expire(reason='Connection to the simulator was lost')
@@ -524,7 +563,7 @@ class Relay:
             return
         self.delegated = self.state['delegated'] = delegated
         if delegated and self.writer:
-            self.writer.close()  # frees the simulator for the source; _connect then idles
+            close_with_reset(self.writer)  # frees the simulator for the source; _connect then idles
         if not delegated and self.state['enabled']:
             self.state['status'] = 'Reconnecting to the simulator'
 
@@ -540,7 +579,7 @@ class Relay:
                 await asyncio.wait_for(writer.drain(), 1)
                 return True
             except (OSError, asyncio.TimeoutError):
-                writer.close()
+                close_with_reset(writer)
                 return False
 
     async def close(self):
@@ -553,7 +592,7 @@ class Relay:
                 pass
         self.task = None
         if self.writer:
-            self.writer.close()
+            close_with_reset(self.writer)
         self.writer = None
         self.state.update(connected=False, status='Forwarding off', player={})
 

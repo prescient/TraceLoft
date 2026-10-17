@@ -1,5 +1,25 @@
 # TraceLoft work log
 
+## 2026-10-17 — Reset-close for GSPro, no reply expected on connect (D77 addendum)
+
+- `reset_on_close` (SO_LINGER 0 on connect) and `close_with_reset` (abort the transport, then close
+  the socket before asyncio's Windows transport sends its shutdown FIN) on every relay close. The
+  connect heartbeat no longer starts the reply timer; status "Connected; the simulator answers with
+  the next shot", status strip "Connected · answers with the next shot". A connection GSPro drops
+  (WinError 64/10053/10054) reads "GSPro closed the connection".
+- **Verification:**
+  - Tests: a fake GSPro sees a reset (not a polite close) when the relay is turned off; a quiet GSPro
+    with no shot sent raises no alert. Relay tests passed three runs in a row. The full suite
+    (282) passed with the reset close. Of the last three changes (the connect timer, the status text
+    and the closed-connection wording), the first two are covered by relay tests that pass; the third
+    is covered by no test. The suite was not rerun after them. 95 UI tests pass.
+  - Live: the user reset GSPro Connect (GSPro on the range). TraceLoft-next was restarted with the
+    reset close: the old connection disappeared at once (no FIN_WAIT_2), and rēlā's next shot was
+    acknowledged on the new connection in 70 ms ("200 Club & Ball Data received"; replies 200, 201
+    ×2, 202), with no GSPro Connect reset in between. A second restart: GSPro dropped the first new
+    connection (WinError 64), and the relay reconnected 2 s later and held it. That connection has
+    not yet carried a shot. GSPro sent no reply on any connect, only on shots.
+
 ## 2026-10-17 — Desktop start/stop icons for TraceLoft-next (user request)
 
 - `launch_next.py` with `Start TraceLoft-next.cmd` / `Stop TraceLoft-next.cmd`: start runs

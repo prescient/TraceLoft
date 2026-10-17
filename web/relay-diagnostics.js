@@ -51,7 +51,7 @@ export function statusItems(state) {
           ? ['bad', sim, 'Not answering']
           : relay.answering
             ? ['ok', sim, 'Answering']
-            : ['wait', sim, 'Connected · waiting for a reply'];
+            : ['ok', sim, 'Connected · answers with the next shot'];
   return [source, recording, simulator].map(([kind, name, text]) => ({ kind, name, text, profile: profile?.title }));
 }
 

@@ -147,6 +147,9 @@ class RelaDirectTests(unittest.IsolatedAsyncioTestCase):
             await self.gspro(silent=True)
             relay = self.service.input.relay
             self.assertTrue(await self.wait(lambda: relay.state['connected']))
+            await asyncio.sleep(1.2)  # GSPro answers shots only: no shot yet, so nothing is overdue
+            self.assertIsNone(relay.state['answering'])
+            self.assertEqual(self.service.input.alerts()[1:], [])
             entry = self.service.input.diagnose(CHIP)
             await self.service.input.accept_packet(copy.deepcopy(CHIP), 'rela', entry)
             self.assertTrue(await self.wait(lambda: entry['simulator']['status'] == 'no_reply', 6))
@@ -174,6 +177,28 @@ class RelaDirectTests(unittest.IsolatedAsyncioTestCase):
         sock = self.service.input.relay.writer.get_extra_info('socket')
         self.assertEqual(sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE), 1)
 
+    async def test_closing_the_relay_resets_the_connection_so_gspro_frees_its_slot(self):
+        # GSPro Connect ignored a polite close and kept the gone client (WORK_LOG 2026-10-17).
+        ended = asyncio.get_running_loop().create_future()
+
+        async def serve(reader, writer):
+            self.writers.append(writer)
+            try:
+                while await reader.read(8192):
+                    pass
+                ended.set_result('closed politely')
+            except ConnectionResetError:
+                ended.set_result('reset')
+
+        self.sim = await asyncio.start_server(serve, '127.0.0.1', 0)
+        relay = self.service.input.relay
+        await relay.configure(
+            dict(destination='gspro', port=self.sim.sockets[0].getsockname()[1]), self.service.input.port
+        )
+        self.assertTrue(await self.wait(lambda: relay.state['connected']))
+        await relay.configure(dict(destination='off'), self.service.input.port)
+        self.assertEqual(await asyncio.wait_for(ended, 3), 'reset')
+
     async def test_a_closed_connection_reconnects_with_growing_waits(self):
         with patch('shot_input.RECONNECT_WAITS', (0.1, 0.4)):
             self.sim = await asyncio.start_server(
@@ -185,7 +210,7 @@ class RelaDirectTests(unittest.IsolatedAsyncioTestCase):
                 self.service.input.port,
             )
             self.assertTrue(await self.wait(lambda: len(self.writers) >= 3))
-        self.assertIn('Retrying in', relay.state['status'])
+            self.assertTrue(await self.wait(lambda: 'Retrying in' in relay.state['status']))
         self.assertGreaterEqual(relay.attempt, 2)
 
     async def test_alerts_when_rela_is_not_connected(self):

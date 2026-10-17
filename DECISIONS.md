@@ -27,6 +27,15 @@ one connection and stay quiet between shots. Replaces the reconnect-once rule in
 - **Silence is reported, not "fixed".** After 5 s without a reply, the connection stays open, the
   shot is marked "No reply", and the alert says to put GSPro on the range or in a round and, if it
   is, to choose Settings → System → Reset GSPro Connect (or restart GSPro Connect).
+- **Close with a reset.** GSPro Connect never closes its side after a polite close (FIN): our socket
+  sat in FIN_WAIT_2, GSPro Connect kept the gone client, and the next connection was ignored until
+  a reset. So every relay close sends a TCP reset (SO_LINGER 0, set on connect so it also applies
+  when the process exits; `close_with_reset` aborts the transport and closes the socket before
+  asyncio's Windows transport can send its FIN). Live: after a restart with a reset close, GSPro
+  acknowledged the next shot on the new connection in 70 ms, with no GSPro Connect reset.
+- **No reply is expected on connect.** GSPro answers shots only (200, two 201s and 202 per shot),
+  never the connect heartbeat, so "isn't answering" is raised only for an unanswered shot. Until
+  the first shot the Relay page says "Connected · answers with the next shot".
 - **Reply counts.** The Relay page shows this run's simulator replies by code (`reply_codes`).
 - GSPro 2026 answers a shot with "200 Club & Ball Data received" ("200 Ball Data received" without
   club data) and then "202 GSPro ready". The player's club in GSPro (Code 201) stays GSPro's own:
@@ -83,7 +92,7 @@ copy was untouched during a playing session.
   profile is recorded in the source configuration and saved in metadata (`input_profile.v1`).
 - **GSPro still gets rēlā's packet as sent** (club data included): the relay already forwards the
   documented fields of the original packet.
-- **Relay acknowledgement:** a reply is expected within 5 s of connecting and of each shot. On the
+- **Relay acknowledgement:** a reply is expected within 5 s of connecting (D77: of a shot only) and of each shot. On the
   first silence the relay reconnects once, then reports "isn't answering" (GSPro answers only on
   the range or in a round). *Superseded by D77: the relay no longer reconnects on silence.* The first 200 after a shot is taken as its acknowledgement, because
   GSPro replies carry no shot id.
