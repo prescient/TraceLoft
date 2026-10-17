@@ -1,5 +1,6 @@
 import { html } from './charts.js';
 import { mountCalculations } from './calculations.js';
+import { keepOrder, makeSortable, moveItem } from './sortable.js';
 import {
   finite,
   robust,
@@ -283,7 +284,7 @@ function draw(app, r, api, notice, isCurrent, golferId) {
           notice('Keep at least one metric selected.');
           return;
         }
-        state.metrics = checked;
+        state.metrics = keepOrder(state.metrics, checked); // the golfer's tile order survives
         const d = new FormData(form);
         state.filters = {
           ...state.filters,
@@ -395,7 +396,7 @@ function draw(app, r, api, notice, isCurrent, golferId) {
       t.points.map(p => [p.id, p.label]),
       state.inspect,
       'All selected intervals'
-    )}</select></label><span class="form-hint">Median and type-7 middle 50% · independent units · n per metric${t.missingTime ? ' · ' + t.missingTime + ' attempts lack capture timestamps' : ''}</span></div>${legend(t.series)}<div class="analysis-trends ${state.grid ? 'analysis-grid' : ''}">${state.metrics.map(m => html`<section class="analysis-panel"><div class="analysis-panel-head"><h2>${label(m)}</h2><span data-trend-value="${m}" class="form-hint"></span></div><svg class="analysis-plot" data-trend="${m}" role="img" aria-label="${label(m)} medians and middle 50 percent by ${state.resolution}"></svg></section>`)}</div>`;
+    )}</select></label><span class="form-hint">Median and type-7 middle 50% · independent units · n per metric${t.missingTime ? ' · ' + t.missingTime + ' attempts lack capture timestamps' : ''}</span></div>${legend(t.series)}<div class="analysis-trends ${state.grid ? 'analysis-grid' : ''}">${state.metrics.map((m, i) => html`<section class="analysis-panel" data-sort-key="${m}"><div class="analysis-panel-head"><button type="button" class="sort-handle" data-sort-handle aria-label="Drag to reorder ${label(m)}" title="Drag to reorder">⠿</button><h2>${label(m)}</h2><span data-trend-value="${m}" class="form-hint"></span><span class="sort-buttons"><button type="button" class="btn small quiet" data-move="${m}" data-step="-1" ${i ? '' : 'disabled'} aria-label="Move ${label(m)} earlier">Earlier</button><button type="button" class="btn small quiet" data-move="${m}" data-step="1" ${i < state.metrics.length - 1 ? '' : 'disabled'} aria-label="Move ${label(m)} later">Later</button></span></div><svg class="analysis-plot" data-trend="${m}" role="img" aria-label="${label(m)} medians and middle 50 percent by ${state.resolution}"></svg></section>`)}</div>`;
     const inspect = id => {
       state.inspect = id;
       save();
@@ -405,6 +406,24 @@ function draw(app, r, api, notice, isCurrent, golferId) {
       renderCharts();
     };
     body.querySelector('[data-inspect]').onchange = e => inspect(e.target.value);
+    // Tile order (user, 2026-10-17): drag a handle, or use Earlier/Later. The order is state.metrics,
+    // so it is kept for this golfer and travels with saved views. The first metric also drives the
+    // server query, so a new first metric reloads; otherwise only the page is redrawn.
+    const reorder = keys => {
+      const first = state.metrics[0];
+      state.metrics = keys;
+      save();
+      if (keys[0] !== first) refresh();
+      else draw(app, r, api, notice, isCurrent, golferId);
+    };
+    makeSortable(body.querySelector('.analysis-trends'), reorder);
+    body.querySelectorAll('[data-move]').forEach(
+      b =>
+        (b.onclick = () => {
+          const from = state.metrics.indexOf(b.dataset.move);
+          reorder(moveItem(state.metrics, from, from + Number(b.dataset.step)));
+        })
+    );
     renderCharts = () =>
       body
         .querySelectorAll('[data-trend]')

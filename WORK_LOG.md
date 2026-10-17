@@ -1,5 +1,16 @@
 # TraceLoft work log
 
+## 2026-10-17 — Reorder Analyze trend panels (user request), branch `rela-direct`
+
+- `web/sortable.js`: `moveItem`, `dropIndex` (nearest tile centre, so one column and the grid both
+  work), `keepOrder`, `makeSortable` on pointer events (Safari has no touch support for HTML drag and
+  drop). Trend panels get a 44 px ⠿ handle and Earlier/Later buttons. The order is `state.metrics`,
+  kept in sessionStorage and saved views; ticking a metric no longer resets the order to catalog
+  order. A new first metric reloads (it scopes the query); other moves only redraw.
+- **Verification:** `tests/test_sortable.mjs` (3) and 92 UI tests pass. In the browser on the test
+  instance (1024×768, demo pack): a mouse drag moved Absolute offline above Carry, Later moved it back
+  one place, and the order survived a reload. Not verified on a real iPad with touch.
+
 ## 2026-10-17 — rēlā straight into TraceLoft (D74), branch `rela-direct`
 
 - Built in a separate worktree (`Apps\TraceLoft-next`) with its own venv and database

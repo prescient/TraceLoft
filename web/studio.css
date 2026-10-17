@@ -225,6 +225,38 @@
   max-width: 100%;
   overflow-wrap: anywhere;
 }
+/* Reorderable tiles: a 44 px square handle (touch target), a dashed outline while dragging and a
+   cobalt outline on the tile it will take the place of. */
+.sort-handle {
+  width: 44px;
+  height: 44px;
+  margin: -6px 0 0 -6px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+}
+.sort-handle:active {
+  cursor: grabbing;
+}
+.analysis-panel-head h2 {
+  flex: 1;
+}
+.sort-buttons {
+  display: flex;
+  gap: 6px;
+}
+.sort-dragging {
+  outline: 2px dashed var(--muted);
+  opacity: 0.7;
+}
+.sort-target {
+  outline: 2px solid var(--accent);
+}
 .analysis-plot {
   display: block;
   width: 100%;

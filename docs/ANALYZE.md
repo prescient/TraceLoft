@@ -38,7 +38,9 @@ out. Manual exclusion counts are not automatic outlier classifications.
 ## Trends
 
 Select several metrics for aligned panels with independent units; **Grid layout** places panels side
-by side on wide screens. Colors identify bag/club; configurations, swing intent and selected model
+by side on wide screens. Reorder panels by dragging the ⠿ handle (mouse or finger) or with
+**Earlier**/**Later**; the order is kept for the golfer on this browser and saved with views. Newly
+ticked metrics are added at the end. The first panel's metric also scopes the server query. Colors identify bag/club; configurations, swing intent and selected model
 versions remain separate cohorts. Line styles supplement color. Charts show medians and type-7
 middle-50% bands, with available n per metric. One reading has no estimated spread.
 
