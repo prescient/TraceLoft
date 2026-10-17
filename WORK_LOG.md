@@ -10,9 +10,9 @@
 - **Verification:**
   - Tests: a fake GSPro sees a reset (not a polite close) when the relay is turned off; a quiet GSPro
     with no shot sent raises no alert. Relay tests passed three runs in a row. The full suite
-    (282) passed with the reset close. Of the last three changes (the connect timer, the status text
-    and the closed-connection wording), the first two are covered by relay tests that pass; the third
-    is covered by no test. The suite was not rerun after them. 95 UI tests pass.
+    (282) passed with the reset close, and again after the last changes (the connect timer, the
+    status text and the closed-connection wording): 282 Python and 95 UI tests pass. The
+    closed-connection wording has no test of its own.
   - Live: the user reset GSPro Connect (GSPro on the range). TraceLoft-next was restarted with the
     reset close: the old connection disappeared at once (no FIN_WAIT_2), and rēlā's next shot was
     acknowledged on the new connection in 70 ms ("200 Club & Ball Data received"; replies 200, 201
