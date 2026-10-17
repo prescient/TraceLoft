@@ -34,6 +34,21 @@ impact) video saved with the shot and replayed beside its numbers. Ideas to scop
 - Not decided: which cameras, frame rate (impact needs high-speed), and whether capture belongs in
   TraceLoft or in a separate capture app like TraceCapture.
 
+## Option — accept rēlā's batched shot data (user, 2026-10-17, not started)
+
+rēlā can send a shot in parts: ball data first, then club data or other metrics in a later
+message. Keep rēlā on single-message shots for now; the user may revisit this later.
+- **Today:** TraceLoft refuses a club-only message ("Club-only shot packets are not supported."),
+  so batched club data would be lost, and only the ball part is stored and forwarded.
+- **GSPro:** Open Connect v1 documents one complete shot per message and no shot id, so a later
+  club-only message cannot be attached to the shot GSPro already played. GSPro's response to a
+  club-only message has not been tested.
+- **If built:** merge a follow-up club message into the shot just stored when it arrives within a
+  short window (a second or two), as an appended observation (evidence stays immutable), and show the
+  merge in the Relay shot confirmation. GSPro would still get ball-only shots, so this is worth it
+  only if batching gives something single-message mode does not (e.g. faster ball data in GSPro).
+- First, capture what rēlā actually sends in batch mode (`tools/rela_replay.py` reads its log).
+
 ## Option — club estimates in calculation management (2026-10-13; storage done 2026-10-16)
 
 Done (D71, schema 7): every non-putt shot stores per-shot `club_delivery` and `flight` results
