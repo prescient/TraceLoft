@@ -17,8 +17,9 @@
     reset close: the old connection disappeared at once (no FIN_WAIT_2), and rēlā's next shot was
     acknowledged on the new connection in 70 ms ("200 Club & Ball Data received"; replies 200, 201
     ×2, 202), with no GSPro Connect reset in between. A second restart: GSPro dropped the first new
-    connection (WinError 64), and the relay reconnected 2 s later and held it. That connection has
-    not yet carried a shot. GSPro sent no reply on any connect, only on shots.
+    connection (WinError 64), and the relay reconnected 2 s later and held it; seven minutes later
+    the next shot was acknowledged on that connection in 102 ms. GSPro sent no reply on any connect,
+    only on shots.
 
 ## 2026-10-17 — Desktop start/stop icons for TraceLoft-next (user request)
 
